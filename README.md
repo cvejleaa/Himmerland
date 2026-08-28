@@ -25,7 +25,7 @@ på siden. Vinderen vælges med en knap og giver 1 point.
 Uafgjort deler pointet ½–½. Stillingen står altid øverst på siden.
 
 Derudover: par kan justeres pr. hul, noter pr. runde, print/PDF, og eksport/import af scorekortet
-som JSON.
+som JSON. Siden følger telefonens lyse/mørke tilstand.
 
 ## Kørsel lokalt
 
