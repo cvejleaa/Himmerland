@@ -1,8 +1,8 @@
 # ⛳ Himmerland Golf – scorekort
 
 Statisk scorekort til **2 runder golf for 2 spillere à 18 huller** efter Himmerland-husreglerne,
-plus **5 selvbeskrevne aktiviteter**. Der kan køre **så mange turneringer man vil** med den samme
-opsætning. Alt ligger i én fil (`index.html`) uden byggetrin — hostes på `golf.vejleaa.dk`.
+plus **et frit antal selvbeskrevne aktiviteter**. Der kan køre **så mange turneringer man vil** med
+den samme opsætning. Alt ligger i én fil (`index.html`) uden byggetrin — hostes på `golf.vejleaa.dk`.
 
 ## Hvad siden kan
 
@@ -18,16 +18,18 @@ opsætning. Alt ligger i én fil (`index.html`) uden byggetrin — hostes på `g
 | 9 udtrukne huller | “Træk 9 huller” trækker tilfældigt — eller tryk på et hulnummer for at vælge manuelt. Flest vundne af dem giver 1 ekstra point. |
 | 5 m rebet | Gælder hele runden uden begrænsning, så det står som huskeregel under fanen *Regler*. |
 
-**Turneringer** – hver turnering er sit eget scorekort med navn, dato, to spillere, 2 runder og 5
-aktiviteter. Skift mellem dem i vælgeren øverst på siden; de gamle bliver liggende med deres
-resultater. *Kopiér opsætning* starter en ny turnering med samme spillere og par-tal, men blanke
-scores. Hver turnering har sin egen synk-kode, så flere kan køre side om side.
+**Turneringer** – hver turnering er sit eget scorekort med navn, dato, to spillere, 2 runder og sine
+egne aktiviteter. Skift mellem dem i vælgeren øverst på siden; de gamle bliver liggende med deres
+resultater. *Kopiér opsætning* starter en ny turnering med samme spillere, par-tal og aktiviteter, men blanke
+scores og resultater. Hver turnering har sin egen synk-kode, så flere kan køre side om side.
 
-**Aktiviteter** – 5 frie felter hvor titel, beskrivelse og begge spilleres resultat skrives direkte
-på siden. Vinderen vælges med en knap og giver 1 point.
+**Aktiviteter** – tilføj og fjern så mange I vil (op til 40). Titel, beskrivelse og begge spilleres
+resultat skrives direkte på siden, og vinderen vælges med en knap. Skal der være aktiviteter for
+hver dag, navngives de bare derefter — fx “Dag 1 – petanque”.
 
-**Pointregnskab** – 4 point pr. runde + 5 point fra aktiviteterne = **13 point i alt**.
-Uafgjort deler pointet ½–½. Stillingen står altid øverst på siden.
+**Pointregnskab** – 4 point pr. runde (altså 8 fra golfen) plus 1 point pr. aktivitet. Totalen
+følger antallet af aktiviteter og står nederst i stillingen. Uafgjort deler pointet ½–½, og
+stillingen står altid øverst på siden.
 
 Derudover: par kan justeres pr. hul, noter pr. runde, print/PDF, og eksport/import af hele
 turneringshistorikken som JSON (import lægger turneringer oveni i stedet for at overskrive).

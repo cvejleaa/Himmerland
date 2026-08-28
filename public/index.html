@@ -234,7 +234,14 @@ table.res tr.total td{border-bottom:0;border-top:2px solid var(--green);font-wei
 
 /* ---------- Activities ---------- */
 .act{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.act .actbar{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .act .num{font-size:.7rem;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.act .actdel{
+  border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer;
+  width:28px;height:28px;border-radius:8px;font-size:.85rem;line-height:1;flex:0 0 auto
+}
+.act .actdel:hover{border-color:var(--danger);color:var(--danger)}
+.addact{margin-top:4px}
 .act input.title{width:100%;margin:5px 0 7px;padding:9px 10px;font-size:1rem;font-weight:700;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink)}
 .act textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:.86rem;min-height:56px;resize:vertical;background:var(--card);color:var(--ink)}
 .act .grid2{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px}
@@ -313,8 +320,8 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
 
   <section class="panel" id="panel-akt">
     <div class="card">
-      <h2>5 aktiviteter</h2>
-      <p class="help">Beskriv selv aktiviteterne — hvad de går ud på, og hvad resultatet blev. Hver aktivitet giver 1 point til vinderen (½ point hver ved uafgjort).</p>
+      <h2>Aktiviteter</h2>
+      <p class="help">Beskriv selv aktiviteterne — hvad de går ud på, og hvad resultatet blev. Tilføj lige så mange I har brug for; skal der være nogle for hver dag, kan de bare hedde “Dag 1 – …”. Hver aktivitet giver 1 point til vinderen (½ point hver ved uafgjort).</p>
       <div id="acts"></div>
     </div>
   </section>
@@ -322,7 +329,7 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
   <section class="panel" id="panel-tot">
     <div class="card">
       <h2>Samlet stilling</h2>
-      <p class="help">Hver runde giver 4 point: For 9, Bag 9, hele runden og de 9 udtrukne huller. Dertil 5 point fra aktiviteterne — 13 point i alt.</p>
+      <p class="help">Hver runde giver 4 point: For 9, Bag 9, hele runden og de 9 udtrukne huller. Dertil 1 point pr. aktivitet. Totalen står nederst i tabellen.</p>
       <table class="res" id="totaltable"></table>
     </div>
     <div class="card">
@@ -341,7 +348,7 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
   <section class="panel" id="panel-tur">
     <div class="card">
       <h2>Turneringer</h2>
-      <p class="help">Hver turnering er sit eget scorekort med de samme regler: 2 runder, 2 spillere og 5 aktiviteter. Skift mellem dem i toppen af siden — de gamle bliver liggende med deres resultater.</p>
+      <p class="help">Hver turnering er sit eget scorekort med de samme regler: 2 runder, 2 spillere og de aktiviteter I selv tilføjer. Skift mellem dem i toppen af siden — de gamle bliver liggende med deres resultater.</p>
       <div class="btnrow">
         <button class="btn primary" id="btnNewT" type="button">＋ Ny turnering</button>
         <button class="btn" id="btnCopyT" type="button">Kopiér opsætning fra den aktive</button>
@@ -365,7 +372,7 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
     </div>
     <div class="card">
       <h2>Sådan tælles point</h2>
-      <p class="help">Runde 1 og runde 2 giver hver 4 point (For 9, Bag 9, hele runden, 9 udtrukne huller). De 5 aktiviteter giver 1 point hver. Uafgjort deler pointet ½–½. I alt 13 point.</p>
+      <p class="help">Runde 1 og runde 2 giver hver 4 point (For 9, Bag 9, hele runden, 9 udtrukne huller) — altså 8 point fra golfen. Hver aktivitet giver 1 point mere. Uafgjort deler pointet ½–½.</p>
     </div>
   </section>
 
@@ -408,7 +415,10 @@ function newRound(){
     note:   ""
   };
 }
+const MAX_ACTS = 40;
 function newActivity(){ return {title:"", desc:"", res:["",""], winner:null}; }
+// 4 point pr. runde + 1 point pr. aktivitet
+function maxPoints(){ return 8 + S.acts.length; }
 
 function uid(){ return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function today(){ return new Date().toISOString().slice(0,10); }
@@ -423,7 +433,7 @@ function freeCode(base){
   return code;
 }
 
-// En turnering = 2 runder + 5 aktiviteter for de samme to spillere
+// En turnering = 2 runder + et frit antal aktiviteter for de samme to spillere
 function newTournament(opts){
   opts = opts || {};
   const nm = opts.name || ("Himmerland " + new Date().getFullYear());
@@ -434,7 +444,7 @@ function newTournament(opts){
     date: opts.date || today(),
     players: [ (opts.players && opts.players[0]) || "", (opts.players && opts.players[1]) || "" ],
     rounds: [newRound(), newRound()],
-    acts: [newActivity(),newActivity(),newActivity(),newActivity(),newActivity()],
+    acts: Array.isArray(opts.acts) ? opts.acts : [newActivity(),newActivity(),newActivity(),newActivity(),newActivity()],
     updated: 0
   };
 }
@@ -473,12 +483,14 @@ function migrate(raw){
     if(Array.isArray(r.drawn))  t.drawn = r.drawn.filter(n => Number.isInteger(n) && n>=1 && n<=HOLES).slice(0,HOLES);
     if(typeof r.note === "string") t.note = r.note;
   });
-  if(Array.isArray(raw.acts)) raw.acts.slice(0,5).forEach((a,i) => {
-    const t = s.acts[i];
+  if(Array.isArray(raw.acts)) s.acts = raw.acts.slice(0,MAX_ACTS).map(a => {
+    const t = newActivity();
+    if(!a || typeof a !== "object") return t;
     if(typeof a.title === "string") t.title = a.title;
     if(typeof a.desc  === "string") t.desc  = a.desc;
     if(Array.isArray(a.res)) t.res = [String(a.res[0]||""), String(a.res[1]||"")];
     if(a.winner === 0 || a.winner === 1 || a.winner === "tie") t.winner = a.winner;
+    return t;
   });
   s.updated = Number.isFinite(raw.updated) ? raw.updated : 0;
   if(typeof raw.id === "string" && raw.id) s.id = raw.id;
@@ -795,12 +807,35 @@ function buildRound(ri){
 /* ============================================================
    Aktiviteter
    ============================================================ */
+function addActivity(){
+  if(S.acts.length >= MAX_ACTS){ toast("Der er plads til " + MAX_ACTS + " aktiviteter"); return; }
+  S.acts.push(newActivity());
+  save(); buildActs(); refresh();
+  const list = document.querySelectorAll("#acts .act input.title");
+  if(list.length) list[list.length-1].focus();
+}
+function removeActivity(i){
+  const a = S.acts[i];
+  const hasContent = a.title.trim() || a.desc.trim() || a.res[0].trim() || a.res[1].trim() || a.winner != null;
+  if(hasContent && !confirm("Fjern “" + (a.title.trim() || "Aktivitet " + (i+1)) + "”?")) return;
+  S.acts.splice(i,1);
+  save(); buildActs(); refresh();
+}
+
 function buildActs(){
   const box = document.getElementById("acts");
   box.innerHTML = "";
   S.acts.forEach((a,i) => {
     const c = el("div","act");
-    c.appendChild(el("div","num","Aktivitet " + (i+1)));
+    const top = el("div","actbar");
+    top.appendChild(el("div","num","Aktivitet " + (i+1)));
+    const bDel = el("button","actdel","✕");
+    bDel.type = "button";
+    bDel.title = "Fjern aktiviteten";
+    bDel.setAttribute("aria-label", "Fjern aktivitet " + (i+1));
+    bDel.addEventListener("click", () => removeActivity(i));
+    top.appendChild(bDel);
+    c.appendChild(top);
 
     const ti = el("input","title"); ti.placeholder = "Hvad går den ud på? (fx “Putte-konkurrence på greenen”)";
     ti.value = a.title;
@@ -846,6 +881,14 @@ function buildActs(){
     c.appendChild(ws);
     box.appendChild(c);
   });
+
+  if(!S.acts.length){
+    box.appendChild(el("p","help","Ingen aktiviteter endnu — tilføj dem I aftaler undervejs."));
+  }
+  const add = el("button","btn primary addact","＋ Tilføj aktivitet");
+  add.type = "button";
+  add.addEventListener("click", addActivity);
+  box.appendChild(add);
 }
 
 /* ============================================================
@@ -938,11 +981,11 @@ function refresh(){
   document.getElementById("bp0").textContent = fmt(t[0]);
   document.getElementById("bp1").textContent = fmt(t[1]);
   const lead = document.getElementById("blead");
-  if(t[0] === 0 && t[1] === 0) lead.textContent = "Ingen point afgjort endnu — 13 point i spil";
+  if(t[0] === 0 && t[1] === 0) lead.textContent = "Ingen point afgjort endnu — " + maxPoints() + " point i spil";
   else if(t[0] === t[1]) lead.textContent = "Helt lige — " + fmt(t[0]) + " point til hver";
   else {
     const p = t[0] > t[1] ? 0 : 1;
-    lead.textContent = name(p) + " fører med " + fmt(Math.abs(t[0]-t[1])) + " point · " + fmt(13 - t[0] - t[1]) + " point tilbage";
+    lead.textContent = name(p) + " fører med " + fmt(Math.abs(t[0]-t[1])) + " point · " + fmt(maxPoints() - t[0] - t[1]) + " point tilbage";
   }
 }
 
@@ -1012,7 +1055,7 @@ function renderTotals(){
 
   const tr = el("tr","total");
   tr.appendChild(el("td","","I alt"));
-  tr.appendChild(el("td","","af 13 point"));
+  tr.appendChild(el("td","","af " + maxPoints() + " point"));
   tr.appendChild(el("td","p a", fmt(tot[0])));
   tr.appendChild(el("td","p b", fmt(tot[1])));
   tb.appendChild(tr);
@@ -1038,7 +1081,9 @@ function addTournament(copyFrom){
   const base = copyFrom || null;
   const t = newTournament({
     name: "Himmerland " + new Date().getFullYear(),
-    players: base ? base.players.slice() : S.players.slice()
+    players: (base || S).players.slice(),
+    // en kopi tager aktiviteterne med som skabelon, men uden resultater
+    acts: base ? base.acts.map(a => ({ title:a.title, desc:a.desc, res:["",""], winner:null })) : null
   });
   if(base) t.rounds.forEach((r,i) => { r.pars = base.rounds[i].pars.slice(); });
   t.code = freeCode(slug(t.name));
