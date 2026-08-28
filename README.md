@@ -57,8 +57,12 @@ omkring 15 sekunder.
 
 DNS: én CNAME-record fra `golf` til `cvejleaa.github.io`. Certifikatet udsteder GitHub selv.
 
-Opsætningen blev slået til én gang under **Settings → Pages → Source: GitHub Actions**; workflowen
-kan ikke selv oprette Pages-siden første gang (GitHub tillader ikke at en workflow gør det).
+To ting skulle sættes én gang i **Settings → Pages**, fordi GitHub ikke lader en workflow gøre det
+(begge dele svarer `Resource not accessible by integration`):
+
+- **Source: GitHub Actions**
+- **Custom domain: `golf.vejleaa.dk`** — `public/CNAME` alene rækker ikke, når der udgives via
+  Actions; domænet skal stå i selve Pages-opsætningen, ellers svarer det 404.
 
 > **Firebase Hosting bruges ikke.** Filerne `firebase.json` og `.firebaserc` ligger her, hvis du
 > senere vil den vej (`firebase deploy --only hosting`), men den kræver login ved hver udgivelse.
