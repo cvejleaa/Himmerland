@@ -1,0 +1,1103 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Himmerland Golf – Scorekort &amp; Regler</title>
+<meta name="description" content="Scorekort til 2 runder golf for 2 spillere med Himmerland-reglerne, plus 5 valgfrie aktiviteter.">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⛳</text></svg>">
+<style>
+:root{
+  --green:#0d5c3f; --green-2:#12784f; --green-3:#e8f4ee;
+  --sand:#f6f1e4; --ink:#16241d; --muted:#5d6f66;
+  --line:#d8e2db; --card:#fff; --bg:#f2f6f3;
+  --p1:#1b6ac9; --p2:#c2410c; --warn:#b45309; --gold:#b8860b;
+  --radius:14px; --shadow:0 1px 2px rgba(16,40,30,.06),0 6px 20px rgba(16,40,30,.07);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1040px;margin:0 auto;padding:0 14px 96px}
+a{color:var(--green-2)}
+
+/* ---------- Header ---------- */
+header.top{
+  background:linear-gradient(160deg,var(--green) 0%,#0a4630 100%);
+  color:#fff;padding:22px 0 18px;
+}
+header.top .wrap{padding-bottom:0}
+h1{margin:0;font-size:1.45rem;letter-spacing:.2px}
+h1 .em{opacity:.85;font-weight:400}
+.sub{margin:4px 0 0;opacity:.8;font-size:.85rem}
+
+/* players */
+.players{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.players label{flex:1 1 160px;display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;opacity:.75}
+.players input{
+  width:100%;margin-top:4px;padding:9px 11px;border-radius:10px;border:1px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.12);color:#fff;font-size:1rem;font-weight:600
+}
+.players input::placeholder{color:rgba(255,255,255,.6)}
+
+/* ---------- Scoreboard ---------- */
+.board{
+  background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  margin-top:-14px;position:relative;z-index:2;padding:14px;
+}
+.board .row{display:flex;align-items:center;gap:12px}
+.board .side{flex:1;text-align:center}
+.board .nm{font-size:.8rem;color:var(--muted);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .pts{font-size:2.1rem;font-weight:800;line-height:1.1}
+.board .side.a .pts{color:var(--p1)} .board .side.b .pts{color:var(--p2)}
+.board .vs{font-size:.75rem;color:var(--muted);font-weight:700;letter-spacing:.1em}
+.board .lead{margin-top:10px;text-align:center;font-size:.8rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:9px}
+
+/* ---------- Tabs ---------- */
+nav.tabs{display:flex;gap:6px;margin:16px 0 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+nav.tabs button{
+  flex:0 0 auto;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);
+  color:var(--muted);font-size:.88rem;font-weight:600;cursor:pointer;white-space:nowrap
+}
+nav.tabs button[aria-selected="true"]{background:var(--green);border-color:var(--green);color:#fff}
+
+section.panel{display:none}
+section.panel.active{display:block}
+
+/* ---------- Cards ---------- */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
+.card > h2{margin:0 0 4px;font-size:1.05rem}
+.card > h2 .hint{font-weight:400;font-size:.78rem;color:var(--muted);margin-left:6px}
+.card > p.help{margin:0 0 12px;color:var(--muted);font-size:.82rem}
+
+.btn{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:10px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);font-size:.85rem;font-weight:600;cursor:pointer
+}
+.btn:hover{border-color:var(--green-2);color:var(--green-2)}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.btn.primary:hover{background:var(--green-2);color:#fff}
+.btn.ghost{background:transparent}
+.btn.danger:hover{border-color:#b91c1c;color:#b91c1c}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* ---------- Rule usage ---------- */
+.usage{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:720px){.usage{grid-template-columns:1fr 1fr}}
+.usebox{border:1px solid var(--line);border-radius:12px;padding:11px}
+.usebox h3{margin:0 0 8px;font-size:.9rem;display:flex;align-items:center;gap:7px}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.dot.a{background:var(--p1)} .dot.b{background:var(--p2)}
+.useitem{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px dashed var(--line);font-size:.88rem}
+.useitem:first-of-type{border-top:0}
+.useitem .lbl{flex:1;display:flex;align-items:center;gap:7px;cursor:pointer}
+.useitem input[type=checkbox]{width:19px;height:19px;accent-color:var(--green);flex:0 0 auto}
+.useitem.used .lbl{color:var(--muted);text-decoration:line-through}
+.useitem select{padding:4px 6px;border-radius:8px;border:1px solid var(--line);background:var(--card);font-size:.8rem;color:var(--ink)}
+.left{font-size:.78rem;color:var(--muted);margin-top:8px;border-top:1px dashed var(--line);padding-top:7px}
+
+/* ---------- Holes ---------- */
+.holehead{
+  display:none;grid-template-columns:64px 62px 1fr 1fr 92px;gap:8px;padding:0 10px 6px;
+  font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700
+}
+@media(min-width:760px){.holehead{display:grid}}
+.hole{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start;
+  border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;background:var(--card)
+}
+@media(min-width:760px){.hole{grid-template-columns:64px 62px 1fr 1fr 92px;align-items:center}}
+.hole.drawn{border-color:#e0c675;background:#fffdf4}
+.hole .hno{grid-column:1/2;font-weight:800;font-size:1rem;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.hole .hno .star{color:#cbd5cf;font-size:.95rem}
+.hole.drawn .hno .star{color:var(--gold)}
+.hole .parwrap{grid-column:2/3;display:flex;align-items:center;gap:6px;justify-content:flex-end}
+@media(min-width:760px){.hole .parwrap{justify-content:flex-start}}
+.hole .parwrap span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.hole .parwrap input{width:42px;padding:5px;text-align:center;border:1px solid var(--line);border-radius:8px;font-size:.9rem;background:var(--card);color:var(--ink)}
+.pcell{grid-column:span 1;border-top:1px dashed var(--line);padding-top:8px}
+@media(min-width:760px){.pcell{border-top:0;padding-top:0}}
+.pcell .who{font-size:.72rem;font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.pcell.a .who{color:var(--p1)} .pcell.b .who{color:var(--p2)}
+@media(min-width:760px){.pcell .who{display:none}}
+.stepper{display:flex;align-items:center;gap:5px}
+.stepper button{
+  width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--bg);
+  font-size:1.2rem;line-height:1;cursor:pointer;color:var(--green);font-weight:700;flex:0 0 auto
+}
+.stepper button:active{background:var(--green-3)}
+.stepper input{
+  width:56px;height:38px;text-align:center;border:2px solid var(--line);border-radius:9px;
+  font-size:1.05rem;font-weight:800;background:var(--card);color:var(--ink)
+}
+.stepper input:focus{outline:none;border-color:var(--green-2)}
+.pcell.a .stepper input{border-color:#c6dbf3} .pcell.b .stepper input{border-color:#f3d6c6}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stepper input[type=number]{-moz-appearance:textfield}
+.stepper .rel{font-size:.75rem;font-weight:700;color:var(--muted);min-width:26px}
+.chk3{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:.76rem;color:var(--muted);cursor:pointer}
+.chk3 input{width:17px;height:17px;accent-color:var(--warn)}
+.badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.badge{font-size:.68rem;padding:2px 7px;border-radius:999px;font-weight:700;white-space:nowrap}
+.badge.noclub{background:#fee2e2;color:#991b1b}
+.badge.tee{background:#fce7f3;color:#9d174d}
+.badge.win{background:var(--green-3);color:var(--green)}
+.hole .res{grid-column:1/-1;font-size:.75rem;font-weight:700;color:var(--muted);text-align:center;border-top:1px dashed var(--line);padding-top:7px}
+@media(min-width:760px){.hole .res{grid-column:5/6;border-top:0;padding-top:0;text-align:right}}
+.hole .res.a{color:var(--p1)} .hole .res.b{color:var(--p2)}
+
+.subtotal{
+  display:flex;justify-content:space-between;gap:10px;padding:10px 12px;margin:6px 0 12px;
+  background:var(--green-3);border-radius:10px;font-size:.85rem;font-weight:700;color:var(--green)
+}
+
+/* ---------- Result table ---------- */
+table.res{width:100%;border-collapse:collapse;font-size:.87rem}
+table.res th,table.res td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:center}
+table.res th:first-child,table.res td:first-child{text-align:left}
+table.res th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+table.res td.p{font-weight:800}
+table.res td.p.a{color:var(--p1)} table.res td.p.b{color:var(--p2)}
+table.res tr.total td{border-bottom:0;border-top:2px solid var(--green);font-weight:800;padding-top:10px}
+
+/* ---------- Activities ---------- */
+.act{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.act .num{font-size:.7rem;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.act input.title{width:100%;margin:5px 0 7px;padding:9px 10px;font-size:1rem;font-weight:700;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink)}
+.act textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:.86rem;min-height:56px;resize:vertical;background:var(--card);color:var(--ink)}
+.act .grid2{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px}
+@media(min-width:640px){.act .grid2{grid-template-columns:1fr 1fr}}
+.act .grid2 label{font-size:.72rem;font-weight:700;color:var(--muted)}
+.act .grid2 input{width:100%;margin-top:4px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:.92rem;background:var(--card);color:var(--ink)}
+.winsel{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.winsel button{flex:1 1 30%;padding:8px;border-radius:9px;border:1px solid var(--line);background:var(--card);font-size:.8rem;font-weight:700;color:var(--muted);cursor:pointer}
+.winsel button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
+
+/* ---------- Rules ---------- */
+ol.rules{margin:0;padding-left:0;list-style:none;counter-reset:r}
+ol.rules li{counter-increment:r;position:relative;padding:11px 0 11px 40px;border-top:1px solid var(--line);font-size:.92rem}
+ol.rules li:first-child{border-top:0}
+ol.rules li::before{
+  content:counter(r);position:absolute;left:0;top:11px;width:26px;height:26px;border-radius:50%;
+  background:var(--green-3);color:var(--green);font-size:.78rem;font-weight:800;display:flex;align-items:center;justify-content:center
+}
+ol.rules li b{display:block;margin-bottom:2px}
+ol.rules li span{color:var(--muted);font-size:.83rem}
+
+footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--ink);color:#fff;
+  padding:10px 16px;border-radius:10px;font-size:.85rem;opacity:0;pointer-events:none;transition:.25s;z-index:50
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media print{
+  header.top{background:#fff;color:#000}
+  .players input{color:#000;border-color:#999;background:#fff}
+  nav.tabs,.btnrow,.toast{display:none!important}
+  section.panel{display:block!important}
+  .card{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>⛳ Himmerland Golf <span class="em">— 2 runder</span></h1>
+    <p class="sub">Scorekort med husreglerne 😎👊🏻 · alt gemmes automatisk i din browser</p>
+    <div class="players">
+      <label>Spiller 1<input id="p0" placeholder="Navn" autocomplete="off"></label>
+      <label>Spiller 2<input id="p1" placeholder="Navn" autocomplete="off"></label>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="board">
+    <div class="row">
+      <div class="side a"><div class="nm" id="bn0">Spiller 1</div><div class="pts" id="bp0">0</div></div>
+      <div class="vs">POINT</div>
+      <div class="side b"><div class="nm" id="bn1">Spiller 2</div><div class="pts" id="bp1">0</div></div>
+    </div>
+    <div class="lead" id="blead">Ingen scores indtastet endnu</div>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="r0" aria-selected="true">Runde 1</button>
+    <button data-tab="r1" aria-selected="false">Runde 2</button>
+    <button data-tab="akt" aria-selected="false">Aktiviteter</button>
+    <button data-tab="tot" aria-selected="false">Stilling</button>
+    <button data-tab="reg" aria-selected="false">Regler</button>
+  </nav>
+
+  <section class="panel active" id="panel-r0"></section>
+  <section class="panel" id="panel-r1"></section>
+
+  <section class="panel" id="panel-akt">
+    <div class="card">
+      <h2>5 aktiviteter</h2>
+      <p class="help">Beskriv selv aktiviteterne — hvad de går ud på, og hvad resultatet blev. Hver aktivitet giver 1 point til vinderen (½ point hver ved uafgjort).</p>
+      <div id="acts"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-tot">
+    <div class="card">
+      <h2>Samlet stilling</h2>
+      <p class="help">Hver runde giver 4 point: For 9, Bag 9, hele runden og de 9 udtrukne huller. Dertil 5 point fra aktiviteterne — 13 point i alt.</p>
+      <table class="res" id="totaltable"></table>
+    </div>
+    <div class="card">
+      <h2>Data</h2>
+      <p class="help">Alt gemmes lokalt i denne browser. Tag en sikkerhedskopi, eller flyt scorekortet til en anden telefon med eksport/import.</p>
+      <div class="btnrow">
+        <button class="btn" id="btnExport">⬇︎ Eksportér JSON</button>
+        <button class="btn" id="btnImport">⬆︎ Importér JSON</button>
+        <button class="btn" id="btnPrint">🖨 Print / PDF</button>
+        <button class="btn danger" id="btnReset">Nulstil alt</button>
+      </div>
+      <input type="file" id="fileInput" accept="application/json,.json" hidden>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-reg">
+    <div class="card">
+      <h2>Himmerland golf regler 😎👊🏻</h2>
+      <ol class="rules">
+        <li><b>3 mulligans</b><span>Én på drive, én på jern og én på putt — pr. spiller pr. runde. Kryds af på runden når de er brugt.</span></li>
+        <li><b>1 gimmie putt pr. runde</b><span>Spilleren vælger selv hvornår bolden er i hul — men kun hvis den ligger inden for en køllelængde. Kun én pr. spiller pr. runde.</span></li>
+        <li><b>3-putt straffer</b><span>Laver du 3-putt, må du ikke bruge køller på næste hul. Sæt hak ved 3-putt, så vises straffen automatisk på næste hul.</span></li>
+        <li><b>PAR = dametee</b><span>Laver du par (eller bedre) på et hul, må du slå ud fra dametee på næste hul. Vises automatisk ud fra scoren.</span></li>
+        <li><b>3 sejre pr. runde</b><span>Der spilles om For 9, Bag 9 og hele runden. For 9/Bag 9 afgøres på flest vundne huller, hele runden på færrest slag.</span></li>
+        <li><b>9 udtrukne huller</b><span>9 huller udtrækkes ved lodtrækning inden runden. Den der vinder flest af dem får et ekstra point. Tryk “Træk 9 huller”, eller tryk på et hulnummer for at vælge manuelt.</span></li>
+        <li><b>5 m rebet</b><span>Rebet er diameteren fra bolden, hvor man frit må droppe ved hvert slag. Gælder hele runden — ingen begrænsning.</span></li>
+      </ol>
+    </div>
+    <div class="card">
+      <h2>Sådan tælles point</h2>
+      <p class="help">Runde 1 og runde 2 giver hver 4 point (For 9, Bag 9, hele runden, 9 udtrukne huller). De 5 aktiviteter giver 1 point hver. Uafgjort deler pointet ½–½. I alt 13 point.</p>
+    </div>
+  </section>
+
+  <footer>Himmerland golf · golf.vejleaa.dk</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="firebase-config.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   State
+   ============================================================ */
+const KEY = "himmerland-golf-v1";
+const HOLES = 18;
+const DEFAULT_PARS = [4,4,3,5,4,4,3,4,5, 4,3,4,5,4,4,3,4,5];
+const RULE_KEYS = [
+  ["drive",  "Mulligan – drive"],
+  ["iron",   "Mulligan – jern"],
+  ["putt",   "Mulligan – putt"],
+  ["gimmie", "Gimmie putt (1 pr. runde)"]
+];
+
+function emptyRules(){
+  const o = {};
+  RULE_KEYS.forEach(([k]) => o[k] = {used:false, hole:""});
+  return o;
+}
+function newRound(){
+  return {
+    pars:   DEFAULT_PARS.slice(),
+    scores: [Array(HOLES).fill(null), Array(HOLES).fill(null)],
+    putt3:  [Array(HOLES).fill(false), Array(HOLES).fill(false)],
+    rules:  [emptyRules(), emptyRules()],
+    drawn:  [],
+    note:   ""
+  };
+}
+function newActivity(){ return {title:"", desc:"", res:["",""], winner:null}; }
+function newState(){
+  return {
+    v: 1,
+    players: ["", ""],
+    rounds: [newRound(), newRound()],
+    acts: [newActivity(),newActivity(),newActivity(),newActivity(),newActivity()],
+    updated: 0
+  };
+}
+
+let S = newState();
+
+function migrate(raw){
+  const s = newState();
+  if(!raw || typeof raw !== "object") return s;
+  if(Array.isArray(raw.players)) s.players = [raw.players[0]||"", raw.players[1]||""];
+  if(Array.isArray(raw.rounds)) raw.rounds.slice(0,2).forEach((r,i) => {
+    const t = s.rounds[i];
+    if(Array.isArray(r.pars))  for(let h=0;h<HOLES;h++) if(Number.isFinite(r.pars[h])) t.pars[h] = r.pars[h];
+    if(Array.isArray(r.scores)) for(let p=0;p<2;p++) for(let h=0;h<HOLES;h++){
+      const v = r.scores[p] && r.scores[p][h];
+      t.scores[p][h] = Number.isFinite(v) ? v : null;
+    }
+    if(Array.isArray(r.putt3))  for(let p=0;p<2;p++) for(let h=0;h<HOLES;h++) t.putt3[p][h] = !!(r.putt3[p] && r.putt3[p][h]);
+    if(Array.isArray(r.rules))  for(let p=0;p<2;p++) RULE_KEYS.forEach(([k]) => {
+      const src = r.rules[p] && r.rules[p][k];
+      if(src) t.rules[p][k] = {used:!!src.used, hole: src.hole == null ? "" : String(src.hole)};
+    });
+    if(Array.isArray(r.drawn))  t.drawn = r.drawn.filter(n => Number.isInteger(n) && n>=1 && n<=HOLES).slice(0,HOLES);
+    if(typeof r.note === "string") t.note = r.note;
+  });
+  if(Array.isArray(raw.acts)) raw.acts.slice(0,5).forEach((a,i) => {
+    const t = s.acts[i];
+    if(typeof a.title === "string") t.title = a.title;
+    if(typeof a.desc  === "string") t.desc  = a.desc;
+    if(Array.isArray(a.res)) t.res = [String(a.res[0]||""), String(a.res[1]||"")];
+    if(a.winner === 0 || a.winner === 1 || a.winner === "tie") t.winner = a.winner;
+  });
+  s.updated = Number.isFinite(raw.updated) ? raw.updated : 0;
+  return s;
+}
+
+let saveTimer = null;
+function save(){
+  S.updated = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { if(window.HGSync) window.HGSync.push(S); }, 500);
+}
+function load(){
+  try {
+    const raw = localStorage.getItem(KEY);
+    if(raw) S = migrate(JSON.parse(raw));
+  } catch(e){ S = newState(); }
+}
+
+/* ============================================================
+   Beregninger
+   ============================================================ */
+const name = p => S.players[p].trim() || ("Spiller " + (p+1));
+
+// 0 / 1 = vinder, "tie" = uafgjort, null = mangler score
+function holeWinner(r,h){
+  const a = r.scores[0][h], b = r.scores[1][h];
+  if(a == null || b == null) return null;
+  if(a < b) return 0;
+  if(b < a) return 1;
+  return "tie";
+}
+function holesWon(r, from, to, onlyDrawn){
+  const w = [0,0]; let tie = 0, played = 0;
+  for(let h = from; h <= to; h++){
+    if(onlyDrawn && r.drawn.indexOf(h+1) === -1) continue;
+    const x = holeWinner(r,h);
+    if(x === null) continue;
+    played++;
+    if(x === "tie") tie++; else w[x]++;
+  }
+  return {w, tie, played};
+}
+function strokes(r,p){
+  let n = 0, holes = 0;
+  for(let h=0;h<HOLES;h++) if(r.scores[p][h] != null){ n += r.scores[p][h]; holes++; }
+  return {n, holes};
+}
+// Slag talt kun på huller hvor begge har en score (fair sammenligning undervejs)
+function commonStrokes(r){
+  const t = [0,0]; let holes = 0;
+  for(let h=0;h<HOLES;h++){
+    if(r.scores[0][h] == null || r.scores[1][h] == null) continue;
+    t[0] += r.scores[0][h]; t[1] += r.scores[1][h]; holes++;
+  }
+  return {t, holes};
+}
+function decide(a, b, played){
+  if(!played) return {winner:null, pts:[0,0]};
+  if(a > b) return {winner:0, pts:[1,0]};
+  if(b > a) return {winner:1, pts:[0,1]};
+  return {winner:"tie", pts:[.5,.5]};
+}
+function roundResult(r){
+  const f = holesWon(r,0,8,false);
+  const b = holesWon(r,9,17,false);
+  const d = holesWon(r,0,17,true);
+  const cs = commonStrokes(r);
+  const out = {
+    front: Object.assign({label:"For 9",  detail:f.w[0]+"–"+f.w[1]+" huller"}, decide(f.w[0],f.w[1],f.played)),
+    back:  Object.assign({label:"Bag 9",  detail:b.w[0]+"–"+b.w[1]+" huller"}, decide(b.w[0],b.w[1],b.played)),
+    // færrest slag vinder → byt om på argumenterne
+    total: Object.assign({label:"Hele runden", detail:cs.holes ? cs.t[0]+"–"+cs.t[1]+" slag" : "–"}, decide(cs.t[1],cs.t[0],cs.holes)),
+    draw:  Object.assign({label:"9 udtrukne huller", detail: r.drawn.length ? d.w[0]+"–"+d.w[1]+" huller" : "ikke trukket"},
+             r.drawn.length ? decide(d.w[0],d.w[1],d.played) : {winner:null,pts:[0,0]})
+  };
+  out.pts = [0,0];
+  ["front","back","total","draw"].forEach(k => { out.pts[0] += out[k].pts[0]; out.pts[1] += out[k].pts[1]; });
+  return out;
+}
+function actPts(a){
+  if(a.winner === 0) return [1,0];
+  if(a.winner === 1) return [0,1];
+  if(a.winner === "tie") return [.5,.5];
+  return [0,0];
+}
+function grandTotal(){
+  const t = [0,0];
+  S.rounds.forEach(r => { const x = roundResult(r); t[0]+=x.pts[0]; t[1]+=x.pts[1]; });
+  S.acts.forEach(a => { const p = actPts(a); t[0]+=p[0]; t[1]+=p[1]; });
+  return t;
+}
+const fmt = n => (Math.round(n*10)/10).toString().replace(".", ",");
+
+/* ============================================================
+   Hjælpere til DOM
+   ============================================================ */
+function el(tag, cls, txt){
+  const n = document.createElement(tag);
+  if(cls) n.className = cls;
+  if(txt != null) n.textContent = txt;
+  return n;
+}
+let toastTimer = null;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* ============================================================
+   Runde-visning
+   ============================================================ */
+const refs = [[],[]]; // refs[round] = liste af hul-referencer
+
+function buildRound(ri){
+  const panel = document.getElementById("panel-r" + ri);
+  const r = S.rounds[ri];
+  panel.innerHTML = "";
+  refs[ri] = [];
+
+  /* --- Regelforbrug --- */
+  const cUse = el("div","card");
+  const h2 = el("h2","", "Runde " + (ri+1) + " – regelforbrug");
+  h2.appendChild(el("span","hint","mulligans & gimmie, pr. spiller pr. runde"));
+  cUse.appendChild(h2);
+  const usage = el("div","usage");
+  for(let p=0;p<2;p++){
+    const box = el("div","usebox");
+    const t = el("h3");
+    t.appendChild(el("span","dot " + (p?"b":"a")));
+    const nm = el("span","", name(p)); nm.dataset.pname = p; t.appendChild(nm);
+    box.appendChild(t);
+    RULE_KEYS.forEach(([k,label]) => {
+      const row = el("div","useitem");
+      const lab = el("label","lbl");
+      const cb = el("input"); cb.type = "checkbox"; cb.checked = r.rules[p][k].used;
+      lab.appendChild(cb); lab.appendChild(el("span","",label));
+      const sel = el("select");
+      sel.appendChild(new Option("hul –",""));
+      for(let h=1;h<=HOLES;h++) sel.appendChild(new Option("hul " + h, String(h)));
+      sel.value = r.rules[p][k].hole || "";
+      cb.addEventListener("change", () => { r.rules[p][k].used = cb.checked; row.classList.toggle("used", cb.checked); save(); refresh(); });
+      sel.addEventListener("change", () => { r.rules[p][k].hole = sel.value; save(); });
+      row.classList.toggle("used", cb.checked);
+      row.appendChild(lab); row.appendChild(sel);
+      box.appendChild(row);
+    });
+    const left = el("div","left"); left.dataset.left = p;
+    box.appendChild(left);
+    usage.appendChild(box);
+  }
+  cUse.appendChild(usage);
+  panel.appendChild(cUse);
+
+  /* --- Lodtrækning --- */
+  const cDraw = el("div","card");
+  const h2d = el("h2","","9 udtrukne huller");
+  h2d.appendChild(el("span","hint","flest vundne af disse giver 1 ekstra point"));
+  cDraw.appendChild(h2d);
+  const pDraw = el("p","help"); pDraw.dataset.drawinfo = "1"; cDraw.appendChild(pDraw);
+  const rowd = el("div","btnrow");
+  const bDraw = el("button","btn primary","🎲 Træk 9 huller");
+  const bClear = el("button","btn ghost","Ryd");
+  bDraw.addEventListener("click", () => {
+    if(r.drawn.length && !confirm("Træk 9 nye huller? Den nuværende lodtrækning slettes.")) return;
+    const pool = []; for(let h=1;h<=HOLES;h++) pool.push(h);
+    for(let i=pool.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+    r.drawn = pool.slice(0,9).sort((a,b) => a-b);
+    save(); refresh(); toast("Huller trukket: " + r.drawn.join(", "));
+  });
+  bClear.addEventListener("click", () => { r.drawn = []; save(); refresh(); });
+  rowd.appendChild(bDraw); rowd.appendChild(bClear);
+  cDraw.appendChild(rowd);
+  panel.appendChild(cDraw);
+
+  /* --- Huller --- */
+  const cH = el("div","card");
+  const h2h = el("h2","","Scorekort");
+  h2h.appendChild(el("span","hint","tryk på hulnummeret for at markere det som udtrukket"));
+  cH.appendChild(h2h);
+  const head = el("div","holehead");
+  ["Hul","Par","", "", "Hul-vinder"].forEach((x,i) => {
+    const d = el("div","",x);
+    if(i === 2) { d.textContent = ""; d.dataset.pname = 0; }
+    if(i === 3) { d.textContent = ""; d.dataset.pname = 1; }
+    head.appendChild(d);
+  });
+  cH.appendChild(head);
+
+  for(let h=0;h<HOLES;h++){
+    const row = el("div","hole");
+    const ref = {row:row, cells:[], badges:[], res:null, chk:[], inp:[]};
+
+    const hno = el("div","hno");
+    hno.appendChild(el("span","","" + (h+1)));
+    const star = el("span","star","★");
+    hno.appendChild(star);
+    hno.title = "Klik for at markere hullet som udtrukket";
+    hno.addEventListener("click", () => {
+      const i = r.drawn.indexOf(h+1);
+      if(i >= 0) r.drawn.splice(i,1);
+      else if(r.drawn.length >= 9) { toast("Der er allerede trukket 9 huller"); return; }
+      else { r.drawn.push(h+1); r.drawn.sort((a,b) => a-b); }
+      save(); refresh();
+    });
+    row.appendChild(hno);
+
+    const pw = el("div","parwrap");
+    pw.appendChild(el("span","","Par"));
+    const pin = el("input"); pin.type = "number"; pin.min = "3"; pin.max = "6"; pin.inputMode = "numeric";
+    pin.value = r.pars[h];
+    pin.addEventListener("input", () => {
+      const v = parseInt(pin.value,10);
+      r.pars[h] = (Number.isFinite(v) && v>0) ? v : 4;
+      save(); refresh();
+    });
+    pw.appendChild(pin);
+    row.appendChild(pw);
+
+    for(let p=0;p<2;p++){
+      const cell = el("div","pcell " + (p?"b":"a"));
+      const who = el("div","who");
+      who.appendChild(el("span","dot " + (p?"b":"a")));
+      const wn = el("span","",name(p)); wn.dataset.pname = p; who.appendChild(wn);
+      cell.appendChild(who);
+
+      const st = el("div","stepper");
+      const minus = el("button","","−"); minus.type = "button";
+      const inp = el("input"); inp.type = "number"; inp.min = "1"; inp.inputMode = "numeric";
+      inp.placeholder = "";
+      inp.value = r.scores[p][h] == null ? "" : r.scores[p][h];
+      const plus = el("button","","+"); plus.type = "button";
+      const rel = el("span","rel","");
+      const setVal = v => {
+        r.scores[p][h] = v;
+        inp.value = v == null ? "" : v;
+        save(); refresh();
+      };
+      minus.addEventListener("click", () => {
+        const cur = r.scores[p][h];
+        setVal(cur == null ? r.pars[h] : Math.max(1, cur-1));
+      });
+      plus.addEventListener("click", () => {
+        const cur = r.scores[p][h];
+        setVal(cur == null ? r.pars[h] : cur+1);
+      });
+      inp.addEventListener("input", () => {
+        const v = parseInt(inp.value,10);
+        r.scores[p][h] = (Number.isFinite(v) && v > 0) ? v : null;
+        save(); refresh();
+      });
+      st.appendChild(minus); st.appendChild(inp); st.appendChild(plus); st.appendChild(rel);
+      cell.appendChild(st);
+
+      const c3 = el("label","chk3");
+      const cb3 = el("input"); cb3.type = "checkbox"; cb3.checked = r.putt3[p][h];
+      cb3.addEventListener("change", () => { r.putt3[p][h] = cb3.checked; save(); refresh(); });
+      c3.appendChild(cb3); c3.appendChild(el("span","","3-putt"));
+      cell.appendChild(c3);
+
+      const bg = el("div","badges");
+      cell.appendChild(bg);
+
+      row.appendChild(cell);
+      ref.cells.push(cell); ref.badges.push(bg); ref.chk.push(cb3); ref.inp.push({inp:inp, rel:rel});
+    }
+
+    const res = el("div","res","");
+    ref.res = res;
+    row.appendChild(res);
+    cH.appendChild(row);
+    refs[ri].push(ref);
+  }
+
+  const sub = el("div","subtotal");
+  sub.dataset.subtotal = "1";
+  cH.appendChild(sub);
+  panel.appendChild(cH);
+
+  /* --- Resultat --- */
+  const cR = el("div","card");
+  cR.appendChild(el("h2","","Runde " + (ri+1) + " – resultat"));
+  const tab = el("table","res"); tab.dataset.roundtable = ri;
+  cR.appendChild(tab);
+  const nt = el("textarea");
+  nt.style.cssText = "width:100%;margin-top:12px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:.86rem;min-height:52px;background:var(--card);color:var(--ink)";
+  nt.placeholder = "Noter fra runden – væddemål, gimmies, drama …";
+  nt.value = r.note;
+  nt.addEventListener("input", () => { r.note = nt.value; save(); });
+  nt.dataset.note = ri;
+  cR.appendChild(nt);
+  panel.appendChild(cR);
+}
+
+/* ============================================================
+   Aktiviteter
+   ============================================================ */
+function buildActs(){
+  const box = document.getElementById("acts");
+  box.innerHTML = "";
+  S.acts.forEach((a,i) => {
+    const c = el("div","act");
+    c.appendChild(el("div","num","Aktivitet " + (i+1)));
+
+    const ti = el("input","title"); ti.placeholder = "Hvad går den ud på? (fx “Putte-konkurrence på greenen”)";
+    ti.value = a.title;
+    ti.addEventListener("input", () => { a.title = ti.value; save(); });
+    c.appendChild(ti);
+
+    const de = el("textarea"); de.placeholder = "Beskriv reglerne for aktiviteten …";
+    de.value = a.desc;
+    de.addEventListener("input", () => { a.desc = de.value; save(); });
+    c.appendChild(de);
+
+    const g = el("div","grid2");
+    const inputs = [];
+    for(let p=0;p<2;p++){
+      const l = el("label");
+      const span = el("span","",name(p)); span.dataset.pname = p;
+      l.appendChild(span);
+      const inp = el("input"); inp.placeholder = "Resultat";
+      inp.value = a.res[p];
+      inp.addEventListener("input", () => { a.res[p] = inp.value; save(); });
+      l.appendChild(inp);
+      g.appendChild(l);
+      inputs.push(inp);
+    }
+    c.appendChild(g);
+
+    const ws = el("div","winsel");
+    const btns = [];
+    const opts = [{v:0,lab:name(0)},{v:"tie",lab:"Uafgjort"},{v:1,lab:name(1)}];
+    opts.forEach(o => {
+      const b = el("button","","Vinder: " + o.lab);
+      if(o.v === "tie") b.textContent = "Uafgjort";
+      if(o.v !== "tie") b.dataset.wname = String(o.v);
+      b.setAttribute("aria-pressed", String(a.winner === o.v));
+      b.addEventListener("click", () => {
+        a.winner = (a.winner === o.v) ? null : o.v;
+        btns.forEach(x => x.b.setAttribute("aria-pressed", String(a.winner === x.v)));
+        save(); refresh();
+      });
+      ws.appendChild(b);
+      btns.push({b:b, v:o.v});
+    });
+    c.appendChild(ws);
+    box.appendChild(c);
+  });
+}
+
+/* ============================================================
+   Opdatering af alt afledt UI
+   ============================================================ */
+function refresh(){
+  // navne
+  document.querySelectorAll("[data-pname]").forEach(n => {
+    const p = parseInt(n.dataset.pname,10);
+    n.textContent = (n.tagName === "BUTTON" ? "Vinder: " : "") + name(p);
+  });
+  document.querySelectorAll("[data-wname]").forEach(n => { n.textContent = "Vinder: " + name(parseInt(n.dataset.wname,10)); });
+  document.getElementById("bn0").textContent = name(0);
+  document.getElementById("bn1").textContent = name(1);
+
+  for(let ri=0; ri<2; ri++){
+    const r = S.rounds[ri];
+    const panel = document.getElementById("panel-r" + ri);
+
+    // resterende regelforbrug
+    panel.querySelectorAll("[data-left]").forEach(n => {
+      const p = parseInt(n.dataset.left,10);
+      const rest = RULE_KEYS.filter(([k]) => !r.rules[p][k].used).map(([,l]) => l.replace("Mulligan – ","").replace("Gimmie putt (1 pr. runde)","gimmie"));
+      n.textContent = rest.length ? "Tilbage: " + rest.join(", ") : "Alt brugt 🫡";
+    });
+
+    // lodtrækning
+    const di = panel.querySelector("[data-drawinfo]");
+    if(di) di.textContent = r.drawn.length
+      ? "Udtrukne huller: " + r.drawn.join(", ") + " (" + r.drawn.length + "/9)"
+      : "Ingen huller trukket endnu — træk 9 huller inden runden går i gang.";
+
+    // huller
+    for(let h=0; h<HOLES; h++){
+      const ref = refs[ri][h];
+      if(!ref) continue;
+      ref.row.classList.toggle("drawn", r.drawn.indexOf(h+1) !== -1);
+
+      for(let p=0; p<2; p++){
+        const sc = r.scores[p][h];
+        const rel = ref.inp[p].rel;
+        if(sc == null) rel.textContent = "";
+        else {
+          const d = sc - r.pars[h];
+          rel.textContent = d === 0 ? "par" : (d > 0 ? "+" + d : String(d));
+        }
+        if(ref.inp[p].inp.value !== (sc == null ? "" : String(sc))) ref.inp[p].inp.value = sc == null ? "" : sc;
+        ref.chk[p].checked = r.putt3[p][h];
+
+        // konsekvenser fra forrige hul
+        const bg = ref.badges[p];
+        bg.innerHTML = "";
+        if(h > 0){
+          if(r.putt3[p][h-1]){
+            const b = el("span","badge noclub","🚫 Ingen køller (3-putt på hul " + h + ")");
+            bg.appendChild(b);
+          }
+          const prev = r.scores[p][h-1];
+          if(prev != null && prev <= r.pars[h-1]){
+            bg.appendChild(el("span","badge tee","🏌️‍♀️ Dametee (par på hul " + h + ")"));
+          }
+        }
+      }
+
+      const w = holeWinner(r,h);
+      ref.res.className = "res" + (w === 0 ? " a" : w === 1 ? " b" : "");
+      ref.res.textContent = w === null ? "" : (w === "tie" ? "Delt hul" : name(w) + " vinder");
+    }
+
+    // subtotal
+    const sub = panel.querySelector("[data-subtotal]");
+    if(sub){
+      const s0 = strokes(r,0), s1 = strokes(r,1);
+      sub.innerHTML = "";
+      sub.appendChild(el("span","", name(0) + ": " + (s0.holes ? s0.n + " slag / " + s0.holes + " huller" : "–")));
+      sub.appendChild(el("span","", name(1) + ": " + (s1.holes ? s1.n + " slag / " + s1.holes + " huller" : "–")));
+    }
+
+    // rundetabel
+    const tab = panel.querySelector("[data-roundtable]");
+    if(tab) renderRoundTable(tab, roundResult(r));
+  }
+
+  renderTotals();
+
+  const t = grandTotal();
+  document.getElementById("bp0").textContent = fmt(t[0]);
+  document.getElementById("bp1").textContent = fmt(t[1]);
+  const lead = document.getElementById("blead");
+  if(t[0] === 0 && t[1] === 0) lead.textContent = "Ingen point afgjort endnu — 13 point i spil";
+  else if(t[0] === t[1]) lead.textContent = "Helt lige — " + fmt(t[0]) + " point til hver";
+  else {
+    const p = t[0] > t[1] ? 0 : 1;
+    lead.textContent = name(p) + " fører med " + fmt(Math.abs(t[0]-t[1])) + " point · " + fmt(13 - t[0] - t[1]) + " point tilbage";
+  }
+}
+
+function cellPts(tr, res, p){
+  const td = el("td","p " + (p?"b":"a"), fmt(res.pts[p]));
+  tr.appendChild(td);
+}
+function renderRoundTable(tab, res){
+  tab.innerHTML = "";
+  const thead = el("thead"), htr = el("tr");
+  ["Kamp","", name(0), name(1)].forEach((x,i) => {
+    const th = el("th","",x);
+    htr.appendChild(th);
+  });
+  thead.appendChild(htr); tab.appendChild(thead);
+  const tb = el("tbody");
+  ["front","back","total","draw"].forEach(k => {
+    const r = res[k];
+    const tr = el("tr");
+    tr.appendChild(el("td","",r.label));
+    tr.appendChild(el("td","",r.detail));
+    cellPts(tr,r,0); cellPts(tr,r,1);
+    tb.appendChild(tr);
+  });
+  const tr = el("tr","total");
+  tr.appendChild(el("td","","I alt"));
+  tr.appendChild(el("td","","af 4 point"));
+  tr.appendChild(el("td","p a", fmt(res.pts[0])));
+  tr.appendChild(el("td","p b", fmt(res.pts[1])));
+  tb.appendChild(tr);
+  tab.appendChild(tb);
+}
+
+function renderTotals(){
+  const tab = document.getElementById("totaltable");
+  tab.innerHTML = "";
+  const thead = el("thead"), htr = el("tr");
+  ["","", name(0), name(1)].forEach(x => htr.appendChild(el("th","",x)));
+  thead.appendChild(htr); tab.appendChild(thead);
+  const tb = el("tbody");
+  const tot = [0,0];
+
+  S.rounds.forEach((r,i) => {
+    const res = roundResult(r);
+    ["front","back","total","draw"].forEach(k => {
+      const x = res[k];
+      const tr = el("tr");
+      tr.appendChild(el("td","","Runde " + (i+1) + " · " + x.label));
+      tr.appendChild(el("td","",x.detail));
+      tr.appendChild(el("td","p a", fmt(x.pts[0])));
+      tr.appendChild(el("td","p b", fmt(x.pts[1])));
+      tb.appendChild(tr);
+    });
+    tot[0] += res.pts[0]; tot[1] += res.pts[1];
+  });
+
+  S.acts.forEach((a,i) => {
+    const p = actPts(a);
+    const tr = el("tr");
+    tr.appendChild(el("td","", a.title.trim() || ("Aktivitet " + (i+1))));
+    tr.appendChild(el("td","", a.winner == null ? "ikke afgjort" : (a.winner === "tie" ? "uafgjort" : name(a.winner) + " vandt")));
+    tr.appendChild(el("td","p a", fmt(p[0])));
+    tr.appendChild(el("td","p b", fmt(p[1])));
+    tb.appendChild(tr);
+    tot[0] += p[0]; tot[1] += p[1];
+  });
+
+  const tr = el("tr","total");
+  tr.appendChild(el("td","","I alt"));
+  tr.appendChild(el("td","","af 13 point"));
+  tr.appendChild(el("td","p a", fmt(tot[0])));
+  tr.appendChild(el("td","p b", fmt(tot[1])));
+  tb.appendChild(tr);
+  tab.appendChild(tb);
+}
+
+/* ============================================================
+   Faneblade + navne + data
+   ============================================================ */
+function initChrome(){
+  const tabs = document.getElementById("tabs");
+  tabs.addEventListener("click", e => {
+    const b = e.target.closest("button"); if(!b) return;
+    tabs.querySelectorAll("button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+    document.querySelectorAll("section.panel").forEach(p => p.classList.remove("active"));
+    document.getElementById("panel-" + b.dataset.tab).classList.add("active");
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+
+  for(let p=0;p<2;p++){
+    const inp = document.getElementById("p" + p);
+    inp.value = S.players[p];
+    inp.addEventListener("input", () => { S.players[p] = inp.value; save(); refresh(); });
+  }
+
+  document.getElementById("btnExport").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(S,null,2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "himmerland-golf-" + new Date().toISOString().slice(0,10) + ".json";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+  const file = document.getElementById("fileInput");
+  document.getElementById("btnImport").addEventListener("click", () => file.click());
+  file.addEventListener("change", () => {
+    const f = file.files && file.files[0]; if(!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        S = migrate(JSON.parse(rd.result));
+        save(); renderAll(); toast("Scorekort importeret");
+      } catch(e){ alert("Kunne ikke læse filen: " + e.message); }
+      file.value = "";
+    };
+    rd.readAsText(f);
+  });
+  document.getElementById("btnPrint").addEventListener("click", () => window.print());
+  document.getElementById("btnReset").addEventListener("click", () => {
+    if(!confirm("Nulstil alle scores, regelforbrug og aktiviteter?")) return;
+    S = newState();
+    save(); renderAll(); toast("Alt er nulstillet");
+  });
+}
+
+function renderAll(){
+  buildRound(0); buildRound(1); buildActs();
+  for(let p=0;p<2;p++) document.getElementById("p" + p).value = S.players[p];
+  refresh();
+}
+
+/* ============================================================
+   Sky-synk via Firebase (valgfri)
+   ============================================================ */
+const FB_CFG_KEY = "himmerland-fb-config";
+const FB_GAME_KEY = "himmerland-fb-game";
+const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
+
+const Sync = {
+  cfg:null, game:"", db:null, ref:null, unsub:null, on:false, applying:false, lastLocal:0,
+  status(msg, ok){
+    const n = document.getElementById("syncStatus");
+    if(n){ n.textContent = msg; n.style.color = ok ? "var(--green-2)" : "var(--muted)"; }
+  },
+  readCfg(){
+    const w = window.FIREBASE_CONFIG;
+    if(w && w.projectId && w.apiKey && w.apiKey.indexOf("DIN_") !== 0) return w;
+    try {
+      const raw = localStorage.getItem(FB_CFG_KEY);
+      if(raw) return JSON.parse(raw);
+    } catch(e){}
+    return null;
+  },
+  readGame(){
+    const q = new URLSearchParams(location.search).get("kode");
+    if(q) { localStorage.setItem(FB_GAME_KEY, q); return q; }
+    return localStorage.getItem(FB_GAME_KEY) || "himmerland";
+  },
+  async start(){
+    this.cfg = this.readCfg();
+    this.game = this.readGame();
+    if(!this.cfg){ this.status("Slukket – ingen Firebase-opsætning", false); return; }
+    try {
+      const [{initializeApp}, fs, auth] = await Promise.all([
+        import(SDK + "firebase-app.js"),
+        import(SDK + "firebase-firestore.js"),
+        import(SDK + "firebase-auth.js")
+      ]);
+      const app = initializeApp(this.cfg);
+      try {
+        const a = auth.getAuth(app);
+        if(!a.currentUser) await auth.signInAnonymously(a);
+      } catch(e){ /* anonym login ikke slået til – kør videre */ }
+      this.db = fs.getFirestore(app);
+      this.ref = fs.doc(this.db, "spil", this.game);
+      this.fs = fs;
+      this.unsub = fs.onSnapshot(this.ref, snap => {
+        if(!snap.exists() || snap.metadata.hasPendingWrites) return;
+        const remote = snap.data();
+        if(!remote || !Number.isFinite(remote.updated)) return;
+        if(remote.updated <= S.updated) return;
+        if(Date.now() - this.lastLocal < 2500){ setTimeout(() => this.pull(), 2600); return; }
+        this.apply(remote);
+      }, err => this.status("Synk-fejl: " + err.code, false));
+      this.on = true;
+      this.status("Synkroniseret · kode “" + this.game + "”", true);
+      this.push(S, true);
+    } catch(e){
+      this.status("Kunne ikke starte synk: " + e.message, false);
+    }
+  },
+  async pull(){
+    if(!this.on) return;
+    try {
+      const snap = await this.fs.getDoc(this.ref);
+      if(snap.exists()){
+        const d = snap.data();
+        if(Number.isFinite(d.updated) && d.updated > S.updated) this.apply(d);
+      }
+    } catch(e){}
+  },
+  apply(remote){
+    this.applying = true;
+    S = migrate(remote);
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
+    renderAll();
+    this.applying = false;
+    toast("Opdateret fra skyen");
+  },
+  async push(state, silent){
+    if(!this.on || this.applying) return;
+    try {
+      await this.fs.setDoc(this.ref, JSON.parse(JSON.stringify(state)));
+      if(!silent) this.status("Gemt i skyen · kode “" + this.game + "”", true);
+    } catch(e){
+      this.status("Kunne ikke gemme i skyen: " + (e.code || e.message), false);
+    }
+  },
+  stop(){ if(this.unsub) this.unsub(); this.on = false; }
+};
+window.HGSync = {
+  push(state){ Sync.lastLocal = Date.now(); Sync.push(state); }
+};
+
+function buildSyncCard(){
+  const panel = document.getElementById("panel-tot");
+  const c = el("div","card");
+  const h = el("h2","","Sky-synk");
+  h.appendChild(el("span","hint","Firebase – valgfrit"));
+  c.appendChild(h);
+  c.appendChild(el("p","help","Med sky-synk deler I ét scorekort på tværs af telefoner: samme kode = samme spil, opdateret live. Uden opsætning gemmes alt kun i denne browser."));
+
+  const st = el("p","help"); st.id = "syncStatus"; st.style.fontWeight = "700";
+  st.textContent = "Starter …";
+  c.appendChild(st);
+
+  const g = el("div"); g.style.cssText = "display:grid;gap:8px;margin-bottom:10px";
+  const lab1 = el("label"); lab1.style.cssText = "font-size:.72rem;font-weight:700;color:var(--muted)";
+  lab1.textContent = "Spilkode (begge telefoner skal bruge samme)";
+  const gi = el("input");
+  gi.style.cssText = "width:100%;margin-top:4px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:.92rem;background:var(--card);color:var(--ink)";
+  gi.value = Sync.readGame();
+  lab1.appendChild(gi);
+  g.appendChild(lab1);
+
+  const lab2 = el("label"); lab2.style.cssText = "font-size:.72rem;font-weight:700;color:var(--muted)";
+  lab2.textContent = "Firebase web-config (JSON) – kun nødvendig hvis siden ikke selv leverer den";
+  const ta = el("textarea");
+  ta.style.cssText = "width:100%;margin-top:4px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:.78rem;min-height:92px;background:var(--card);color:var(--ink)";
+  ta.placeholder = '{ "apiKey": "…", "authDomain": "himmerland.firebaseapp.com", "projectId": "himmerland", "appId": "…" }';
+  try { const raw = localStorage.getItem(FB_CFG_KEY); if(raw) ta.value = raw; } catch(e){}
+  if(Sync.readCfg() === window.FIREBASE_CONFIG && window.FIREBASE_CONFIG){
+    ta.placeholder = "Leveres af siden (firebase-config.js) – felt kan stå tomt";
+  }
+  lab2.appendChild(ta);
+  g.appendChild(lab2);
+  c.appendChild(g);
+
+  const row = el("div","btnrow");
+  const bSave = el("button","btn primary","Gem & forbind");
+  bSave.addEventListener("click", () => {
+    const code = gi.value.trim().replace(/[^a-zA-Z0-9æøåÆØÅ_-]/g,"-") || "himmerland";
+    localStorage.setItem(FB_GAME_KEY, code);
+    const txt = ta.value.trim();
+    if(txt){
+      try { JSON.parse(txt); localStorage.setItem(FB_CFG_KEY, txt); }
+      catch(e){ alert("Config er ikke gyldig JSON: " + e.message); return; }
+    } else {
+      localStorage.removeItem(FB_CFG_KEY);
+    }
+    location.reload();
+  });
+  const bLink = el("button","btn","🔗 Kopiér link til medspiller");
+  bLink.addEventListener("click", async () => {
+    const url = location.origin + location.pathname + "?kode=" + encodeURIComponent(Sync.readGame());
+    try { await navigator.clipboard.writeText(url); toast("Link kopieret"); }
+    catch(e){ prompt("Kopiér linket:", url); }
+  });
+  row.appendChild(bSave); row.appendChild(bLink);
+  c.appendChild(row);
+
+  panel.appendChild(c);
+}
+
+/* ============================================================
+   Start
+   ============================================================ */
+load();
+renderAll();
+initChrome();
+buildSyncCard();
+Sync.start();
+
+})();
+</script>
+</body>
+</html>
