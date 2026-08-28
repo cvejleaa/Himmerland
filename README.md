@@ -43,28 +43,26 @@ Siden følger telefonens lyse/mørke tilstand.
 python3 -m http.server 8080 --directory public   # → http://localhost:8080
 ```
 
-## Hosting på golf.vejleaa.dk (Firebase Hosting)
+## Hosting: golf.vejleaa.dk
 
-Siden er ren statisk HTML — ét dokument uden byggetrin — så den lægges bare på CDN'et.
-Firebase-projektet hedder **himmerland**.
+Siden er ren statisk HTML og ligger på **GitHub Pages**. Workflowen
+`.github/workflows/deploy.yml` pakker `public/` og udgiver den ved hvert push til
+`claude/himmerland-golf-scorecard-7g3jkj` — der er ingen manuelle deploy-trin. En kørsel tager
+omkring 15 sekunder.
 
-```bash
-npm install -g firebase-tools
-firebase login
-firebase deploy --only hosting
-```
+| Adresse | |
+|---|---|
+| `https://golf.vejleaa.dk` | Domænet, sat af `public/CNAME` |
+| `https://cvejleaa.github.io/Himmerland/` | Pages-adressen |
 
-Du får en `*.web.app`-adresse med det samme. Domænet tilføjes derefter under
-**Firebase Console → Hosting → Add custom domain → `golf.vejleaa.dk`**, hvor Firebase viser de
-DNS-records (A/TXT), du skal oprette hos din DNS-udbyder. Certifikatet klares automatisk.
+DNS: én CNAME-record fra `golf` til `cvejleaa.github.io`. Certifikatet udsteder GitHub selv.
 
-`firebase.json` peger på `public/`, sætter `no-cache` på `index.html` og `firebase-config.js`, så
-en ny udgivelse slår igennem med det samme, og sender ukendte stier videre til appen, så
-`?kode=`-links virker.
+Opsætningen blev slået til én gang under **Settings → Pages → Source: GitHub Actions**; workflowen
+kan ikke selv oprette Pages-siden første gang (GitHub tillader ikke at en workflow gør det).
 
-> **Ikke App Hosting.** App Hosting bygger repoet med buildpacks og kræver en Node-app; en statisk
-> side fejler i build-trinnet. Er der oprettet en App Hosting-backend på projektet, kan den slettes
-> — den bruges ikke her.
+> **Firebase Hosting bruges ikke.** Filerne `firebase.json` og `.firebaserc` ligger her, hvis du
+> senere vil den vej (`firebase deploy --only hosting`), men den kræver login ved hver udgivelse.
+> App Hosting duer slet ikke til en statisk side — den bygger med buildpacks og kræver en Node-app.
 
 ## Sky-synk (valgfrit, men rart)
 
@@ -77,6 +75,8 @@ Med sky-synk deler I ét fælles scorekort på tværs af telefoner, opdateret li
 3. **Web-config**: Console → Projektindstillinger → Dine apps → Web-app. Kopiér værdierne ind i
    `public/firebase-config.js` i stedet for pladsholderne, og deploy igen.
 4. **Regler**: `firebase deploy --only firestore:rules`
+5. **Tilladte domæner**: Console → Authentication → Settings → Authorized domains → tilføj
+   `golf.vejleaa.dk` og `cvejleaa.github.io`. Uden dem afviser Firebase det anonyme login.
 
 Scorekortene ligger i samlingen `spil`, ét dokument pr. **turneringskode**. Koden dannes ud fra
 turneringens navn og kan ændres under fanen *Stilling → Sky-synk*. Knappen *Kopiér link til
@@ -93,6 +93,8 @@ Har du ikke lyst til at lægge config'en i repoet, kan den i stedet indsættes d
 |---|---|
 | `public/index.html` | Hele appen: layout, regler, pointberegning, turneringer og synk |
 | `public/firebase-config.js` | Firebase web-config (pladsholdere indtil du udfylder dem) |
-| `firebase.json` | Hosting- og Firestore-opsætning |
+| `firebase.json` | Firestore-regler + valgfri Firebase Hosting |
 | `firestore.rules` | Adgang til samlingen `spil` |
 | `.firebaserc` | Standardprojekt til Firebase CLI |
+| `public/CNAME` | Domænet siden svarer på |
+| `.github/workflows/deploy.yml` | Udgiver siden ved hvert push |
