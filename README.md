@@ -35,16 +35,33 @@ Siden følger telefonens lyse/mørke tilstand.
 
 ## Kørsel lokalt
 
-Åbn `index.html` direkte i en browser, eller:
-
 ```bash
-python3 -m http.server 8080     # → http://localhost:8080
+npm start        # → http://localhost:8080
 ```
 
-## Hosting på golf.vejleaa.dk (Firebase Hosting)
+Eller åbn `public/index.html` direkte i en browser — siden har ingen byggetrin.
 
-Firebase-projektet hedder **himmerland**. Ret evt. `projects.default` i `.firebaserc`, hvis
-projekt-id'et er et andet (fx `himmerland-1a2b3`).
+## Hosting på golf.vejleaa.dk
+
+Firebase-projektet hedder **himmerland**. Repoet virker med begge Firebase-hostingprodukter.
+
+### App Hosting (bygger automatisk ved push)
+
+App Hosting bygger repoet med buildpacks og kører det som en Node-app, så en ren HTML-mappe er
+ikke nok. Derfor ligger siden i `public/`, og `server.js` serverer den på `$PORT`:
+
+| Fil | Rolle i buildet |
+|---|---|
+| `package.json` | `npm start` → `node server.js`, Node 20+ |
+| `server.js` | Statisk webserver uden afhængigheder |
+| `apphosting.yaml` | CPU, hukommelse og `runCommand` |
+
+Backenden bygger selv videre ved hvert push til den forbundne branch. Domænet tilføjes under
+**Firebase Console → App Hosting → backend → Custom domains**.
+
+### Klassisk Hosting (statisk CDN, uden container)
+
+Billigere og enklere for en side som denne — filerne lægges bare på CDN'et:
 
 ```bash
 npm install -g firebase-tools
@@ -52,8 +69,8 @@ firebase login
 firebase deploy --only hosting
 ```
 
-Tilføj derefter domænet: **Firebase Console → Hosting → Add custom domain → `golf.vejleaa.dk`**,
-og opret de DNS-records (A/TXT), Firebase viser, hos din DNS-udbyder. Certifikatet klares
+Domænet tilføjes under **Hosting → Add custom domain → `golf.vejleaa.dk`**. Begge veje kræver, at
+du opretter de DNS-records (A/TXT), Firebase viser, hos din DNS-udbyder; certifikatet klares
 automatisk.
 
 ## Sky-synk (valgfrit, men rart)
@@ -65,7 +82,7 @@ Med sky-synk deler I ét fælles scorekort på tværs af telefoner, opdateret li
 2. **Anonym login**: Console → Authentication → Sign-in method → slå *Anonymous* til.
    (Reglerne kræver et login; siden logger selv anonymt ind.)
 3. **Web-config**: Console → Projektindstillinger → Dine apps → Web-app. Kopiér værdierne ind i
-   `firebase-config.js` i stedet for pladsholderne, og deploy igen.
+   `public/firebase-config.js` i stedet for pladsholderne, og deploy igen.
 4. **Regler**: `firebase deploy --only firestore:rules`
 
 Scorekortene ligger i samlingen `spil`, ét dokument pr. **turneringskode**. Koden dannes ud fra
@@ -81,8 +98,11 @@ Har du ikke lyst til at lægge config'en i repoet, kan den i stedet indsættes d
 
 | Fil | Formål |
 |---|---|
-| `index.html` | Hele appen: layout, regler, pointberegning, turneringer og synk |
-| `firebase-config.js` | Firebase web-config (pladsholdere indtil du udfylder dem) |
-| `firebase.json` | Hosting- og Firestore-opsætning |
+| `public/index.html` | Hele appen: layout, regler, pointberegning, turneringer og synk |
+| `public/firebase-config.js` | Firebase web-config (pladsholdere indtil du udfylder dem) |
+| `server.js` | Statisk webserver til App Hosting |
+| `package.json` | Startkommando og Node-version til buildet |
+| `apphosting.yaml` | App Hosting-opsætning |
+| `firebase.json` | Klassisk Hosting + Firestore-opsætning |
 | `firestore.rules` | Adgang til samlingen `spil` |
 | `.firebaserc` | Standardprojekt til Firebase CLI |
