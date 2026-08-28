@@ -448,6 +448,18 @@ function newTournament(opts){
     updated: 0
   };
 }
+// En turnering ingen har rørt endnu — bruges til at rydde op ved import
+function isPristine(t){
+  if(t.players.some(n => n.trim())) return false;
+  if(t.acts.some(a => a.title.trim() || a.desc.trim() || a.res[0].trim() || a.res[1].trim() || a.winner != null)) return false;
+  return t.rounds.every(r =>
+    r.note.trim() === "" &&
+    !r.drawn.length &&
+    r.scores.every(p => p.every(v => v == null)) &&
+    r.putt3.every(p => p.every(v => !v)) &&
+    r.rules.every(x => RULE_KEYS.every(([k]) => !x[k].used))
+  );
+}
 function newLibrary(){
   const t = newTournament();
   return { v:2, currentId:t.id, tournaments:[t] };
@@ -1211,10 +1223,17 @@ function initChrome(){
           if(i < 0){ G.tournaments.push(t); added++; }
           else if(t.updated > G.tournaments[i].updated){ G.tournaments[i] = t; updated++; }
         });
-        if(!setCurrent(G.currentId)) setCurrent(G.tournaments[0].id);
+        // ryd den tomme starturnering væk, hvis der ikke er rørt ved den
+        if(added && G.tournaments.length > lib.tournaments.length){
+          const tom = G.tournaments.filter(t => isPristine(t) && !lib.tournaments.some(x => x.id === t.id));
+          tom.forEach(t => G.tournaments.splice(G.tournaments.indexOf(t), 1));
+        }
+        // åbn den turnering, filen selv stod på — ellers ser importen tom ud
+        const mål = lib.tournaments.find(t => t.id === lib.currentId) || lib.tournaments[0];
+        if(!(mål && setCurrent(mål.id))) setCurrent(G.tournaments[0].id);
         save(); renderAll();
         if(window.HGSync) window.HGSync.rebind();
-        toast(added + " turnering(er) tilføjet, " + updated + " opdateret");
+        toast(added + " turnering(er) hentet ind" + (updated ? ", " + updated + " opdateret" : ""));
       } catch(e){ alert("Kunne ikke læse filen: " + e.message); }
       file.value = "";
     };
