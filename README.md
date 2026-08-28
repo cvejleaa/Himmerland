@@ -1,8 +1,8 @@
 # ⛳ Himmerland Golf – scorekort
 
 Statisk scorekort til **2 runder golf for 2 spillere à 18 huller** efter Himmerland-husreglerne,
-plus **5 selvbeskrevne aktiviteter**. Alt ligger i én fil (`index.html`) uden byggetrin — hostes på
-`golf.vejleaa.dk`.
+plus **5 selvbeskrevne aktiviteter**. Der kan køre **så mange turneringer man vil** med den samme
+opsætning. Alt ligger i én fil (`index.html`) uden byggetrin — hostes på `golf.vejleaa.dk`.
 
 ## Hvad siden kan
 
@@ -18,14 +18,20 @@ plus **5 selvbeskrevne aktiviteter**. Alt ligger i én fil (`index.html`) uden b
 | 9 udtrukne huller | “Træk 9 huller” trækker tilfældigt — eller tryk på et hulnummer for at vælge manuelt. Flest vundne af dem giver 1 ekstra point. |
 | 5 m rebet | Gælder hele runden uden begrænsning, så det står som huskeregel under fanen *Regler*. |
 
+**Turneringer** – hver turnering er sit eget scorekort med navn, dato, to spillere, 2 runder og 5
+aktiviteter. Skift mellem dem i vælgeren øverst på siden; de gamle bliver liggende med deres
+resultater. *Kopiér opsætning* starter en ny turnering med samme spillere og par-tal, men blanke
+scores. Hver turnering har sin egen synk-kode, så flere kan køre side om side.
+
 **Aktiviteter** – 5 frie felter hvor titel, beskrivelse og begge spilleres resultat skrives direkte
 på siden. Vinderen vælges med en knap og giver 1 point.
 
 **Pointregnskab** – 4 point pr. runde + 5 point fra aktiviteterne = **13 point i alt**.
 Uafgjort deler pointet ½–½. Stillingen står altid øverst på siden.
 
-Derudover: par kan justeres pr. hul, noter pr. runde, print/PDF, og eksport/import af scorekortet
-som JSON. Siden følger telefonens lyse/mørke tilstand.
+Derudover: par kan justeres pr. hul, noter pr. runde, print/PDF, og eksport/import af hele
+turneringshistorikken som JSON (import lægger turneringer oveni i stedet for at overskrive).
+Siden følger telefonens lyse/mørke tilstand.
 
 ## Kørsel lokalt
 
@@ -62,9 +68,11 @@ Med sky-synk deler I ét fælles scorekort på tværs af telefoner, opdateret li
    `firebase-config.js` i stedet for pladsholderne, og deploy igen.
 4. **Regler**: `firebase deploy --only firestore:rules`
 
-Scorekortene ligger i samlingen `spil`, ét dokument pr. **spilkode**. Under fanen *Stilling → Sky-synk*
-sættes koden (fx `himmerland-2026`), og knappen *Kopiér link til medspiller* laver et link med
-`?kode=…`, så den anden telefon åbner det samme spil.
+Scorekortene ligger i samlingen `spil`, ét dokument pr. **turneringskode**. Koden dannes ud fra
+turneringens navn og kan ændres under fanen *Stilling → Sky-synk*. Knappen *Kopiér link til
+medspiller* laver et link med `?kode=…` — åbner medspilleren det, hentes turneringen ned og lægges
+i vedkommendes egen liste. Kun den aktive turnering synkroniseres; skifter du turnering, følger
+synken med.
 
 Har du ikke lyst til at lægge config'en i repoet, kan den i stedet indsættes direkte i feltet under
 *Stilling → Sky-synk* på hver telefon — så gemmes den kun lokalt.
@@ -73,7 +81,7 @@ Har du ikke lyst til at lægge config'en i repoet, kan den i stedet indsættes d
 
 | Fil | Formål |
 |---|---|
-| `index.html` | Hele appen: layout, regler, pointberegning og synk |
+| `index.html` | Hele appen: layout, regler, pointberegning, turneringer og synk |
 | `firebase-config.js` | Firebase web-config (pladsholdere indtil du udfylder dem) |
 | `firebase.json` | Hosting- og Firestore-opsætning |
 | `firestore.rules` | Adgang til samlingen `spil` |

@@ -81,6 +81,37 @@ h1 .em{opacity:.85;font-weight:400}
 }
 .players input::placeholder{color:rgba(255,255,255,.6)}
 
+/* turneringsvælger */
+.tpick{display:flex;gap:8px;align-items:flex-end;margin-top:14px;flex-wrap:wrap}
+.tpick label{flex:1 1 220px;display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;opacity:.75}
+.tpick select{
+  width:100%;margin-top:4px;padding:9px 11px;border-radius:10px;border:1px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.12);color:#fff;font-size:.95rem;font-weight:600
+}
+.tpick select option{color:#16241d;background:#fff}
+.tpick .btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff}
+.tpick .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45);color:#fff}
+
+/* turneringsliste */
+.trow{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+.trow.cur{border-color:var(--green);background:var(--green-3)}
+.trow .thead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.trow .thead input.tname{
+  flex:1 1 180px;padding:8px 10px;font-size:.98rem;font-weight:700;border:1px solid var(--line);
+  border-radius:9px;background:var(--card);color:var(--ink)
+}
+.trow .thead input.tdate{
+  width:150px;padding:8px 10px;font-size:.85rem;border:1px solid var(--line);border-radius:9px;
+  background:var(--card);color:var(--ink);color-scheme:light dark
+}
+.trow .tmeta{margin-top:8px;font-size:.82rem;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.trow .tscore{font-weight:800}
+.trow .tscore .a{color:var(--p1)} .trow .tscore .b{color:var(--p2)}
+.trow .tag{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--green-3);color:var(--green)}
+.trow.cur .tag{background:var(--green);color:var(--on-accent)}
+.trow .tactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.trow .tactions .btn{padding:6px 11px;font-size:.8rem}
+
 /* ---------- Scoreboard ---------- */
 .board{
   background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
@@ -247,6 +278,10 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
   <div class="wrap">
     <h1>⛳ Himmerland Golf <span class="em">— 2 runder</span></h1>
     <p class="sub">Scorekort med husreglerne 😎👊🏻 · alt gemmes automatisk i din browser</p>
+    <div class="tpick">
+      <label>Turnering<select id="tsel"></select></label>
+      <button class="btn" id="btnNewTop" type="button">＋ Ny turnering</button>
+    </div>
     <div class="players">
       <label>Spiller 1<input id="p0" placeholder="Navn" autocomplete="off"></label>
       <label>Spiller 2<input id="p1" placeholder="Navn" autocomplete="off"></label>
@@ -269,6 +304,7 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
     <button data-tab="r1" aria-selected="false">Runde 2</button>
     <button data-tab="akt" aria-selected="false">Aktiviteter</button>
     <button data-tab="tot" aria-selected="false">Stilling</button>
+    <button data-tab="tur" aria-selected="false">Turneringer</button>
     <button data-tab="reg" aria-selected="false">Regler</button>
   </nav>
 
@@ -291,14 +327,26 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
     </div>
     <div class="card">
       <h2>Data</h2>
-      <p class="help">Alt gemmes lokalt i denne browser. Tag en sikkerhedskopi, eller flyt scorekortet til en anden telefon med eksport/import.</p>
+      <p class="help">Alle turneringer gemmes lokalt i denne browser. Eksport tager dem alle med — import lægger dem oveni det du har, så du kan flytte historikken til en anden telefon.</p>
       <div class="btnrow">
         <button class="btn" id="btnExport">⬇︎ Eksportér JSON</button>
         <button class="btn" id="btnImport">⬆︎ Importér JSON</button>
         <button class="btn" id="btnPrint">🖨 Print / PDF</button>
-        <button class="btn danger" id="btnReset">Nulstil alt</button>
+        <button class="btn danger" id="btnReset">Nulstil denne turnering</button>
       </div>
       <input type="file" id="fileInput" accept="application/json,.json" hidden>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-tur">
+    <div class="card">
+      <h2>Turneringer</h2>
+      <p class="help">Hver turnering er sit eget scorekort med de samme regler: 2 runder, 2 spillere og 5 aktiviteter. Skift mellem dem i toppen af siden — de gamle bliver liggende med deres resultater.</p>
+      <div class="btnrow">
+        <button class="btn primary" id="btnNewT" type="button">＋ Ny turnering</button>
+        <button class="btn" id="btnCopyT" type="button">Kopiér opsætning fra den aktive</button>
+      </div>
+      <div id="tlist"></div>
     </div>
   </section>
 
@@ -334,7 +382,8 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
 /* ============================================================
    State
    ============================================================ */
-const KEY = "himmerland-golf-v1";
+const KEY = "himmerland-golf-v2";
+const OLD_KEY = "himmerland-golf-v1";
 const HOLES = 18;
 const DEFAULT_PARS = [4,4,3,5,4,4,3,4,5, 4,3,4,5,4,4,3,4,5];
 const RULE_KEYS = [
@@ -360,20 +409,53 @@ function newRound(){
   };
 }
 function newActivity(){ return {title:"", desc:"", res:["",""], winner:null}; }
-function newState(){
+
+function uid(){ return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function today(){ return new Date().toISOString().slice(0,10); }
+function slug(txt){
+  return (txt||"").toLowerCase()
+    .replace(/æ/g,"ae").replace(/ø/g,"oe").replace(/å/g,"aa")
+    .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,28) || "turnering";
+}
+function freeCode(base){
+  let code = base, n = 2;
+  while(G.tournaments.some(t => t.code === code)) code = base + "-" + (n++);
+  return code;
+}
+
+// En turnering = 2 runder + 5 aktiviteter for de samme to spillere
+function newTournament(opts){
+  opts = opts || {};
+  const nm = opts.name || ("Himmerland " + new Date().getFullYear());
   return {
-    v: 1,
-    players: ["", ""],
+    id: uid(),
+    code: opts.code || slug(nm) + "-" + Math.random().toString(36).slice(2,5),
+    name: nm,
+    date: opts.date || today(),
+    players: [ (opts.players && opts.players[0]) || "", (opts.players && opts.players[1]) || "" ],
     rounds: [newRound(), newRound()],
     acts: [newActivity(),newActivity(),newActivity(),newActivity(),newActivity()],
     updated: 0
   };
 }
+function newLibrary(){
+  const t = newTournament();
+  return { v:2, currentId:t.id, tournaments:[t] };
+}
 
-let S = newState();
+let G = newLibrary();        // alle turneringer
+let S = G.tournaments[0];    // den aktive turnering
+
+function setCurrent(id){
+  const t = G.tournaments.find(x => x.id === id);
+  if(!t) return false;
+  G.currentId = t.id;
+  S = t;
+  return true;
+}
 
 function migrate(raw){
-  const s = newState();
+  const s = newTournament();
   if(!raw || typeof raw !== "object") return s;
   if(Array.isArray(raw.players)) s.players = [raw.players[0]||"", raw.players[1]||""];
   if(Array.isArray(raw.rounds)) raw.rounds.slice(0,2).forEach((r,i) => {
@@ -399,21 +481,38 @@ function migrate(raw){
     if(a.winner === 0 || a.winner === 1 || a.winner === "tie") t.winner = a.winner;
   });
   s.updated = Number.isFinite(raw.updated) ? raw.updated : 0;
+  if(typeof raw.id === "string" && raw.id) s.id = raw.id;
+  if(typeof raw.code === "string" && raw.code) s.code = raw.code;
+  if(typeof raw.name === "string" && raw.name.trim()) s.name = raw.name;
+  if(typeof raw.date === "string") s.date = raw.date;
   return s;
+}
+
+// Accepterer både et enkelt scorekort (den gamle v1-form) og et helt bibliotek
+function migrateLibrary(raw){
+  if(!raw || typeof raw !== "object") return newLibrary();
+  if(Array.isArray(raw.tournaments) && raw.tournaments.length){
+    const lib = { v:2, currentId:"", tournaments: raw.tournaments.map(migrate) };
+    lib.currentId = lib.tournaments.some(t => t.id === raw.currentId) ? raw.currentId : lib.tournaments[0].id;
+    return lib;
+  }
+  const t = migrate(raw);
+  return { v:2, currentId:t.id, tournaments:[t] };
 }
 
 let saveTimer = null;
 function save(){
   S.updated = Date.now();
-  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
+  try { localStorage.setItem(KEY, JSON.stringify(G)); } catch(e){}
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => { if(window.HGSync) window.HGSync.push(S); }, 500);
 }
 function load(){
   try {
-    const raw = localStorage.getItem(KEY);
-    if(raw) S = migrate(JSON.parse(raw));
-  } catch(e){ S = newState(); }
+    const raw = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY);
+    G = raw ? migrateLibrary(JSON.parse(raw)) : newLibrary();
+  } catch(e){ G = newLibrary(); }
+  if(!setCurrent(G.currentId)) setCurrent(G.tournaments[0].id);
 }
 
 /* ============================================================
@@ -831,6 +930,9 @@ function refresh(){
   }
 
   renderTotals();
+  buildTournaments();
+  const codeInp = document.getElementById("syncCode");
+  if(codeInp && document.activeElement !== codeInp) codeInp.value = S.code;
 
   const t = grandTotal();
   document.getElementById("bp0").textContent = fmt(t[0]);
@@ -918,6 +1020,107 @@ function renderTotals(){
 }
 
 /* ============================================================
+   Turneringer
+   ============================================================ */
+function tournamentSummary(t){
+  const prev = S;
+  S = t;                       // point beregnes altid på den aktive turnering
+  const pts = grandTotal();
+  S = prev;
+  return pts;
+}
+function switchTo(id){
+  if(!setCurrent(id)) return;
+  save(); renderAll();
+  if(window.HGSync) window.HGSync.rebind();
+}
+function addTournament(copyFrom){
+  const base = copyFrom || null;
+  const t = newTournament({
+    name: "Himmerland " + new Date().getFullYear(),
+    players: base ? base.players.slice() : S.players.slice()
+  });
+  if(base) t.rounds.forEach((r,i) => { r.pars = base.rounds[i].pars.slice(); });
+  t.code = freeCode(slug(t.name));
+  G.tournaments.unshift(t);
+  G.currentId = t.id; S = t;
+  save(); renderAll();
+  if(window.HGSync) window.HGSync.rebind();
+  toast("Ny turnering oprettet");
+  const sel = document.getElementById("tsel"); if(sel) sel.focus();
+}
+function deleteTournament(id){
+  const i = G.tournaments.findIndex(t => t.id === id);
+  if(i < 0) return;
+  if(G.tournaments.length === 1){ toast("Den sidste turnering kan ikke slettes"); return; }
+  if(!confirm("Slet “" + G.tournaments[i].name + "” med alle scores?")) return;
+  G.tournaments.splice(i,1);
+  if(G.currentId === id) setCurrent(G.tournaments[0].id);
+  save(); renderAll();
+  if(window.HGSync) window.HGSync.rebind();
+  toast("Turnering slettet");
+}
+
+function buildTournaments(){
+  const box = document.getElementById("tlist");
+  box.innerHTML = "";
+  G.tournaments.forEach(t => {
+    const cur = t.id === G.currentId;
+    const row = el("div","trow" + (cur ? " cur" : ""));
+
+    const head = el("div","thead");
+    const nm = el("input","tname"); nm.value = t.name; nm.placeholder = "Navn på turneringen";
+    nm.addEventListener("input", () => { t.name = nm.value; save(); fillSelect(); });
+    const dt = el("input","tdate"); dt.type = "date"; dt.value = t.date || "";
+    dt.addEventListener("input", () => { t.date = dt.value; save(); fillSelect(); });
+    head.appendChild(nm); head.appendChild(dt);
+    if(cur) head.appendChild(el("span","tag","Aktiv"));
+    row.appendChild(head);
+
+    const pts = tournamentSummary(t);
+    const meta = el("div","tmeta");
+    const nA = t.players[0].trim() || "Spiller 1", nB = t.players[1].trim() || "Spiller 2";
+    const sc = el("span","tscore");
+    sc.appendChild(el("span","a", nA + " " + fmt(pts[0])));
+    sc.appendChild(el("span","", " – "));
+    sc.appendChild(el("span","b", fmt(pts[1]) + " " + nB));
+    meta.appendChild(sc);
+    meta.appendChild(el("span","", pts[0] === pts[1] ? "uafgjort indtil videre" :
+      (pts[0] > pts[1] ? nA : nB) + " fører"));
+    meta.appendChild(el("span","", "kode: " + t.code));
+    row.appendChild(meta);
+
+    const act = el("div","tactions");
+    if(!cur){
+      const b = el("button","btn primary","Åbn");
+      b.addEventListener("click", () => switchTo(t.id));
+      act.appendChild(b);
+    }
+    const bCopy = el("button","btn","Kopiér opsætning");
+    bCopy.title = "Ny turnering med samme spillere og par-tal";
+    bCopy.addEventListener("click", () => addTournament(t));
+    act.appendChild(bCopy);
+    const bDel = el("button","btn danger","Slet");
+    bDel.addEventListener("click", () => deleteTournament(t.id));
+    act.appendChild(bDel);
+    row.appendChild(act);
+
+    box.appendChild(row);
+  });
+}
+
+function fillSelect(){
+  const sel = document.getElementById("tsel");
+  if(!sel) return;
+  sel.innerHTML = "";
+  G.tournaments.forEach(t => {
+    const label = (t.date ? t.date.split("-").reverse().join(".") + " · " : "") + (t.name || "Uden navn");
+    sel.appendChild(new Option(label, t.id, false, t.id === G.currentId));
+  });
+  sel.value = G.currentId;
+}
+
+/* ============================================================
    Faneblade + navne + data
    ============================================================ */
 function initChrome(){
@@ -936,8 +1139,13 @@ function initChrome(){
     inp.addEventListener("input", () => { S.players[p] = inp.value; save(); refresh(); });
   }
 
+  document.getElementById("tsel").addEventListener("change", e => switchTo(e.target.value));
+  document.getElementById("btnNewTop").addEventListener("click", () => addTournament(null));
+  document.getElementById("btnNewT").addEventListener("click", () => addTournament(null));
+  document.getElementById("btnCopyT").addEventListener("click", () => addTournament(S));
+
   document.getElementById("btnExport").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(S,null,2)], {type:"application/json"});
+    const blob = new Blob([JSON.stringify(G,null,2)], {type:"application/json"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "himmerland-golf-" + new Date().toISOString().slice(0,10) + ".json";
@@ -951,8 +1159,17 @@ function initChrome(){
     const rd = new FileReader();
     rd.onload = () => {
       try {
-        S = migrate(JSON.parse(rd.result));
-        save(); renderAll(); toast("Scorekort importeret");
+        const lib = migrateLibrary(JSON.parse(rd.result));
+        let added = 0, updated = 0;
+        lib.tournaments.forEach(t => {
+          const i = G.tournaments.findIndex(x => x.id === t.id);
+          if(i < 0){ G.tournaments.push(t); added++; }
+          else if(t.updated > G.tournaments[i].updated){ G.tournaments[i] = t; updated++; }
+        });
+        if(!setCurrent(G.currentId)) setCurrent(G.tournaments[0].id);
+        save(); renderAll();
+        if(window.HGSync) window.HGSync.rebind();
+        toast(added + " turnering(er) tilføjet, " + updated + " opdateret");
       } catch(e){ alert("Kunne ikke læse filen: " + e.message); }
       file.value = "";
     };
@@ -960,15 +1177,19 @@ function initChrome(){
   });
   document.getElementById("btnPrint").addEventListener("click", () => window.print());
   document.getElementById("btnReset").addEventListener("click", () => {
-    if(!confirm("Nulstil alle scores, regelforbrug og aktiviteter?")) return;
-    S = newState();
-    save(); renderAll(); toast("Alt er nulstillet");
+    if(!confirm("Nulstil scores, regelforbrug og aktiviteter i “" + S.name + "”? Spillerne bliver stående.")) return;
+    const fresh = newTournament({name:S.name, date:S.date, players:S.players.slice(), code:S.code});
+    fresh.id = S.id;
+    G.tournaments[G.tournaments.findIndex(t => t.id === S.id)] = fresh;
+    setCurrent(fresh.id);
+    save(); renderAll(); toast("Turneringen er nulstillet");
   });
 }
 
 function renderAll(){
   buildRound(0); buildRound(1); buildActs();
   for(let p=0;p<2;p++) document.getElementById("p" + p).value = S.players[p];
+  fillSelect();
   refresh();
 }
 
@@ -976,11 +1197,10 @@ function renderAll(){
    Sky-synk via Firebase (valgfri)
    ============================================================ */
 const FB_CFG_KEY = "himmerland-fb-config";
-const FB_GAME_KEY = "himmerland-fb-game";
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 
 const Sync = {
-  cfg:null, game:"", db:null, ref:null, unsub:null, on:false, applying:false, lastLocal:0,
+  cfg:null, db:null, fs:null, ref:null, unsub:null, on:false, applying:false, lastLocal:0,
   status(msg, ok){
     const n = document.getElementById("syncStatus");
     if(n){ n.textContent = msg; n.style.color = ok ? "var(--green-2)" : "var(--muted)"; }
@@ -994,15 +1214,22 @@ const Sync = {
     } catch(e){}
     return null;
   },
-  readGame(){
-    const q = new URLSearchParams(location.search).get("kode");
-    if(q) { localStorage.setItem(FB_GAME_KEY, q); return q; }
-    return localStorage.getItem(FB_GAME_KEY) || "himmerland";
+  // ?kode=… åbner den turnering koden hører til – også hvis den kun findes i skyen
+  openShared(){
+    const code = new URLSearchParams(location.search).get("kode");
+    if(!code) return null;
+    const local = G.tournaments.find(t => t.code === code);
+    if(local){ setCurrent(local.id); renderAll(); return null; }
+    return code;
   },
   async start(){
     this.cfg = this.readCfg();
-    this.game = this.readGame();
-    if(!this.cfg){ this.status("Slukket – ingen Firebase-opsætning", false); return; }
+    const wanted = this.openShared();
+    if(!this.cfg){
+      this.status(wanted ? "Slukket – kan ikke hente delt turnering uden Firebase-opsætning"
+                         : "Slukket – ingen Firebase-opsætning", false);
+      return;
+    }
     try {
       const [{initializeApp}, fs, auth] = await Promise.all([
         import(SDK + "firebase-app.js"),
@@ -1015,22 +1242,43 @@ const Sync = {
         if(!a.currentUser) await auth.signInAnonymously(a);
       } catch(e){ /* anonym login ikke slået til – kør videre */ }
       this.db = fs.getFirestore(app);
-      this.ref = fs.doc(this.db, "spil", this.game);
       this.fs = fs;
-      this.unsub = fs.onSnapshot(this.ref, snap => {
-        if(!snap.exists() || snap.metadata.hasPendingWrites) return;
-        const remote = snap.data();
-        if(!remote || !Number.isFinite(remote.updated)) return;
-        if(remote.updated <= S.updated) return;
-        if(Date.now() - this.lastLocal < 2500){ setTimeout(() => this.pull(), 2600); return; }
-        this.apply(remote);
-      }, err => this.status("Synk-fejl: " + err.code, false));
       this.on = true;
-      this.status("Synkroniseret · kode “" + this.game + "”", true);
+      if(wanted) await this.adopt(wanted);
+      this.bind();
       this.push(S, true);
     } catch(e){
       this.status("Kunne ikke starte synk: " + e.message, false);
     }
+  },
+  // henter en turnering ned, som kun findes i skyen (delt link)
+  async adopt(code){
+    try {
+      const snap = await this.fs.getDoc(this.fs.doc(this.db, "spil", code));
+      if(!snap.exists()){ toast("Fandt ingen turnering med koden “" + code + "”"); return; }
+      const t = migrate(snap.data());
+      t.code = code;
+      if(G.tournaments.some(x => x.id === t.id)) t.id = uid();
+      G.tournaments.unshift(t);
+      setCurrent(t.id);
+      save(); renderAll();
+      toast("Hentede turneringen “" + t.name + "”");
+    } catch(e){ this.status("Kunne ikke hente delt turnering: " + (e.code || e.message), false); }
+  },
+  bind(){
+    if(!this.on) return;
+    if(this.unsub){ this.unsub(); this.unsub = null; }
+    const code = S.code;
+    this.ref = this.fs.doc(this.db, "spil", code);
+    this.unsub = this.fs.onSnapshot(this.ref, snap => {
+      if(!snap.exists() || snap.metadata.hasPendingWrites) return;
+      const remote = snap.data();
+      if(!remote || !Number.isFinite(remote.updated)) return;
+      if(remote.updated <= S.updated) return;
+      if(Date.now() - this.lastLocal < 2500){ setTimeout(() => this.pull(), 2600); return; }
+      this.apply(remote);
+    }, err => this.status("Synk-fejl: " + err.code, false));
+    this.status("Synkroniseret · kode “" + code + "”", true);
   },
   async pull(){
     if(!this.on) return;
@@ -1044,25 +1292,30 @@ const Sync = {
   },
   apply(remote){
     this.applying = true;
-    S = migrate(remote);
-    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
+    const t = migrate(remote);
+    t.id = S.id; t.code = S.code;              // behold pladsen i det lokale bibliotek
+    const i = G.tournaments.findIndex(x => x.id === S.id);
+    if(i >= 0) G.tournaments[i] = t;
+    setCurrent(t.id);
+    try { localStorage.setItem(KEY, JSON.stringify(G)); } catch(e){}
     renderAll();
     this.applying = false;
     toast("Opdateret fra skyen");
   },
   async push(state, silent){
-    if(!this.on || this.applying) return;
+    if(!this.on || this.applying || !this.ref) return;
+    if(state.code !== S.code) return;          // turneringen er skiftet imens
     try {
       await this.fs.setDoc(this.ref, JSON.parse(JSON.stringify(state)));
-      if(!silent) this.status("Gemt i skyen · kode “" + this.game + "”", true);
+      if(!silent) this.status("Gemt i skyen · kode “" + S.code + "”", true);
     } catch(e){
       this.status("Kunne ikke gemme i skyen: " + (e.code || e.message), false);
     }
-  },
-  stop(){ if(this.unsub) this.unsub(); this.on = false; }
+  }
 };
 window.HGSync = {
-  push(state){ Sync.lastLocal = Date.now(); Sync.push(state); }
+  push(state){ Sync.lastLocal = Date.now(); Sync.push(state); },
+  rebind(){ if(Sync.on){ Sync.bind(); Sync.push(S, true); } }
 };
 
 function buildSyncCard(){
@@ -1071,18 +1324,20 @@ function buildSyncCard(){
   const h = el("h2","","Sky-synk");
   h.appendChild(el("span","hint","Firebase – valgfrit"));
   c.appendChild(h);
-  c.appendChild(el("p","help","Med sky-synk deler I ét scorekort på tværs af telefoner: samme kode = samme spil, opdateret live. Uden opsætning gemmes alt kun i denne browser."));
+  c.appendChild(el("p","help","Med sky-synk deler I ét scorekort på tværs af telefoner. Hver turnering har sin egen kode, så I kan have flere kørende uden at de blander sig. Uden opsætning gemmes alt kun i denne browser."));
 
   const st = el("p","help"); st.id = "syncStatus"; st.style.fontWeight = "700";
   st.textContent = "Starter …";
   c.appendChild(st);
 
   const g = el("div"); g.style.cssText = "display:grid;gap:8px;margin-bottom:10px";
+
   const lab1 = el("label"); lab1.style.cssText = "font-size:.72rem;font-weight:700;color:var(--muted)";
-  lab1.textContent = "Spilkode (begge telefoner skal bruge samme)";
+  lab1.textContent = "Kode for den aktive turnering (begge telefoner skal bruge samme)";
   const gi = el("input");
   gi.style.cssText = "width:100%;margin-top:4px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:.92rem;background:var(--card);color:var(--ink)";
-  gi.value = Sync.readGame();
+  gi.id = "syncCode";
+  gi.value = S.code;
   lab1.appendChild(gi);
   g.appendChild(lab1);
 
@@ -1102,20 +1357,27 @@ function buildSyncCard(){
   const row = el("div","btnrow");
   const bSave = el("button","btn primary","Gem & forbind");
   bSave.addEventListener("click", () => {
-    const code = gi.value.trim().replace(/[^a-zA-Z0-9æøåÆØÅ_-]/g,"-") || "himmerland";
-    localStorage.setItem(FB_GAME_KEY, code);
+    const code = slug(gi.value);
+    if(code !== S.code){
+      if(G.tournaments.some(t => t.code === code && t.id !== S.id)){
+        alert("Koden bruges allerede af en anden turnering. Vælg en anden.");
+        return;
+      }
+      S.code = code;
+      save();
+    }
     const txt = ta.value.trim();
     if(txt){
       try { JSON.parse(txt); localStorage.setItem(FB_CFG_KEY, txt); }
       catch(e){ alert("Config er ikke gyldig JSON: " + e.message); return; }
-    } else {
+    } else if(!window.FIREBASE_CONFIG){
       localStorage.removeItem(FB_CFG_KEY);
     }
-    location.reload();
+    location.href = location.origin + location.pathname;
   });
   const bLink = el("button","btn","🔗 Kopiér link til medspiller");
   bLink.addEventListener("click", async () => {
-    const url = location.origin + location.pathname + "?kode=" + encodeURIComponent(Sync.readGame());
+    const url = location.origin + location.pathname + "?kode=" + encodeURIComponent(S.code);
     try { await navigator.clipboard.writeText(url); toast("Link kopieret"); }
     catch(e){ prompt("Kopiér linket:", url); }
   });
