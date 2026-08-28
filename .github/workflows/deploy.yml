@@ -29,6 +29,22 @@ jobs:
         with:
           enablement: true
 
+      # CNAME-filen alene rækker ikke, når der udgives via Actions:
+      # domænet skal registreres i selve Pages-opsætningen.
+      - name: Registrér domænet
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DOMAIN: golf.vejleaa.dk
+        run: |
+          nu=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.cname // ""' 2>/dev/null || echo "")
+          if [ "$nu" = "$DOMAIN" ]; then
+            echo "Domænet er allerede sat til $DOMAIN"
+          elif gh api -X PUT "repos/$GITHUB_REPOSITORY/pages" -f "cname=$DOMAIN"; then
+            echo "Domænet sat til $DOMAIN"
+          else
+            echo "::warning::Kunne ikke sætte domænet automatisk. Sæt det under Settings → Pages → Custom domain."
+          fi
+
       - name: Pak siden
         uses: actions/upload-pages-artifact@v3
         with:
