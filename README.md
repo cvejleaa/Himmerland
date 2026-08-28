@@ -35,33 +35,16 @@ Siden følger telefonens lyse/mørke tilstand.
 
 ## Kørsel lokalt
 
+Åbn `public/index.html` direkte i en browser, eller server mappen:
+
 ```bash
-npm start        # → http://localhost:8080
+python3 -m http.server 8080 --directory public   # → http://localhost:8080
 ```
 
-Eller åbn `public/index.html` direkte i en browser — siden har ingen byggetrin.
+## Hosting på golf.vejleaa.dk (Firebase Hosting)
 
-## Hosting på golf.vejleaa.dk
-
-Firebase-projektet hedder **himmerland**. Repoet virker med begge Firebase-hostingprodukter.
-
-### App Hosting (bygger automatisk ved push)
-
-App Hosting bygger repoet med buildpacks og kører det som en Node-app, så en ren HTML-mappe er
-ikke nok. Derfor ligger siden i `public/`, og `server.js` serverer den på `$PORT`:
-
-| Fil | Rolle i buildet |
-|---|---|
-| `package.json` | `npm start` → `node server.js`, Node 20+ |
-| `server.js` | Statisk webserver uden afhængigheder |
-| `apphosting.yaml` | CPU, hukommelse og `runCommand` |
-
-Backenden bygger selv videre ved hvert push til den forbundne branch. Domænet tilføjes under
-**Firebase Console → App Hosting → backend → Custom domains**.
-
-### Klassisk Hosting (statisk CDN, uden container)
-
-Billigere og enklere for en side som denne — filerne lægges bare på CDN'et:
+Siden er ren statisk HTML — ét dokument uden byggetrin — så den lægges bare på CDN'et.
+Firebase-projektet hedder **himmerland**.
 
 ```bash
 npm install -g firebase-tools
@@ -69,9 +52,17 @@ firebase login
 firebase deploy --only hosting
 ```
 
-Domænet tilføjes under **Hosting → Add custom domain → `golf.vejleaa.dk`**. Begge veje kræver, at
-du opretter de DNS-records (A/TXT), Firebase viser, hos din DNS-udbyder; certifikatet klares
-automatisk.
+Du får en `*.web.app`-adresse med det samme. Domænet tilføjes derefter under
+**Firebase Console → Hosting → Add custom domain → `golf.vejleaa.dk`**, hvor Firebase viser de
+DNS-records (A/TXT), du skal oprette hos din DNS-udbyder. Certifikatet klares automatisk.
+
+`firebase.json` peger på `public/`, sætter `no-cache` på `index.html` og `firebase-config.js`, så
+en ny udgivelse slår igennem med det samme, og sender ukendte stier videre til appen, så
+`?kode=`-links virker.
+
+> **Ikke App Hosting.** App Hosting bygger repoet med buildpacks og kræver en Node-app; en statisk
+> side fejler i build-trinnet. Er der oprettet en App Hosting-backend på projektet, kan den slettes
+> — den bruges ikke her.
 
 ## Sky-synk (valgfrit, men rart)
 
@@ -100,9 +91,6 @@ Har du ikke lyst til at lægge config'en i repoet, kan den i stedet indsættes d
 |---|---|
 | `public/index.html` | Hele appen: layout, regler, pointberegning, turneringer og synk |
 | `public/firebase-config.js` | Firebase web-config (pladsholdere indtil du udfylder dem) |
-| `server.js` | Statisk webserver til App Hosting |
-| `package.json` | Startkommando og Node-version til buildet |
-| `apphosting.yaml` | App Hosting-opsætning |
-| `firebase.json` | Klassisk Hosting + Firestore-opsætning |
+| `firebase.json` | Hosting- og Firestore-opsætning |
 | `firestore.rules` | Adgang til samlingen `spil` |
 | `.firebaserc` | Standardprojekt til Firebase CLI |
