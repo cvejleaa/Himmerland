@@ -82,7 +82,9 @@ To ting skulle sættes én gang i **Settings → Pages**, fordi GitHub ikke lade
 Uden opsætning gemmes alt i browserens `localStorage` — ét scorekort pr. telefon.
 Med sky-synk deler I ét fælles scorekort på tværs af telefoner, opdateret live:
 
-1. **Firestore**: Console → Firestore Database → opret database (production mode).
+1. **Firestore**: Console → Firestore Database → opret database (production mode). Hedder databasen
+   noget andet end `(default)`, skal navnet sættes som `databaseId` i `public/firebase-config.js` —
+   i dette projekt hedder den `golf`.
 2. **Anonym login**: Console → Authentication → Sign-in method → slå *Anonymous* til.
    (Reglerne kræver et login; siden logger selv anonymt ind.)
 3. **Web-config**: Console → Projektindstillinger → Dine apps → Web-app. Kopiér værdierne ind i

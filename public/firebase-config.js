@@ -12,9 +12,8 @@ window.FIREBASE_CONFIG = {
   storageBucket:     "himmerland.firebasestorage.app",
   messagingSenderId: "942817781646",
   appId:             "1:942817781646:web:c2e28f02018a562895a6df",
-  measurementId:     "G-1BS3Y6RMVB"
+  measurementId:     "G-1BS3Y6RMVB",
 
-  // Har Firestore-databasen et selvvalgt navn i stedet for "(default)",
-  // så fjern kommentaren herunder og skriv navnet:
-  // , databaseId: "navnet-på-databasen"
+  // Firestore-databasen i projektet hedder "golf", ikke "(default)"
+  databaseId:        "golf"
 };
