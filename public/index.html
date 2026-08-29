@@ -1774,6 +1774,41 @@ window.HGSync = {
   rebind(){ if(Sync.on){ Sync.bind(); Sync.push(S, true); } }
 };
 
+// Spørger Firestore direkte over HTTP. Svaret afslører hvad der er galt:
+// blokeret anmodning, manglende database, eller en database der svarer som den skal.
+async function testForbindelse(vis){
+  const cfg = Sync.readCfg();
+  if(!cfg){ vis("Ingen Firebase-opsætning på siden.", false); return; }
+  vis("Tester …", null);
+  const url = "https://firestore.googleapis.com/v1/projects/" + cfg.projectId +
+              "/databases/(default)/documents/spil?pageSize=1&key=" + encodeURIComponent(cfg.apiKey);
+  let res;
+  const stop = new AbortController();
+  const ur = setTimeout(() => stop.abort(), 8000);
+  try {
+    res = await fetch(url, {signal: stop.signal});
+  } catch(e){
+    vis(e.name === "AbortError"
+      ? "Intet svar inden for 8 sekunder. Enten er der ikke net, eller også bliver anmodningen holdt tilbage undervejs."
+      : "Anmodningen nåede aldrig ud af browseren. Det er en annonceblokker, en udvidelse eller et netværk, der spærrer for firestore.googleapis.com. Prøv et privat vindue eller slå blokeringen fra for denne side.", false);
+    return;
+  } finally { clearTimeout(ur); }
+  let body = {};
+  try { body = await res.json(); } catch(e){}
+  const besked = (body.error && body.error.message) || "";
+  if(res.status === 404){
+    vis("Projektet “" + cfg.projectId + "” har ingen (default)-database. Opret Firestore-databasen i konsollen — og vælg standardnavnet, ikke et selvvalgt.", false);
+  } else if(res.status === 403 && /API key|referer|blocked/i.test(besked)){
+    vis("API-nøglen afviser anmodninger fra denne adresse: " + besked, false);
+  } else if(res.status === 403){
+    vis("Databasen svarer, og afviser opslag uden login — præcis som jeres regler siger. Forbindelsen er i orden.", true);
+  } else if(res.ok){
+    vis("Databasen svarer.", true);
+  } else {
+    vis("Uventet svar " + res.status + (besked ? ": " + besked : ""), false);
+  }
+}
+
 function buildSyncCard(){
   const panel = document.getElementById("panel-tot");
   const c = el("div","card");
@@ -1837,8 +1872,18 @@ function buildSyncCard(){
     try { await navigator.clipboard.writeText(url); toast("Link kopieret"); }
     catch(e){ prompt("Kopiér linket:", url); }
   });
-  row.appendChild(bSave); row.appendChild(bLink);
+  const bTest = el("button","btn","🔎 Test forbindelsen");
+  bTest.type = "button";
+  const testUd = el("p","help");
+  testUd.id = "syncTest";
+  testUd.style.cssText = "margin:10px 0 0;font-weight:700";
+  bTest.addEventListener("click", () => testForbindelse((txt, ok) => {
+    testUd.textContent = txt;
+    testUd.style.color = ok === null ? "var(--muted)" : ok ? "var(--green-2)" : "var(--danger)";
+  }));
+  row.appendChild(bSave); row.appendChild(bLink); row.appendChild(bTest);
   c.appendChild(row);
+  c.appendChild(testUd);
 
   panel.appendChild(c);
 }
