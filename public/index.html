@@ -92,6 +92,22 @@ h1 .em{opacity:.85;font-weight:400}
 .tpick .btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff}
 .tpick .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45);color:#fff}
 
+.synkchip{
+  padding:8px 12px;border-radius:10px;font:inherit;font-size:.78rem;font-weight:700;cursor:pointer;
+  border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;white-space:nowrap
+}
+.synkchip.fejl{background:rgba(255,120,120,.22);border-color:rgba(255,160,160,.5)}
+
+#notice{margin:14px 0 0}
+.notice{
+  border-radius:var(--radius);padding:12px 14px;font-size:.86rem;box-shadow:var(--shadow);
+  background:var(--card);border-left:4px solid var(--warn)
+}
+.notice.fejl{border-left-color:var(--danger)}
+.notice b{display:block;margin-bottom:3px}
+.notice p{margin:0;color:var(--muted);font-size:.82rem}
+.notice .btnrow{margin-top:10px}
+
 /* turneringsliste */
 .trow{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
 .trow.cur{border-color:var(--green);background:var(--green-3)}
@@ -349,6 +365,7 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
     <div class="tpick">
       <label>Turnering<select id="tsel"></select></label>
       <button class="btn" id="btnNewTop" type="button">＋ Ny turnering</button>
+      <button class="synkchip" id="synkChip" type="button" hidden></button>
     </div>
     <div class="players">
       <label>Spiller 1<input id="p0" placeholder="Navn" autocomplete="off"></label>
@@ -366,6 +383,8 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
     </div>
     <div class="lead" id="blead">Ingen scores indtastet endnu</div>
   </div>
+
+  <div id="notice" hidden></div>
 
   <nav class="tabs" id="tabs">
     <button data-tab="r0" aria-selected="true">Runde 1</button>
@@ -756,6 +775,23 @@ function el(tag, cls, txt){
   if(txt != null) n.textContent = txt;
   return n;
 }
+// Vedvarende besked øverst — til det, der ikke må forsvinde af sig selv
+function notice(titel, tekst, kind){
+  const box = document.getElementById("notice");
+  box.innerHTML = "";
+  const n = el("div","notice" + (kind === "fejl" ? " fejl" : ""));
+  n.appendChild(el("b","",titel));
+  if(tekst) n.appendChild(el("p","",tekst));
+  const row = el("div","btnrow");
+  const bLuk = el("button","btn","OK");
+  bLuk.type = "button";
+  bLuk.addEventListener("click", () => { box.hidden = true; box.innerHTML = ""; });
+  row.appendChild(bLuk);
+  n.appendChild(row);
+  box.appendChild(n);
+  box.hidden = false;
+}
+
 let toastTimer = null;
 function toast(msg){
   const t = document.getElementById("toast");
@@ -1474,6 +1510,11 @@ function initChrome(){
     inp.addEventListener("input", () => { S.players[p] = inp.value; save(); refresh(); });
   }
 
+  document.getElementById("synkChip").addEventListener("click", () => {
+    document.querySelector('#tabs button[data-tab="tot"]').click();
+    const n = document.getElementById("syncStatus");
+    if(n) n.scrollIntoView({behavior:"smooth", block:"center"});
+  });
   document.getElementById("tsel").addEventListener("change", e => switchTo(e.target.value));
   document.getElementById("btnNewTop").addEventListener("click", () => addTournament(null));
   document.getElementById("btnNewT").addEventListener("click", () => addTournament(null));
@@ -1546,6 +1587,13 @@ const Sync = {
   status(msg, ok){
     const n = document.getElementById("syncStatus");
     if(n){ n.textContent = msg; n.style.color = ok ? "var(--green-2)" : "var(--muted)"; }
+    const chip = document.getElementById("synkChip");
+    if(chip){
+      chip.hidden = false;
+      chip.textContent = ok ? "☁︎ Synk kører" : "☁︎ Synk fra";
+      chip.classList.toggle("fejl", !ok);
+      chip.title = msg;
+    }
   },
   readCfg(){
     const w = window.FIREBASE_CONFIG;
@@ -1570,6 +1618,8 @@ const Sync = {
     if(!this.cfg){
       this.status(wanted ? "Slukket – kan ikke hente delt turnering uden Firebase-opsætning"
                          : "Slukket – ingen Firebase-opsætning", false);
+      if(wanted) notice("Kunne ikke hente den delte turnering",
+        "Sky-synk er ikke sat op på denne side, så koden “" + wanted + "” kan ikke slås op. Du ser et tomt scorekort.", "fejl");
       return;
     }
     try {
@@ -1582,7 +1632,10 @@ const Sync = {
       try {
         const a = auth.getAuth(app);
         if(!a.currentUser) await auth.signInAnonymously(a);
-      } catch(e){ /* anonym login ikke slået til – kør videre */ }
+      } catch(e){
+        // anonymt login ikke slået til: Firestore afviser bagefter, så gem grunden
+        this.authErr = e.code || e.message;
+      }
       this.db = fs.getFirestore(app);
       this.fs = fs;
       this.on = true;
@@ -1591,13 +1644,20 @@ const Sync = {
       this.push(S, true);
     } catch(e){
       this.status("Kunne ikke starte synk: " + e.message, false);
+      if(wanted) notice("Kunne ikke hente den delte turnering",
+        "Der er ikke forbindelse til skyen lige nu (" + e.message + "). Prøv igen, når du har net — du ser indtil da et tomt scorekort.", "fejl");
     }
   },
   // henter en turnering ned, som kun findes i skyen (delt link)
   async adopt(code){
     try {
       const snap = await this.fs.getDoc(this.fs.doc(this.db, "spil", code));
-      if(!snap.exists()){ toast("Fandt ingen turnering med koden “" + code + "”"); return; }
+      if(!snap.exists()){
+        notice("Der ligger ingen turnering med koden “" + code + "”",
+          "Skyen kender ikke koden. Som regel fordi telefonen der har scorerne, aldrig fik gemt dem op — tjek at der står “Synkroniseret” under Stilling → Sky-synk på den telefon, og send så linket igen.", "fejl");
+        this.status("Ingen turnering med koden “" + code + "”", false);
+        return;
+      }
       const t = migrate(snap.data());
       t.code = code;
       if(G.tournaments.some(x => x.id === t.id)) t.id = uid();
@@ -1605,7 +1665,14 @@ const Sync = {
       setCurrent(t.id);
       save(); renderAll();
       toast("Hentede turneringen “" + t.name + "”");
-    } catch(e){ this.status("Kunne ikke hente delt turnering: " + (e.code || e.message), false); }
+    } catch(e){
+      const grund = e.code || e.message;
+      this.status("Kunne ikke hente delt turnering: " + grund, false);
+      notice("Kunne ikke hente den delte turnering",
+        grund === "permission-denied"
+          ? "Skyen afviste opslaget" + (this.authErr ? " (anonymt login fejlede: " + this.authErr + ")" : "") + ". Tjek at Firestore-reglerne er udgivet, og at Anonymous er slået til under Authentication."
+          : "Fejl: " + grund, "fejl");
+    }
   },
   bind(){
     if(!this.on) return;
