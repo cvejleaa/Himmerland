@@ -1660,7 +1660,8 @@ const Sync = {
         // anonymt login ikke slået til: Firestore afviser bagefter, så gem grunden
         this.authErr = e.code || e.message;
       }
-      this.db = fs.getFirestore(app);
+      // en database med selvvalgt navn kan angives i config'en som databaseId
+      this.db = this.cfg.databaseId ? fs.getFirestore(app, this.cfg.databaseId) : fs.getFirestore(app);
       this.fs = fs;
       this.on = true;
       if(wanted) await this.adopt(wanted);
@@ -1780,8 +1781,10 @@ async function testForbindelse(vis){
   const cfg = Sync.readCfg();
   if(!cfg){ vis("Ingen Firebase-opsætning på siden.", false); return; }
   vis("Tester …", null);
+  const dbId = cfg.databaseId || "(default)";
   const url = "https://firestore.googleapis.com/v1/projects/" + cfg.projectId +
-              "/databases/(default)/documents/spil?pageSize=1&key=" + encodeURIComponent(cfg.apiKey);
+              "/databases/" + encodeURIComponent(dbId) +
+              "/documents/spil?pageSize=1&key=" + encodeURIComponent(cfg.apiKey);
   let res;
   const stop = new AbortController();
   const ur = setTimeout(() => stop.abort(), 8000);
@@ -1797,7 +1800,7 @@ async function testForbindelse(vis){
   try { body = await res.json(); } catch(e){}
   const besked = (body.error && body.error.message) || "";
   if(res.status === 404){
-    vis("Projektet “" + cfg.projectId + "” har ingen (default)-database. Opret Firestore-databasen i konsollen — og vælg standardnavnet, ikke et selvvalgt.", false);
+    vis("Projektet “" + cfg.projectId + "” har ingen database ved navn " + dbId + ". Opret Firestore-databasen i konsollen med database-id “(default)” — eller skriv navnet på den eksisterende under databaseId i firebase-config.js.", false);
   } else if(res.status === 403 && /API key|referer|blocked/i.test(besked)){
     vis("API-nøglen afviser anmodninger fra denne adresse: " + besked, false);
   } else if(res.status === 403){
