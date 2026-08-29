@@ -1608,6 +1608,17 @@ const Sync = {
       chip.title = msg;
     }
   },
+  ok(){
+    if(this.grøn) return;
+    this.grøn = true;
+    this.status("Synkroniseret · kode “" + S.code + "”", true);
+  },
+  blokeret(){
+    if(this.sagtFra) return;
+    this.sagtFra = true;
+    notice("Ingen forbindelse til skyen",
+      "Browseren kan ikke nå Firestore. Det skyldes næsten altid en annonceblokker eller en udvidelse, der spærrer for firestore.googleapis.com — prøv et privat vindue, eller slå blokeringen fra for denne side. Scorekortet virker fint imens; det gemmes bare kun lokalt.", "fejl");
+  },
   readCfg(){
     const w = window.FIREBASE_CONFIG;
     if(w && w.projectId && w.apiKey && w.apiKey.indexOf("DIN_") !== 0) return w;
@@ -1690,15 +1701,20 @@ const Sync = {
       notice("Kunne ikke hente den delte turnering",
         grund === "permission-denied"
           ? "Skyen afviste opslaget" + (this.authErr ? " (anonymt login fejlede: " + this.authErr + ")" : "") + ". Tjek at Firestore-reglerne er udgivet, og at Anonymous er slået til under Authentication."
-          : "Fejl: " + grund, "fejl");
+          : grund === "unavailable"
+            ? "Browseren kan ikke nå Firestore. Næsten altid en annonceblokker eller udvidelse, der spærrer for firestore.googleapis.com — prøv et privat vindue, eller slå blokeringen fra for denne side."
+            : "Fejl: " + grund, "fejl");
     }
   },
   bind(){
     if(!this.on) return;
     if(this.unsub){ this.unsub(); this.unsub = null; }
+    this.grøn = false;
     const code = S.code;
     this.ref = this.fs.doc(this.db, "spil", code);
     this.unsub = this.fs.onSnapshot(this.ref, snap => {
+      // første svar fra serveren betyder, at forbindelsen står
+      if(!snap.metadata.fromCache) this.ok();
       if(!snap.exists() || snap.metadata.hasPendingWrites) return;
       const raw = snap.data();
       if(!raw || !Number.isFinite(raw.updated)) return;
@@ -1707,8 +1723,11 @@ const Sync = {
       if(!remote) return;
       if(Date.now() - this.lastLocal < 2500){ setTimeout(() => this.pull(), 2600); return; }
       this.apply(remote);
-    }, err => this.status("Synk-fejl: " + err.code, false));
-    this.status("Synkroniseret · kode “" + code + "”", true);
+    }, err => {
+      this.status("Synk-fejl: " + err.code, false);
+      if(err.code === "unavailable") this.blokeret();
+    });
+    this.status("Forbinder til skyen · kode “" + code + "”", false);
   },
   async pull(){
     if(!this.on) return;
@@ -1740,9 +1759,13 @@ const Sync = {
     if(state.code !== S.code) return;          // turneringen er skiftet imens
     try {
       await this.fs.setDoc(this.ref, pakInd(state));
-      if(!silent) this.status("Gemt i skyen · kode “" + S.code + "”", true);
+      this.grøn = true;
+      this.status(silent ? "Synkroniseret · kode “" + S.code + "”"
+                         : "Gemt i skyen · kode “" + S.code + "”", true);
     } catch(e){
-      this.status("Kunne ikke gemme i skyen: " + (e.code || e.message), false);
+      const grund = e.code || e.message;
+      this.status("Kunne ikke gemme i skyen: " + grund, false);
+      if(grund === "unavailable") this.blokeret();
     }
   }
 };
