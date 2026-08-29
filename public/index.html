@@ -1582,6 +1582,19 @@ function renderAll(){
 const FB_CFG_KEY = "himmerland-fb-config";
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 
+// Firestore kan ikke gemme et array inde i et array, og scorekortet har fire af dem
+// (scores, putt3, hcp, feet). Derfor gemmes turneringen som JSON-tekst i ét felt.
+function pakInd(t){
+  return { v:2, code: t.code, navn: t.name || "", updated: t.updated || 0, data: JSON.stringify(t) };
+}
+function pakUd(d){
+  if(!d) return null;
+  if(typeof d.data === "string"){
+    try { return JSON.parse(d.data); } catch(e){ return null; }
+  }
+  return d;   // ældre dokumenter uden indpakning
+}
+
 const Sync = {
   cfg:null, db:null, fs:null, ref:null, unsub:null, on:false, applying:false, lastLocal:0,
   status(msg, ok){
@@ -1658,7 +1671,13 @@ const Sync = {
         this.status("Ingen turnering med koden “" + code + "”", false);
         return;
       }
-      const t = migrate(snap.data());
+      const rå = pakUd(snap.data());
+      if(!rå){
+        notice("Kunne ikke læse den delte turnering",
+          "Dokumentet med koden “" + code + "” er gemt i et format, siden ikke forstår.", "fejl");
+        return;
+      }
+      const t = migrate(rå);
       t.code = code;
       if(G.tournaments.some(x => x.id === t.id)) t.id = uid();
       G.tournaments.unshift(t);
@@ -1681,9 +1700,11 @@ const Sync = {
     this.ref = this.fs.doc(this.db, "spil", code);
     this.unsub = this.fs.onSnapshot(this.ref, snap => {
       if(!snap.exists() || snap.metadata.hasPendingWrites) return;
-      const remote = snap.data();
-      if(!remote || !Number.isFinite(remote.updated)) return;
-      if(remote.updated <= S.updated) return;
+      const raw = snap.data();
+      if(!raw || !Number.isFinite(raw.updated)) return;
+      if(raw.updated <= S.updated) return;
+      const remote = pakUd(raw);
+      if(!remote) return;
       if(Date.now() - this.lastLocal < 2500){ setTimeout(() => this.pull(), 2600); return; }
       this.apply(remote);
     }, err => this.status("Synk-fejl: " + err.code, false));
@@ -1694,8 +1715,11 @@ const Sync = {
     try {
       const snap = await this.fs.getDoc(this.ref);
       if(snap.exists()){
-        const d = snap.data();
-        if(Number.isFinite(d.updated) && d.updated > S.updated) this.apply(d);
+        const raw = snap.data();
+        if(Number.isFinite(raw.updated) && raw.updated > S.updated){
+          const d = pakUd(raw);
+          if(d) this.apply(d);
+        }
       }
     } catch(e){}
   },
@@ -1715,7 +1739,7 @@ const Sync = {
     if(!this.on || this.applying || !this.ref) return;
     if(state.code !== S.code) return;          // turneringen er skiftet imens
     try {
-      await this.fs.setDoc(this.ref, JSON.parse(JSON.stringify(state)));
+      await this.fs.setDoc(this.ref, pakInd(state));
       if(!silent) this.status("Gemt i skyen · kode “" + S.code + "”", true);
     } catch(e){
       this.status("Kunne ikke gemme i skyen: " + (e.code || e.message), false);
