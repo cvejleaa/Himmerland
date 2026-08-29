@@ -14,9 +14,10 @@ den samme opsætning. Alt ligger i én fil (`index.html`) uden byggetrin — hos
 | 1 gimmie putt pr. runde | Samme afkrydsning, én pr. spiller pr. runde. |
 | 3-putt = ingen køller på næste hul | Sæt hak ved “3-putt”, og næste hul får automatisk mærket 🚫 *Ingen køller*. |
 | PAR = dametee på næste hul | Beregnes ud fra score vs. par (par eller bedre) og vises som 🏌️‍♀️ *Dametee* på næste hul. |
-| 3 sejre: For 9, Bag 9, hele runden | For 9/Bag 9 afgøres på flest vundne huller, hele runden på færrest slag. 1 point hver. |
+| 3 sejre: For 9, Bag 9, hele runden | For 9/Bag 9 afgøres på flest vundne huller. Hele runden afgøres på **enten** færrest netto slag **eller** flest Stableford-point — vælges pr. runde under *resultat*. 1 point hver. |
 | 9 udtrukne huller | “Træk 9 huller” trækker tilfældigt — eller tryk på et hulnummer for at vælge manuelt. Flest vundne af dem giver 1 ekstra point. |
 | Slagtilskud (handicap) | Den ene spiller kan få ekstra slag — fordelt jævnt over runden med ét tryk, eller sat hul for hul med “+ slag”-chippen. Hul, For 9, Bag 9 og hele runden afgøres derefter på **netto**. Højst 4 slag på ét hul. |
+| Stableford | Hvert hul giver point efter netto score — 2 for par, 3 for birdie, 4 for eagle, 1 for bogey, 0 for dobbeltbogey eller værre. Pointene står ved hver score. |
 | 5 m rebet | Gælder hele runden uden begrænsning, så det står som huskeregel under fanen *Regler*. |
 
 **Turneringer** – hver turnering er sit eget scorekort med navn, dato, to spillere, 2 runder og sine
@@ -30,6 +31,10 @@ hver dag, navngives de bare derefter — fx “Dag 1 – petanque”.
 
 **Handicap** – er der forskel på spillernes niveau, gives den ene ekstra slag. Uden tilskud afgøres
 alt på rå score, præcis som før.
+
+**Stableford** – pointene beregnes automatisk på hvert hul ud fra netto score og vises ved siden af
+slagene. Hele runden kan afgøres på point i stedet for slag, hvilket lægger loft over hvad et enkelt
+dårligt hul koster.
 
 **Pointregnskab** – 4 point pr. runde (altså 8 fra golfen) plus 1 point pr. aktivitet. Totalen
 følger antallet af aktiviteter og står nederst i stillingen. Uafgjort deler pointet ½–½, og

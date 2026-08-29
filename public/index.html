@@ -175,7 +175,7 @@ section.panel.active{display:block}
 }
 @media(min-width:760px){.holehead{display:grid}}
 .hole{
-  display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start;
   border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;background:var(--card)
 }
 @media(min-width:760px){.hole{grid-template-columns:64px 62px 1fr 1fr 92px;align-items:center}}
@@ -187,7 +187,7 @@ section.panel.active{display:block}
 @media(min-width:760px){.hole .parwrap{justify-content:flex-start}}
 .hole .parwrap span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .hole .parwrap input{width:42px;padding:5px;text-align:center;border:1px solid var(--line);border-radius:8px;font-size:.9rem;background:var(--card);color:var(--ink)}
-.pcell{grid-column:span 1;border-top:1px dashed var(--line);padding-top:8px}
+.pcell{grid-column:span 1;min-width:0;border-top:1px dashed var(--line);padding-top:8px}
 @media(min-width:760px){.pcell{border-top:0;padding-top:0}}
 .pcell .who{font-size:.72rem;font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:6px}
 .pcell.a .who{color:var(--p1)} .pcell.b .who{color:var(--p2)}
@@ -199,7 +199,7 @@ section.panel.active{display:block}
 }
 .stepper button:active{background:var(--green-3)}
 .stepper input{
-  width:56px;height:38px;text-align:center;border:2px solid var(--line);border-radius:9px;
+  width:56px;min-width:0;height:38px;text-align:center;border:2px solid var(--line);border-radius:9px;
   font-size:1.05rem;font-weight:800;background:var(--card);color:var(--ink)
 }
 .stepper input:focus{outline:none;border-color:var(--green-2)}
@@ -215,8 +215,38 @@ section.panel.active{display:block}
 }
 .hcpchip:hover{border-color:var(--green-2);color:var(--green-2)}
 .hcpchip.on{border-style:solid;border-color:var(--gold);background:var(--draw-bg);color:var(--gold)}
+.stbl{font-size:.72rem;font-weight:800;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.stbl.god{color:var(--green-2)}
+.stbl.nul{color:var(--danger)}
+
+.modesel{display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap}
+.modesel button{
+  flex:1 1 140px;text-align:left;padding:9px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--card);cursor:pointer;color:var(--muted);font:inherit
+}
+.modesel button strong{display:block;font-size:.88rem;color:var(--ink)}
+.modesel button span{font-size:.74rem}
+.modesel button[aria-pressed="true"]{border-color:var(--green);background:var(--green-3)}
+.modesel button[aria-pressed="true"] strong{color:var(--green)}
 .chk3 input{width:17px;height:17px;accent-color:var(--warn)}
 .chk3{margin-top:0}
+
+/* smalle telefoner: skru komponenterne ned, så rækken holder sig inden for skærmen */
+@media(max-width:430px){
+  .hole{padding:9px;gap:6px}
+  .stepper{gap:4px}
+  .stepper button{width:30px;height:30px;font-size:1.05rem}
+  .stepper input{width:44px;height:34px;font-size:1rem}
+  .stepper .rel{min-width:0;font-size:.7rem}
+  .hole .parwrap input{width:38px}
+  .hole .parwrap span{font-size:.66rem}
+  .smallrow{gap:6px}
+  .chk3{font-size:.72rem}
+  .chk3 input{width:15px;height:15px}
+  .hcpchip{padding:2px 6px;font-size:.68rem}
+  .stbl{font-size:.68rem}
+  .badge{font-size:.64rem;padding:2px 6px}
+}
 .badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .badge{font-size:.68rem;padding:2px 7px;border-radius:999px;font-weight:700;white-space:nowrap}
 .badge.noclub{background:var(--noclub-bg);color:var(--noclub-fg)}
@@ -376,6 +406,7 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
         <li><b>3 sejre pr. runde</b><span>Der spilles om For 9, Bag 9 og hele runden. For 9/Bag 9 afgøres på flest vundne huller, hele runden på færrest slag.</span></li>
         <li><b>9 udtrukne huller</b><span>9 huller udtrækkes ved lodtrækning inden runden. Den der vinder flest af dem får et ekstra point. Tryk “Træk 9 huller”, eller tryk på et hulnummer for at vælge manuelt.</span></li>
         <li><b>Slagtilskud</b><span>Er der forskel på jeres handicap, gives den svageste spiller ekstra slag — fordelt over runden eller sat hul for hul. Hullet og runden afgøres derefter på netto.</span></li>
+        <li><b>Stableford</b><span>Hvert hul giver point efter netto score: 2 for par, 3 for birdie, 4 for eagle, 1 for bogey og 0 for dobbeltbogey eller værre. Under “resultat” vælger I, om hele runden afgøres på netto slag eller på point.</span></li>
         <li><b>5 m rebet</b><span>Rebet er diameteren fra bolden, hvor man frit må droppe ved hvert slag. Gælder hele runden — ingen begrænsning.</span></li>
       </ol>
     </div>
@@ -422,6 +453,7 @@ function newRound(){
     hcp:    [Array(HOLES).fill(0), Array(HOLES).fill(0)],   // ekstra slag pr. hul
     rules:  [emptyRules(), emptyRules()],
     drawn:  [],
+    mode:   "netto",   // "netto" = færrest slag, "stableford" = flest point
     note:   ""
   };
 }
@@ -508,6 +540,7 @@ function migrate(raw){
       if(src) t.rules[p][k] = {used:!!src.used, hole: src.hole == null ? "" : String(src.hole)};
     });
     if(Array.isArray(r.drawn))  t.drawn = r.drawn.filter(n => Number.isInteger(n) && n>=1 && n<=HOLES).slice(0,HOLES);
+    if(r.mode === "stableford" || r.mode === "netto") t.mode = r.mode;
     if(typeof r.note === "string") t.note = r.note;
   });
   if(Array.isArray(raw.acts)) s.acts = raw.acts.slice(0,MAX_ACTS).map(a => {
@@ -583,6 +616,26 @@ function fordelSlag(r, p, n){
   r.hcp[p] = arr.map(v => Math.min(MAX_HCP, v));
   r.hcp[1-p] = Array(HOLES).fill(0);
 }
+// Stableford: 2 point for netto par, +1 pr. slag bedre, -1 pr. slag ringere, aldrig under 0
+function stableford(r,p,h){
+  const n = net(r,p,h);
+  if(n == null) return null;
+  return Math.max(0, 2 - (n - r.pars[h]));
+}
+function stablefordSum(r,p){
+  let sum = 0;
+  for(let h=0;h<HOLES;h++){ const v = stableford(r,p,h); if(v != null) sum += v; }
+  return sum;
+}
+// Point talt kun på huller hvor begge har en score
+function commonPoints(r){
+  const t = [0,0]; let holes = 0;
+  for(let h=0;h<HOLES;h++){
+    if(r.scores[0][h] == null || r.scores[1][h] == null) continue;
+    t[0] += stableford(r,0,h); t[1] += stableford(r,1,h); holes++;
+  }
+  return {t, holes};
+}
 function hcpGiven(r,p){
   let n = 0;
   for(let h=0;h<HOLES;h++) n += (r.hcp[p][h] || 0);
@@ -624,12 +677,18 @@ function roundResult(r){
   const b = holesWon(r,9,17,false);
   const d = holesWon(r,0,17,true);
   const cs = commonStrokes(r);
+  const cp = commonPoints(r);
   const givet = hcpGiven(r,0) || hcpGiven(r,1);
+  const stbl = r.mode === "stableford";
+  // færrest slag vinder, men flest point vinder
+  const heleRunden = stbl
+    ? Object.assign({label:"Hele runden", detail: cp.holes ? cp.t[0]+"–"+cp.t[1]+" point" : "–"}, decide(cp.t[0], cp.t[1], cp.holes))
+    : Object.assign({label:"Hele runden", detail: cs.holes ? cs.t[0]+"–"+cs.t[1]+(givet?" netto":" slag") : "–"}, decide(cs.t[1], cs.t[0], cs.holes));
   const out = {
     front: Object.assign({label:"For 9",  detail:f.w[0]+"–"+f.w[1]+" huller"}, decide(f.w[0],f.w[1],f.played)),
     back:  Object.assign({label:"Bag 9",  detail:b.w[0]+"–"+b.w[1]+" huller"}, decide(b.w[0],b.w[1],b.played)),
     // færrest slag vinder → byt om på argumenterne
-    total: Object.assign({label:"Hele runden", detail:cs.holes ? cs.t[0]+"–"+cs.t[1]+(givet?" netto":" slag") : "–"}, decide(cs.t[1],cs.t[0],cs.holes)),
+    total: heleRunden,
     draw:  Object.assign({label:"9 udtrukne huller", detail: r.drawn.length ? d.w[0]+"–"+d.w[1]+" huller" : "ikke trukket"},
              r.drawn.length ? decide(d.w[0],d.w[1],d.played) : {winner:null,pts:[0,0]})
   };
@@ -788,7 +847,7 @@ function buildRound(ri){
 
   for(let h=0;h<HOLES;h++){
     const row = el("div","hole");
-    const ref = {row:row, cells:[], badges:[], res:null, chk:[], hcp:[], inp:[]};
+    const ref = {row:row, cells:[], badges:[], res:null, chk:[], hcp:[], stb:[], inp:[]};
 
     const hno = el("div","hno");
     hno.appendChild(el("span","","" + (h+1)));
@@ -867,13 +926,17 @@ function buildRound(ri){
         save(); refresh();
       });
       rowsm.appendChild(hc);
+
+      const stb = el("span","stbl");
+      stb.title = "Stableford-point for hullet";
+      rowsm.appendChild(stb);
       cell.appendChild(rowsm);
 
       const bg = el("div","badges");
       cell.appendChild(bg);
 
       row.appendChild(cell);
-      ref.cells.push(cell); ref.badges.push(bg); ref.chk.push(cb3); ref.hcp.push(hc); ref.inp.push({inp:inp, rel:rel});
+      ref.cells.push(cell); ref.badges.push(bg); ref.chk.push(cb3); ref.hcp.push(hc); ref.stb.push(stb); ref.inp.push({inp:inp, rel:rel});
     }
 
     const res = el("div","res","");
@@ -890,7 +953,22 @@ function buildRound(ri){
 
   /* --- Resultat --- */
   const cR = el("div","card");
-  cR.appendChild(el("h2","","Runde " + (ri+1) + " – resultat"));
+  const h2r = el("h2","","Runde " + (ri+1) + " – resultat");
+  h2r.appendChild(el("span","hint","hele runden afgøres på:"));
+  cR.appendChild(h2r);
+
+  const modeRow = el("div","modesel");
+  [["netto","Netto slag","færrest slag vinder"],["stableford","Stableford","flest point vinder"]].forEach(([v,lab,hint]) => {
+    const bm = el("button"); bm.type = "button";
+    bm.appendChild(el("strong","",lab));
+    bm.appendChild(el("span","",hint));
+    bm.dataset.mode = v;
+    bm.addEventListener("click", () => { r.mode = v; save(); refresh(); });
+    modeRow.appendChild(bm);
+  });
+  modeRow.dataset.moderow = ri;
+  cR.appendChild(modeRow);
+
   const tab = el("table","res"); tab.dataset.roundtable = ri;
   cR.appendChild(tab);
   const nt = el("textarea");
@@ -1043,6 +1121,11 @@ function refresh(){
         chip.classList.toggle("on", giv > 0);
         chip.setAttribute("aria-label", name(p) + " får " + giv + " ekstra slag på hul " + (h+1));
 
+        const pt = stableford(r,p,h);
+        const stb = ref.stb[p];
+        stb.textContent = pt == null ? "" : pt + " p";
+        stb.className = "stbl" + (pt == null ? "" : pt >= 3 ? " god" : pt === 0 ? " nul" : "");
+
         const rel = ref.inp[p].rel;
         if(sc == null) rel.textContent = "";
         else {
@@ -1079,11 +1162,16 @@ function refresh(){
       [0,1].forEach(p => {
         const st = strokes(r,p), giv = hcpGiven(r,p);
         const txt = st.holes
-          ? st.n + " slag" + (giv ? " · netto " + st.netto : "") + " / " + st.holes + " huller"
+          ? st.n + " slag" + (giv ? " · netto " + st.netto : "") + " · " + stablefordSum(r,p) + " point"
           : (giv ? giv + " slag i tilskud" : "–");
         sub.appendChild(el("span","", name(p) + ": " + txt));
       });
     }
+
+    // valgt afgørelsesform
+    const mr = panel.querySelector("[data-moderow]");
+    if(mr) mr.querySelectorAll("button").forEach(bm =>
+      bm.setAttribute("aria-pressed", String(bm.dataset.mode === r.mode)));
 
     // rundetabel
     const tab = panel.querySelector("[data-roundtable]");
