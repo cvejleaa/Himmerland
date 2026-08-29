@@ -18,7 +18,7 @@ den samme opsætning. Alt ligger i én fil (`index.html`) uden byggetrin — hos
 | 9 udtrukne huller | “Træk 9 huller” trækker tilfældigt — eller tryk på et hulnummer for at vælge manuelt. Flest vundne af dem giver 1 ekstra point. |
 | Slagtilskud (handicap) | Den ene spiller kan få ekstra slag — fordelt jævnt over runden med ét tryk, eller sat hul for hul med “+ slag”-chippen. Hul, For 9, Bag 9 og hele runden afgøres derefter på **netto**. Højst 4 slag på ét hul. |
 | Stableford | Hvert hul giver point efter netto score — 2 for par, 3 for birdie, 4 for eagle, 1 for bogey, 0 for dobbeltbogey eller værre. Pointene står ved hver score. |
-| 5 m rebet | Gælder hele runden uden begrænsning, så det står som huskeregel under fanen *Regler*. |
+| Fødderne (afløser rebet) | Hver spiller har et antal fødder til frit drop på runden. Totalen sættes øverst i runden, forbruget noteres på hvert hul, og resten står ved regelforbruget — gul ved nul, rød hvis der er brugt for mange. |
 
 **Turneringer** – hver turnering er sit eget scorekort med navn, dato, to spillere, 2 runder og sine
 egne aktiviteter. Skift mellem dem i vælgeren øverst på siden; de gamle bliver liggende med deres

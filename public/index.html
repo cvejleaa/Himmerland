@@ -167,6 +167,20 @@ section.panel.active{display:block}
 .useitem.used .lbl{color:var(--muted);text-decoration:line-through}
 .useitem select{padding:4px 6px;border-radius:8px;border:1px solid var(--line);background:var(--card);font-size:.8rem;color:var(--ink);color-scheme:light dark}
 .left{font-size:.78rem;color:var(--muted);margin-top:8px;border-top:1px dashed var(--line);padding-top:7px}
+.feetleft{
+  margin-top:8px;border-top:1px dashed var(--line);padding-top:7px;
+  font-size:.82rem;font-weight:800;color:var(--green)
+}
+.feetleft.tom{color:var(--warn)}
+.feetleft.over{color:var(--danger)}
+.feetleft.ingen{font-weight:400;color:var(--muted)}
+.feetset{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin:2px 0 12px}
+.feetset label{font-size:.72rem;font-weight:700;color:var(--muted);display:block}
+.feetset input{
+  display:block;width:96px;margin-top:4px;padding:8px 10px;border:1px solid var(--line);
+  border-radius:9px;font-size:.95rem;font-weight:700;background:var(--card);color:var(--ink);text-align:center
+}
+.feetset .hint{font-size:.74rem;color:var(--muted);padding-bottom:9px}
 
 /* ---------- Holes ---------- */
 .holehead{
@@ -218,6 +232,15 @@ section.panel.active{display:block}
 .stbl{font-size:.72rem;font-weight:800;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .stbl.god{color:var(--green-2)}
 .stbl.nul{color:var(--danger)}
+.feetin{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;color:var(--muted);cursor:pointer}
+.feetin input{
+  width:38px;padding:2px 4px;text-align:center;border:1px solid var(--line);border-radius:7px;
+  font:inherit;font-size:.72rem;font-weight:700;background:var(--card);color:var(--ink);
+  -moz-appearance:textfield
+}
+.feetin input::-webkit-outer-spin-button,.feetin input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.feetin.on input{border-color:var(--green-2);color:var(--green-2)}
+.feetin.on{color:var(--green-2);font-weight:700}
 
 .modesel{display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap}
 .modesel button{
@@ -407,7 +430,7 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
         <li><b>9 udtrukne huller</b><span>9 huller udtrækkes ved lodtrækning inden runden. Den der vinder flest af dem får et ekstra point. Tryk “Træk 9 huller”, eller tryk på et hulnummer for at vælge manuelt.</span></li>
         <li><b>Slagtilskud</b><span>Er der forskel på jeres handicap, gives den svageste spiller ekstra slag — fordelt over runden eller sat hul for hul. Hullet og runden afgøres derefter på netto.</span></li>
         <li><b>Stableford</b><span>Hvert hul giver point efter netto score: 2 for par, 3 for birdie, 4 for eagle, 1 for bogey og 0 for dobbeltbogey eller værre. Under “resultat” vælger I, om hele runden afgøres på netto slag eller på point.</span></li>
-        <li><b>5 m rebet</b><span>Rebet er diameteren fra bolden, hvor man frit må droppe ved hvert slag. Gælder hele runden — ingen begrænsning.</span></li>
+        <li><b>Fødderne</b><span>I stedet for rebet har hver spiller et antal fødder til rådighed på runden, som må bruges til frit drop. Noter forbruget på hvert hul — resten står øverst under regelforbrug, og løber du tør, er der ikke flere drop.</span></li>
       </ol>
     </div>
     <div class="card">
@@ -454,11 +477,14 @@ function newRound(){
     rules:  [emptyRules(), emptyRules()],
     drawn:  [],
     mode:   "netto",   // "netto" = færrest slag, "stableford" = flest point
+    feetTotal: 0,      // fødder til rådighed pr. spiller på runden
+    feet:   [Array(HOLES).fill(0), Array(HOLES).fill(0)],   // brugte fødder pr. hul
     note:   ""
   };
 }
 const MAX_ACTS = 40;
 const MAX_HCP = 4;   // højst 4 ekstra slag på ét hul
+const MAX_FEET = 999;
 function newActivity(){ return {title:"", desc:"", res:["",""], winner:null}; }
 // 4 point pr. runde + 1 point pr. aktivitet
 function maxPoints(){ return 8 + S.acts.length; }
@@ -541,6 +567,11 @@ function migrate(raw){
     });
     if(Array.isArray(r.drawn))  t.drawn = r.drawn.filter(n => Number.isInteger(n) && n>=1 && n<=HOLES).slice(0,HOLES);
     if(r.mode === "stableford" || r.mode === "netto") t.mode = r.mode;
+    if(Number.isFinite(r.feetTotal) && r.feetTotal >= 0) t.feetTotal = Math.min(MAX_FEET, Math.round(r.feetTotal));
+    if(Array.isArray(r.feet)) for(let p=0;p<2;p++) for(let h=0;h<HOLES;h++){
+      const v = r.feet[p] && r.feet[p][h];
+      t.feet[p][h] = (Number.isFinite(v) && v > 0) ? Math.min(MAX_FEET, Math.round(v)) : 0;
+    }
     if(typeof r.note === "string") t.note = r.note;
   });
   if(Array.isArray(raw.acts)) s.acts = raw.acts.slice(0,MAX_ACTS).map(a => {
@@ -636,6 +667,12 @@ function commonPoints(r){
   }
   return {t, holes};
 }
+function feetUsed(r,p){
+  let n = 0;
+  for(let h=0;h<HOLES;h++) n += (r.feet[p][h] || 0);
+  return n;
+}
+function feetLeft(r,p){ return r.feetTotal - feetUsed(r,p); }
 function hcpGiven(r,p){
   let n = 0;
   for(let h=0;h<HOLES;h++) n += (r.hcp[p][h] || 0);
@@ -743,6 +780,23 @@ function buildRound(ri){
   const h2 = el("h2","", "Runde " + (ri+1) + " – regelforbrug");
   h2.appendChild(el("span","hint","mulligans & gimmie, pr. spiller pr. runde"));
   cUse.appendChild(h2);
+
+  const feetSet = el("div","feetset");
+  const flab = el("label","","Fødder til rådighed pr. spiller");
+  const fin = el("input");
+  fin.type = "number"; fin.min = "0"; fin.max = String(MAX_FEET); fin.inputMode = "numeric";
+  fin.placeholder = "0";
+  fin.value = r.feetTotal || "";
+  fin.addEventListener("input", () => {
+    const v = parseInt(fin.value,10);
+    r.feetTotal = (Number.isFinite(v) && v > 0) ? Math.min(MAX_FEET, v) : 0;
+    save(); refresh();
+  });
+  flab.appendChild(fin);
+  feetSet.appendChild(flab);
+  feetSet.appendChild(el("span","hint","Fødderne bruges til frit drop og noteres på hvert hul"));
+  cUse.appendChild(feetSet);
+
   const usage = el("div","usage");
   for(let p=0;p<2;p++){
     const box = el("div","usebox");
@@ -765,6 +819,8 @@ function buildRound(ri){
       row.appendChild(lab); row.appendChild(sel);
       box.appendChild(row);
     });
+    const feetLine = el("div","feetleft"); feetLine.dataset.feetleft = p;
+    box.appendChild(feetLine);
     const left = el("div","left"); left.dataset.left = p;
     box.appendChild(left);
     usage.appendChild(box);
@@ -847,7 +903,7 @@ function buildRound(ri){
 
   for(let h=0;h<HOLES;h++){
     const row = el("div","hole");
-    const ref = {row:row, cells:[], badges:[], res:null, chk:[], hcp:[], stb:[], inp:[]};
+    const ref = {row:row, cells:[], badges:[], res:null, chk:[], hcp:[], stb:[], feet:[], inp:[]};
 
     const hno = el("div","hno");
     hno.appendChild(el("span","","" + (h+1)));
@@ -930,13 +986,28 @@ function buildRound(ri){
       const stb = el("span","stbl");
       stb.title = "Stableford-point for hullet";
       rowsm.appendChild(stb);
+
+      const fwrap = el("label","feetin");
+      const fi = el("input");
+      fi.type = "number"; fi.min = "0"; fi.max = String(MAX_FEET); fi.inputMode = "numeric";
+      fi.placeholder = "0";
+      fi.value = r.feet[p][h] || "";
+      fi.title = "Fødder brugt på dette hul";
+      fi.addEventListener("input", () => {
+        const v = parseInt(fi.value,10);
+        r.feet[p][h] = (Number.isFinite(v) && v > 0) ? Math.min(MAX_FEET, v) : 0;
+        save(); refresh();
+      });
+      fwrap.appendChild(fi);
+      fwrap.appendChild(el("span","","fod"));
+      rowsm.appendChild(fwrap);
       cell.appendChild(rowsm);
 
       const bg = el("div","badges");
       cell.appendChild(bg);
 
       row.appendChild(cell);
-      ref.cells.push(cell); ref.badges.push(bg); ref.chk.push(cb3); ref.hcp.push(hc); ref.stb.push(stb); ref.inp.push({inp:inp, rel:rel});
+      ref.cells.push(cell); ref.badges.push(bg); ref.chk.push(cb3); ref.hcp.push(hc); ref.stb.push(stb); ref.feet.push(fi); ref.inp.push({inp:inp, rel:rel});
     }
 
     const res = el("div","res","");
@@ -1085,6 +1156,16 @@ function refresh(){
     const r = S.rounds[ri];
     const panel = document.getElementById("panel-r" + ri);
 
+    // fødder tilbage
+    panel.querySelectorAll("[data-feetleft]").forEach(n => {
+      const p = parseInt(n.dataset.feetleft,10);
+      const rest = feetLeft(r,p), brugt = feetUsed(r,p);
+      n.className = "feetleft" + (r.feetTotal ? (rest < 0 ? " over" : rest === 0 ? " tom" : "") : " ingen");
+      n.textContent = r.feetTotal
+        ? "🦶 " + rest + " fod tilbage af " + r.feetTotal + (brugt ? " · " + brugt + " brugt" : "")
+        : "🦶 Sæt et antal fødder foroven";
+    });
+
     // resterende regelforbrug
     panel.querySelectorAll("[data-left]").forEach(n => {
       const p = parseInt(n.dataset.left,10);
@@ -1134,6 +1215,9 @@ function refresh(){
         }
         if(ref.inp[p].inp.value !== (sc == null ? "" : String(sc))) ref.inp[p].inp.value = sc == null ? "" : sc;
         ref.chk[p].checked = r.putt3[p][h];
+        const fx = ref.feet[p], fv = r.feet[p][h] ? String(r.feet[p][h]) : "";
+        if(document.activeElement !== fx && fx.value !== fv) fx.value = fv;
+        fx.parentNode.classList.toggle("on", (r.feet[p][h] || 0) > 0);
 
         // konsekvenser fra forrige hul
         const bg = ref.badges[p];
