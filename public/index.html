@@ -207,8 +207,16 @@ section.panel.active{display:block}
 .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .stepper input[type=number]{-moz-appearance:textfield}
 .stepper .rel{font-size:.75rem;font-weight:700;color:var(--muted);min-width:26px}
-.chk3{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:.76rem;color:var(--muted);cursor:pointer}
+.smallrow{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+.chk3{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;color:var(--muted);cursor:pointer}
+.hcpchip{
+  border:1px dashed var(--line);background:transparent;color:var(--muted);cursor:pointer;
+  font:inherit;font-size:.72rem;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap
+}
+.hcpchip:hover{border-color:var(--green-2);color:var(--green-2)}
+.hcpchip.on{border-style:solid;border-color:var(--gold);background:var(--draw-bg);color:var(--gold)}
 .chk3 input{width:17px;height:17px;accent-color:var(--warn)}
+.chk3{margin-top:0}
 .badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .badge{font-size:.68rem;padding:2px 7px;border-radius:999px;font-weight:700;white-space:nowrap}
 .badge.noclub{background:var(--noclub-bg);color:var(--noclub-fg)}
@@ -367,6 +375,7 @@ footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.75rem}
         <li><b>PAR = dametee</b><span>Laver du par (eller bedre) på et hul, må du slå ud fra dametee på næste hul. Vises automatisk ud fra scoren.</span></li>
         <li><b>3 sejre pr. runde</b><span>Der spilles om For 9, Bag 9 og hele runden. For 9/Bag 9 afgøres på flest vundne huller, hele runden på færrest slag.</span></li>
         <li><b>9 udtrukne huller</b><span>9 huller udtrækkes ved lodtrækning inden runden. Den der vinder flest af dem får et ekstra point. Tryk “Træk 9 huller”, eller tryk på et hulnummer for at vælge manuelt.</span></li>
+        <li><b>Slagtilskud</b><span>Er der forskel på jeres handicap, gives den svageste spiller ekstra slag — fordelt over runden eller sat hul for hul. Hullet og runden afgøres derefter på netto.</span></li>
         <li><b>5 m rebet</b><span>Rebet er diameteren fra bolden, hvor man frit må droppe ved hvert slag. Gælder hele runden — ingen begrænsning.</span></li>
       </ol>
     </div>
@@ -410,12 +419,14 @@ function newRound(){
     pars:   DEFAULT_PARS.slice(),
     scores: [Array(HOLES).fill(null), Array(HOLES).fill(null)],
     putt3:  [Array(HOLES).fill(false), Array(HOLES).fill(false)],
+    hcp:    [Array(HOLES).fill(0), Array(HOLES).fill(0)],   // ekstra slag pr. hul
     rules:  [emptyRules(), emptyRules()],
     drawn:  [],
     note:   ""
   };
 }
 const MAX_ACTS = 40;
+const MAX_HCP = 4;   // højst 4 ekstra slag på ét hul
 function newActivity(){ return {title:"", desc:"", res:["",""], winner:null}; }
 // 4 point pr. runde + 1 point pr. aktivitet
 function maxPoints(){ return 8 + S.acts.length; }
@@ -488,6 +499,10 @@ function migrate(raw){
       t.scores[p][h] = Number.isFinite(v) ? v : null;
     }
     if(Array.isArray(r.putt3))  for(let p=0;p<2;p++) for(let h=0;h<HOLES;h++) t.putt3[p][h] = !!(r.putt3[p] && r.putt3[p][h]);
+    if(Array.isArray(r.hcp))    for(let p=0;p<2;p++) for(let h=0;h<HOLES;h++){
+      const v = r.hcp[p] && r.hcp[p][h];
+      t.hcp[p][h] = (Number.isFinite(v) && v > 0) ? Math.min(MAX_HCP, Math.round(v)) : 0;
+    }
     if(Array.isArray(r.rules))  for(let p=0;p<2;p++) RULE_KEYS.forEach(([k]) => {
       const src = r.rules[p] && r.rules[p][k];
       if(src) t.rules[p][k] = {used:!!src.used, hole: src.hole == null ? "" : String(src.hole)};
@@ -545,12 +560,33 @@ function load(){
 const name = p => S.players[p].trim() || ("Spiller " + (p+1));
 
 // 0 / 1 = vinder, "tie" = uafgjort, null = mangler score
+// Slagtilskud trækkes fra, så hullet afgøres på netto
+function net(r,p,h){
+  const v = r.scores[p][h];
+  return v == null ? null : v - (r.hcp[p][h] || 0);
+}
 function holeWinner(r,h){
-  const a = r.scores[0][h], b = r.scores[1][h];
+  const a = net(r,0,h), b = net(r,1,h);
   if(a == null || b == null) return null;
   if(a < b) return 0;
   if(b < a) return 1;
   return "tie";
+}
+// Fordeler n slag jævnt ud over de 18 huller til én spiller; modstanderen nulstilles,
+// for det er forskellen mellem spillerne der gives i tilskud
+function fordelSlag(r, p, n){
+  const arr = Array(HOLES).fill(0);
+  n = Math.max(0, Math.min(HOLES * MAX_HCP, Math.round(n) || 0));
+  const grund = Math.floor(n / HOLES), rest = n % HOLES;
+  for(let h=0;h<HOLES;h++) arr[h] = grund;
+  for(let i=0;i<rest;i++) arr[Math.round(i * HOLES / rest) % HOLES] += 1;
+  r.hcp[p] = arr.map(v => Math.min(MAX_HCP, v));
+  r.hcp[1-p] = Array(HOLES).fill(0);
+}
+function hcpGiven(r,p){
+  let n = 0;
+  for(let h=0;h<HOLES;h++) n += (r.hcp[p][h] || 0);
+  return n;
 }
 function holesWon(r, from, to, onlyDrawn){
   const w = [0,0]; let tie = 0, played = 0;
@@ -564,16 +600,16 @@ function holesWon(r, from, to, onlyDrawn){
   return {w, tie, played};
 }
 function strokes(r,p){
-  let n = 0, holes = 0;
-  for(let h=0;h<HOLES;h++) if(r.scores[p][h] != null){ n += r.scores[p][h]; holes++; }
-  return {n, holes};
+  let n = 0, netto = 0, holes = 0;
+  for(let h=0;h<HOLES;h++) if(r.scores[p][h] != null){ n += r.scores[p][h]; netto += net(r,p,h); holes++; }
+  return {n, netto, holes};
 }
-// Slag talt kun på huller hvor begge har en score (fair sammenligning undervejs)
+// Nettoslag talt kun på huller hvor begge har en score (fair sammenligning undervejs)
 function commonStrokes(r){
   const t = [0,0]; let holes = 0;
   for(let h=0;h<HOLES;h++){
     if(r.scores[0][h] == null || r.scores[1][h] == null) continue;
-    t[0] += r.scores[0][h]; t[1] += r.scores[1][h]; holes++;
+    t[0] += net(r,0,h); t[1] += net(r,1,h); holes++;
   }
   return {t, holes};
 }
@@ -588,11 +624,12 @@ function roundResult(r){
   const b = holesWon(r,9,17,false);
   const d = holesWon(r,0,17,true);
   const cs = commonStrokes(r);
+  const givet = hcpGiven(r,0) || hcpGiven(r,1);
   const out = {
     front: Object.assign({label:"For 9",  detail:f.w[0]+"–"+f.w[1]+" huller"}, decide(f.w[0],f.w[1],f.played)),
     back:  Object.assign({label:"Bag 9",  detail:b.w[0]+"–"+b.w[1]+" huller"}, decide(b.w[0],b.w[1],b.played)),
     // færrest slag vinder → byt om på argumenterne
-    total: Object.assign({label:"Hele runden", detail:cs.holes ? cs.t[0]+"–"+cs.t[1]+" slag" : "–"}, decide(cs.t[1],cs.t[0],cs.holes)),
+    total: Object.assign({label:"Hele runden", detail:cs.holes ? cs.t[0]+"–"+cs.t[1]+(givet?" netto":" slag") : "–"}, decide(cs.t[1],cs.t[0],cs.holes)),
     draw:  Object.assign({label:"9 udtrukne huller", detail: r.drawn.length ? d.w[0]+"–"+d.w[1]+" huller" : "ikke trukket"},
              r.drawn.length ? decide(d.w[0],d.w[1],d.played) : {winner:null,pts:[0,0]})
   };
@@ -697,6 +734,44 @@ function buildRound(ri){
   cDraw.appendChild(rowd);
   panel.appendChild(cDraw);
 
+  /* --- Slagtilskud --- */
+  const cHcp = el("div","card");
+  const h2c = el("h2","","Slagtilskud");
+  h2c.appendChild(el("span","hint","handicapforskel mellem jer"));
+  cHcp.appendChild(h2c);
+  cHcp.appendChild(el("p","help","Giv den ene spiller de ekstra slag, I er enige om. Hullet afgøres så på netto — og du kan altid justere det enkelte hul med “+ slag” nede i scorekortet."));
+  const rowh = el("div","btnrow");
+  const selP = el("select");
+  selP.style.cssText = "padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:.88rem;font-weight:600;color-scheme:light dark";
+  [0,1].forEach(p => { const o = new Option(name(p), String(p)); o.dataset.pname = p; selP.appendChild(o); });
+  selP.dataset.hcpsel = ri;
+  const numH = el("input");
+  numH.type = "number"; numH.min = "0"; numH.max = String(HOLES * MAX_HCP); numH.inputMode = "numeric";
+  numH.value = "";
+  numH.placeholder = "slag";
+  numH.style.cssText = "width:76px;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:.92rem;text-align:center";
+  const bFordel = el("button","btn primary","Fordel jævnt");
+  bFordel.type = "button";
+  bFordel.addEventListener("click", () => {
+    const n = parseInt(numH.value,10);
+    if(!Number.isFinite(n) || n < 0){ toast("Skriv hvor mange slag der gives"); numH.focus(); return; }
+    fordelSlag(r, parseInt(selP.value,10), n);
+    save(); refresh();
+    toast(n + " slag fordelt til " + name(parseInt(selP.value,10)));
+  });
+  const bRyd = el("button","btn ghost","Ryd");
+  bRyd.type = "button";
+  bRyd.addEventListener("click", () => {
+    r.hcp = [Array(HOLES).fill(0), Array(HOLES).fill(0)];
+    numH.value = "";
+    save(); refresh();
+  });
+  rowh.appendChild(selP); rowh.appendChild(numH); rowh.appendChild(bFordel); rowh.appendChild(bRyd);
+  cHcp.appendChild(rowh);
+  const infoH = el("p","help"); infoH.dataset.hcpinfo = "1"; infoH.style.margin = "10px 0 0";
+  cHcp.appendChild(infoH);
+  panel.appendChild(cHcp);
+
   /* --- Huller --- */
   const cH = el("div","card");
   const h2h = el("h2","","Scorekort");
@@ -713,7 +788,7 @@ function buildRound(ri){
 
   for(let h=0;h<HOLES;h++){
     const row = el("div","hole");
-    const ref = {row:row, cells:[], badges:[], res:null, chk:[], inp:[]};
+    const ref = {row:row, cells:[], badges:[], res:null, chk:[], hcp:[], inp:[]};
 
     const hno = el("div","hno");
     hno.appendChild(el("span","","" + (h+1)));
@@ -776,17 +851,29 @@ function buildRound(ri){
       st.appendChild(minus); st.appendChild(inp); st.appendChild(plus); st.appendChild(rel);
       cell.appendChild(st);
 
+      const rowsm = el("div","smallrow");
       const c3 = el("label","chk3");
       const cb3 = el("input"); cb3.type = "checkbox"; cb3.checked = r.putt3[p][h];
       cb3.addEventListener("change", () => { r.putt3[p][h] = cb3.checked; save(); refresh(); });
       c3.appendChild(cb3); c3.appendChild(el("span","","3-putt"));
-      cell.appendChild(c3);
+      rowsm.appendChild(c3);
+
+      // slagtilskud: tryk for at tælle op, hold ikke nødvendigt
+      const hc = el("button","hcpchip");
+      hc.type = "button";
+      hc.title = "Ekstra slag på dette hul (handicapforskel)";
+      hc.addEventListener("click", () => {
+        r.hcp[p][h] = ((r.hcp[p][h] || 0) + 1) % (MAX_HCP + 1);
+        save(); refresh();
+      });
+      rowsm.appendChild(hc);
+      cell.appendChild(rowsm);
 
       const bg = el("div","badges");
       cell.appendChild(bg);
 
       row.appendChild(cell);
-      ref.cells.push(cell); ref.badges.push(bg); ref.chk.push(cb3); ref.inp.push({inp:inp, rel:rel});
+      ref.cells.push(cell); ref.badges.push(bg); ref.chk.push(cb3); ref.hcp.push(hc); ref.inp.push({inp:inp, rel:rel});
     }
 
     const res = el("div","res","");
@@ -927,6 +1014,15 @@ function refresh(){
       n.textContent = rest.length ? "Tilbage: " + rest.join(", ") : "Alt brugt 🫡";
     });
 
+    // slagtilskud
+    const ih = panel.querySelector("[data-hcpinfo]");
+    if(ih){
+      const g = [hcpGiven(r,0), hcpGiven(r,1)];
+      ih.textContent = (g[0] || g[1])
+        ? (g[0] ? name(0) + " får " + g[0] + " slag. " : "") + (g[1] ? name(1) + " får " + g[1] + " slag. " : "") + "Hullerne afgøres på netto."
+        : "Ingen slag givet — hullerne afgøres på rå score.";
+    }
+
     // lodtrækning
     const di = panel.querySelector("[data-drawinfo]");
     if(di) di.textContent = r.drawn.length
@@ -941,11 +1037,17 @@ function refresh(){
 
       for(let p=0; p<2; p++){
         const sc = r.scores[p][h];
+        const giv = r.hcp[p][h] || 0;
+        const chip = ref.hcp[p];
+        chip.textContent = giv ? "+" + giv + " slag" : "+ slag";
+        chip.classList.toggle("on", giv > 0);
+        chip.setAttribute("aria-label", name(p) + " får " + giv + " ekstra slag på hul " + (h+1));
+
         const rel = ref.inp[p].rel;
         if(sc == null) rel.textContent = "";
         else {
-          const d = sc - r.pars[h];
-          rel.textContent = d === 0 ? "par" : (d > 0 ? "+" + d : String(d));
+          const d = net(r,p,h) - r.pars[h];
+          rel.textContent = (d === 0 ? "par" : (d > 0 ? "+" + d : String(d))) + (giv ? " netto" : "");
         }
         if(ref.inp[p].inp.value !== (sc == null ? "" : String(sc))) ref.inp[p].inp.value = sc == null ? "" : sc;
         ref.chk[p].checked = r.putt3[p][h];
@@ -973,10 +1075,14 @@ function refresh(){
     // subtotal
     const sub = panel.querySelector("[data-subtotal]");
     if(sub){
-      const s0 = strokes(r,0), s1 = strokes(r,1);
       sub.innerHTML = "";
-      sub.appendChild(el("span","", name(0) + ": " + (s0.holes ? s0.n + " slag / " + s0.holes + " huller" : "–")));
-      sub.appendChild(el("span","", name(1) + ": " + (s1.holes ? s1.n + " slag / " + s1.holes + " huller" : "–")));
+      [0,1].forEach(p => {
+        const st = strokes(r,p), giv = hcpGiven(r,p);
+        const txt = st.holes
+          ? st.n + " slag" + (giv ? " · netto " + st.netto : "") + " / " + st.holes + " huller"
+          : (giv ? giv + " slag i tilskud" : "–");
+        sub.appendChild(el("span","", name(p) + ": " + txt));
+      });
     }
 
     // rundetabel

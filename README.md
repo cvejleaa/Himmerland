@@ -16,6 +16,7 @@ den samme opsætning. Alt ligger i én fil (`index.html`) uden byggetrin — hos
 | PAR = dametee på næste hul | Beregnes ud fra score vs. par (par eller bedre) og vises som 🏌️‍♀️ *Dametee* på næste hul. |
 | 3 sejre: For 9, Bag 9, hele runden | For 9/Bag 9 afgøres på flest vundne huller, hele runden på færrest slag. 1 point hver. |
 | 9 udtrukne huller | “Træk 9 huller” trækker tilfældigt — eller tryk på et hulnummer for at vælge manuelt. Flest vundne af dem giver 1 ekstra point. |
+| Slagtilskud (handicap) | Den ene spiller kan få ekstra slag — fordelt jævnt over runden med ét tryk, eller sat hul for hul med “+ slag”-chippen. Hul, For 9, Bag 9 og hele runden afgøres derefter på **netto**. Højst 4 slag på ét hul. |
 | 5 m rebet | Gælder hele runden uden begrænsning, så det står som huskeregel under fanen *Regler*. |
 
 **Turneringer** – hver turnering er sit eget scorekort med navn, dato, to spillere, 2 runder og sine
@@ -26,6 +27,9 @@ scores og resultater. Hver turnering har sin egen synk-kode, så flere kan køre
 **Aktiviteter** – tilføj og fjern så mange I vil (op til 40). Titel, beskrivelse og begge spilleres
 resultat skrives direkte på siden, og vinderen vælges med en knap. Skal der være aktiviteter for
 hver dag, navngives de bare derefter — fx “Dag 1 – petanque”.
+
+**Handicap** – er der forskel på spillernes niveau, gives den ene ekstra slag. Uden tilskud afgøres
+alt på rå score, præcis som før.
 
 **Pointregnskab** – 4 point pr. runde (altså 8 fra golfen) plus 1 point pr. aktivitet. Totalen
 følger antallet af aktiviteter og står nederst i stillingen. Uafgjort deler pointet ½–½, og
