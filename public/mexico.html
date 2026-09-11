@@ -160,6 +160,8 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 .die.blank span{opacity:0}
 .dice.mexico .die{box-shadow:0 0 0 3px var(--gold),0 0 22px var(--gold)}
 .dice.pair .die{box-shadow:0 0 0 3px var(--pair),0 0 18px var(--pair)}
+.dice.skru .die{animation:skru .5s linear infinite}
+@keyframes skru{0%{transform:rotate(0) scale(1)}25%{transform:rotate(90deg) scale(1.08) translate(4px,-3px)}50%{transform:rotate(180deg) scale(.95)}75%{transform:rotate(270deg) scale(1.06) translate(-4px,3px)}100%{transform:rotate(360deg) scale(1)}}
 @keyframes shake{
   0%{transform:translate(0,0) rotate(0)}
   25%{transform:translate(3px,-2px) rotate(4deg)}
@@ -195,6 +197,7 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 .shout.mexico span{background:var(--gold)}
 .shout.ohno span{background:var(--danger)}
 .shout.notgood span{background:var(--warn);font-size:clamp(2rem,10vw,3.6rem)}
+.shout.skru span{background:var(--pair)}
 .shout.bye span{background:var(--ink);color:var(--bg);font-size:clamp(1.5rem,7.5vw,2.8rem);max-width:92vw;text-align:center;overflow-wrap:anywhere}
 @keyframes shout{0%{opacity:0;transform:scale(.4) rotate(-8deg)}15%{opacity:1;transform:scale(1.08) rotate(2deg)}25%{transform:scale(1) rotate(-1deg)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
 @media (prefers-reduced-motion: reduce){.shout span{animation-duration:1.2s}.die.rolling{animation:none}}
@@ -218,6 +221,7 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 
 /* ---------- Historik ---------- */
 .subh{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 4px;font-weight:600}
+.subh .hint{text-transform:none;letter-spacing:0;font-weight:400;margin-left:6px}
 .hist-table{width:100%;border-collapse:collapse;font-size:.85rem}
 .hist-table th,.hist-table td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:top}
 .hist-table th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
@@ -342,6 +346,7 @@ details summary{cursor:pointer;font-weight:600}
     <div class="progress" id="progress"></div>
     <div class="btnrow stretch">
       <button class="btn primary big" id="btnRoll" type="button">Slå</button>
+      <button class="btn big" id="btnSkru" type="button" title="Ryst bægeret på den berusede måde – tæller som et slag">🌀 Skru</button>
       <button class="btn big" id="btnStand" type="button" hidden>Stå</button>
     </div>
     <p class="muted" id="turnNote" style="margin:10px 0 0"></p>
@@ -384,7 +389,7 @@ details summary{cursor:pointer;font-weight:600}
       <summary>Historik <span class="hint" id="historyHint"></span></summary>
       <p class="muted" id="historyEmpty" style="margin:8px 0 0">Ingen færdige spil endnu. Historikken gemmes på denne telefon.</p>
       <div id="historyBody" hidden>
-        <h3 class="subh">Sejre</h3>
+        <h3 class="subh">Rangliste <span class="hint">placering = point · færrest fører</span></h3>
         <table class="hist-table" id="leaderboard"></table>
         <h3 class="subh">Spil</h3>
         <div id="historyGames"></div>
@@ -412,7 +417,7 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Næste runde.</strong> Vinderen af runden (højeste slag) starter. Deler flere det højeste, starter den af dem der slog først.</li>
         <li><strong>Slut.</strong> Spillere uden liv er ude. Sidste spiller med liv tilbage vinder. Ryger alle tilbageværende ud i samme runde, får de hver ét liv og spiller en afgørende runde.</li>
       </ul>
-      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås. Par lyser lilla, og der råbes <em>Ecuadooooooor!</em> ved Mexico som en sydamerikansk fodboldkommentator, <em>Ohh no!</em> ved 31 og <em>Not good</em> ved 32. Ryger en spiller ud, siger spillet <em>Farvel</em> med navn. Vinderen fejres med trommehvirvel, kommentator, olé-kor, konfetti og podie – tryk på skærmen for at springe over. Raflelyd og udbrud slås til og fra med højttaler-knappen øverst.</p>
+      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås. Par lyser lilla, og der råbes <em>Ecuadooooooor!</em> ved Mexico som en sydamerikansk fodboldkommentator, <em>Ohh no!</em> ved 31 og <em>Not good</em> ved 32. Ryger en spiller ud, siger spillet <em>Farvel</em> med navn. Tryk <em>Skru</em> i stedet for <em>Slå</em> for at ryste bægeret på den særlige, berusede måde – det ændrer ikke slaget og tæller som et almindeligt slag. Vinderen fejres med trommehvirvel, kommentator, olé-kor, konfetti og podie – tryk på skærmen for at springe over. Raflelyd og udbrud slås til og fra med højttaler-knappen øverst.</p>
     </details>
   </section>
 
@@ -447,6 +452,7 @@ const HISTORY_KEY = 'mexico-historik-v1';
 const LOG_PREVIEW = 8;        // runder der vises i rundeforløbet før 'Vis alle'
 const DEFAULT_ROWS = 6;      // felter der vises fra start – der kan tilføjes så mange man vil
 const MAX_ROLLS = 3;
+const SKRU_MS = 1400;         // et skru rystes længere end et almindeligt slag
 const MIN_CAP = 2;            // de øvrige må altid slå mindst 2 gange, uanset startspilleren
 const LIVES_OPTIONS = [3, 4, 5, 6, 8, 10];
 const PENALTY_OPTIONS = [1, 2];
@@ -494,7 +500,7 @@ function newGame(names, lives, penalty){
     current: null,          // aktuelt slag for spilleren der har turen
     results: {},            // spillerindeks -> slag
     outcome: null,          // resultat af runden når phase = 'result'/'over'
-    stats: {mexicos: 0},
+    stats: {mexicos: 0, skru: 0},
     log: []
   };
 }
@@ -529,17 +535,30 @@ function currentPlayer(){ return game.players[game.order[game.pos]]; }
 function isStarter(){ return game.pos === 0; }
 function rollLimit(){ return isStarter() ? MAX_ROLLS : game.cap; }
 
-function doRoll(){
+function doRoll(skru){
   if(animating || game.phase !== 'turn') return;
   if(game.rollsUsed >= rollLimit()) return;
   const r = makeRoll(rollDie(), rollDie());
   game.rollsUsed += 1;
   game.current = r;
-  if(r.mexico){ game.stats = game.stats || {mexicos: 0}; game.stats.mexicos += 1; }
+  game.stats = game.stats || {mexicos: 0, skru: 0};
+  if(r.mexico) game.stats.mexicos = (game.stats.mexicos || 0) + 1;
+  if(skru) game.stats.skru = (game.stats.skru || 0) + 1;
   animating = true;
   updateTurnButtons();
-  Sound.rattle(650);
+  // Et skru er den berusede måde at ryste bægeret på: længere, vildere og med snurren og hik.
+  // Det ændrer ikke slaget og tæller som et almindeligt slag.
+  const ms = skru ? SKRU_MS : 650;
+  if(skru){
+    shout('SKRU!', 'skru', 1500);
+    Sound.skru(ms);
+    Sound.say('Skruuuu!', 'da-DK', 0.8, 0.8);
+    $('dice').classList.add('skru');
+  }else{
+    Sound.rattle(ms);
+  }
   animateDice(r, () => {
+    $('dice').classList.remove('skru');
     animating = false;
     celebrate(r);
     save();
@@ -548,7 +567,7 @@ function doRoll(){
     if(r.mexico || game.rollsUsed >= rollLimit()){
       setTimeout(stand, r.mexico ? 900 : 550);
     }
-  });
+  }, ms);
 }
 
 function stand(){
@@ -658,14 +677,14 @@ function showFace(el, v){
   const on = v ? PIPS[v] : [];
   [...el.children].forEach((s, i) => s.classList.toggle('on', on.includes(i)));
 }
-function animateDice(r, done){
+function animateDice(r, done, ms){
   const d1 = $('die1'), d2 = $('die2');
   $('dice').classList.remove('mexico', 'pair');
   d1.classList.add('rolling'); d2.classList.add('rolling');
   const t0 = performance.now();
   const tick = () => {
     const t = performance.now() - t0;
-    if(t < 650){
+    if(t < (ms || 650)){
       // Kun pynt – det rigtige slag er allerede afgjort
       showFace(d1, 1 + Math.floor(Math.random() * 6)); showFace(d2, 1 + Math.floor(Math.random() * 6));
       setTimeout(tick, 70);
@@ -797,6 +816,7 @@ function updateTurnButtons(){
   const r = game.current;
   const canRoll = !animating && game.rollsUsed < limit && !(r && r.mexico);
   $('btnRoll').disabled = !canRoll;
+  $('btnSkru').disabled = !canRoll;
   $('btnRoll').textContent = game.rollsUsed === 0 ? 'Slå' : `Slå igen (${game.rollsUsed + 1} af ${limit})`;
   const showStand = !!r && !animating && game.rollsUsed < limit && !r.mexico;
   $('btnStand').hidden = !showStand;
@@ -954,7 +974,8 @@ $('btnRematch').addEventListener('click', () => {
   toast('Nyt spil – samme spillere');
 });
 
-$('btnRoll').addEventListener('click', doRoll);
+$('btnRoll').addEventListener('click', () => doRoll(false));
+$('btnSkru').addEventListener('click', () => doRoll(true));
 $('btnStand').addEventListener('click', stand);
 $('btnNext').addEventListener('click', nextRound);
 $('btnUndo').addEventListener('click', undo);
@@ -964,6 +985,8 @@ document.addEventListener('keydown', e => {
   if(e.key === ' ' || e.key === 'Enter'){
     if(game.phase === 'turn'){ if(!$('btnRoll').disabled){ doRoll(); e.preventDefault(); } }
     else if(game.phase === 'result'){ nextRound(); e.preventDefault(); }
+  }else if(e.key.toLowerCase() === 'k' && game.phase === 'turn' && !$('btnRoll').disabled){
+    doRoll(true);
   }else if(e.key.toLowerCase() === 's' && game.phase === 'turn' && !$('btnStand').hidden){
     stand();
   }
@@ -1056,6 +1079,34 @@ const Sound = {
     }
     this.land(end + 0.03, 0.72);
     this.land(end + 0.1, 0.6);
+  },
+  // Skru: bægeret drejes rundt på den berusede måde – terningerne slingrer, det snurrer og hikker
+  skru(ms){
+    const c = this.ensure(); if(!c) return;
+    const t0 = c.currentTime + 0.02, end = t0 + ms / 1000;
+    let t = t0;
+    while(t < end - 0.15){
+      const hits = 1 + Math.floor(Math.random() * 3);
+      for(let i = 0; i < hits; i++){
+        this.knock(t + Math.random() * 0.12, 0.18 + Math.random() * 0.3,
+          {thud: 150 + Math.random() * 160, thudGain: 0.7, dur: 0.02 + Math.random() * 0.03});
+      }
+      t += 0.12 + Math.random() * 0.14;
+    }
+    const o = c.createOscillator(); o.type = 'triangle';
+    o.frequency.setValueAtTime(240, t0);
+    for(let k = 1; k <= 4; k++) o.frequency.linearRampToValueAtTime(k % 2 ? 720 : 260, t0 + (ms / 1000) * k / 4);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.12, t0 + 0.1);
+    g.gain.setValueAtTime(0.12, end - 0.2); g.gain.exponentialRampToValueAtTime(0.0001, end);
+    o.connect(g).connect(this.bus); o.start(t0); o.stop(end + 0.05);
+    const ht = t0 + ms / 2000;
+    const h = c.createOscillator(); h.type = 'square';
+    h.frequency.setValueAtTime(380, ht); h.frequency.exponentialRampToValueAtTime(760, ht + 0.08);
+    const hg = c.createGain();
+    hg.gain.setValueAtTime(0.0001, ht); hg.gain.exponentialRampToValueAtTime(0.15, ht + 0.02); hg.gain.exponentialRampToValueAtTime(0.0001, ht + 0.12);
+    h.connect(hg).connect(this.bus); h.start(ht); h.stop(ht + 0.15);
+    this.land(end + 0.03, 0.72); this.land(end + 0.1, 0.6);
   },
   tone(freq, at, dur, type, gain){
     const c = this.ctx;
@@ -1429,10 +1480,12 @@ function statsHtml(){
   const w = P[pl[0]];
   const firstOut = P.filter(p => p.outRound).sort((x, y) => x.outRound - y.outRound)[0];
   const mex = (game.stats && game.stats.mexicos) || 0;
+  const skru = (game.stats && game.stats.skru) || 0;
   return `<div class="stats">
     <span>🏁 ${game.round} ${game.round === 1 ? 'runde' : 'runder'}</span>
     <span>❤️ ${w.lives} liv tilbage</span>
     <span>🎲 ${mex} Mexico${mex === 1 ? '' : "'er"}</span>
+    <span>🌀 ${skru} skru</span>
     ${firstOut ? `<span>🥴 Første ud: ${esc(firstOut.name)} (runde ${firstOut.outRound})</span>` : ''}
   </div>`;
 }
@@ -1506,6 +1559,19 @@ function placements(h){
     return (y.outRound ?? 0) - (x.outRound ?? 0) || y.lives - x.lives;
   });
 }
+// Placering pr. spiller i et færdigt spil: vinderen er 1, derefter dem der røg ud senest.
+// Ryger flere ud i samme runde, deler de placeringen, og den næste springer tilsvarende.
+function gameRanks(h){
+  const pl = placements(h);
+  const ranks = new Map(); let rank = 1;
+  pl.forEach((p, i) => {
+    const prev = pl[i - 1];
+    const shared = i >= 2 && prev.name !== h.winner && (prev.outRound ?? 0) === (p.outRound ?? 0) && prev.lives === p.lives;
+    if(!shared) rank = i + 1;
+    ranks.set(p.name, rank);
+  });
+  return ranks;
+}
 function fmtWhen(iso){
   const d = new Date(iso); if(isNaN(d)) return '';
   const opts = {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'};
@@ -1518,18 +1584,22 @@ function renderHistory(){
   $('historyEmpty').hidden = n > 0;
   $('historyBody').hidden = n === 0;
   if(!n) return;
-  // Sejrsliste pr. navn
+  // Rangliste på tværs af spil: hver placering giver lige så mange point som placeringen,
+  // og færrest point fører. Ved lige point vinder flest sejre, så laveste snit.
   const stats = new Map();
-  history.forEach(h => h.players.forEach(p => {
-    const st = stats.get(p.name) || {name: p.name, wins: 0, games: 0};
-    st.games += 1; if(p.name === h.winner) st.wins += 1;
-    stats.set(p.name, st);
-  }));
-  const rows = [...stats.values()].sort((a, b) => b.wins - a.wins || a.games - b.games || a.name.localeCompare(b.name, 'da'));
-  $('leaderboard').innerHTML = '<tr><th>Spiller</th><th class="num">Sejre</th><th class="num">Spil</th><th class="num">Andel</th></tr>' +
+  history.forEach(h => {
+    const ranks = gameRanks(h);
+    h.players.forEach(p => {
+      const st = stats.get(p.name) || {name: p.name, points: 0, games: 0, wins: 0};
+      st.games += 1; st.points += ranks.get(p.name) || h.players.length; if(p.name === h.winner) st.wins += 1;
+      stats.set(p.name, st);
+    });
+  });
+  const rows = [...stats.values()].sort((a, b) => a.points - b.points || b.wins - a.wins || (a.points / a.games) - (b.points / b.games) || a.name.localeCompare(b.name, 'da'));
+  $('leaderboard').innerHTML = '<tr><th>Spiller</th><th class="num">Point</th><th class="num">Spil</th><th class="num">Snit</th><th class="num">Sejre</th></tr>' +
     rows.map((r, i) => {
-      const top = i === 0 && r.wins > 0;
-      return `<tr class="${top ? 'top' : ''}"><td>${top ? '🏆 ' : ''}${esc(r.name)}</td><td class="num">${r.wins}</td><td class="num">${r.games}</td><td class="num">${Math.round(100 * r.wins / r.games)} %</td></tr>`;
+      const top = i === 0;
+      return `<tr class="${top ? 'top' : ''}"><td>${top ? '👑 ' : ''}${esc(r.name)}</td><td class="num">${r.points}</td><td class="num">${r.games}</td><td class="num">${(r.points / r.games).toFixed(1).replace('.', ',')}</td><td class="num">${r.wins}</td></tr>`;
     }).join('');
   // Spil, nyeste øverst
   $('historyGames').innerHTML = history.map(h => {

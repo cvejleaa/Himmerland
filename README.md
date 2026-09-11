@@ -64,6 +64,10 @@ igangværende spil gemmes i browseren så en genindlæsning ikke koster runden. 
 Liv pr. spiller vælges under opsætningen (standard 6). *Fortryd* starter den aktuelle runde forfra
 eller går en runde tilbage, og *Nyt spil med samme spillere* lader vinderen starte.
 
+**Skru**: tryk *Skru* i stedet for *Slå* for at ryste bægeret på den særlige, berusede måde. Terningerne
+snurrer længere og vildere med snurre-lyd og hik, og der råbes "Skru!". Det ændrer ikke slaget og tæller som
+et almindeligt slag. Statistikken ved spilslut tæller antal skru.
+
 **Fejring af vinderen** når spillet er slut: skærmen går i sort med trommehvirvel og "Og vinderen er…",
 navnet smækkes ind i guld med airhorn, fyrværkeri, konfetti og vibration (Android), kommentatoren råber
 "Campeón" mens talesyntesen siger "Tillykke <navn>, du er Mexico-mester!", publikum synger "Olé, olé olé
@@ -72,8 +76,9 @@ Mexico'er, første ud). Et tryk på skærmen springer fejringen over. Podiet og 
 resultatkortet, og historikken viser sølv og bronze.
 
 **Historik** gemmes på telefonen: hvert færdigt spil med tidspunkt, vinder, antal runder og
-placeringer (rækkefølgen spillerne røg ud i), samt en sejrsliste pr. spiller med sejre, spil og
-andel. Fortrydes den sidste runde, fjernes spillet fra historikken igen. *Ryd historik* sletter
+placeringer (rækkefølgen spillerne røg ud i), samt en samlet rangliste: hver placering giver lige så mange point som
+placeringen (1. plads 1 point, 5. plads 5 point), og færrest point fører. Ved siden af står antal spil,
+gennemsnitsplacering og sejre. Ryger flere ud i samme runde, deler de placeringen. Fortrydes den sidste runde, fjernes spillet fra historikken igen. *Ryd historik* sletter
 alt. Rundeforløbet i det igangværende spil viser alle runder med *Vis alle* når der er mange.
 
 Par lyser lilla med et *PAR*-mærke på terningerne, i turkortet, i stillingen og i resultatet, så de
