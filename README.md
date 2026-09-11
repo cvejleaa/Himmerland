@@ -64,6 +64,10 @@ igangværende spil gemmes i browseren så en genindlæsning ikke koster runden. 
 Liv pr. spiller vælges under opsætningen (standard 6). *Fortryd* starter den aktuelle runde forfra
 eller går en runde tilbage, og *Nyt spil med samme spillere* lader vinderen starte.
 
+**Skru**: tryk *Skru* i stedet for *Slå* for at ryste bægeret på den særlige, berusede måde. Terningerne
+snurrer længere og vildere med snurre-lyd og hik, og der råbes "Skru!". Det ændrer ikke slaget og tæller som
+et almindeligt slag. Statistikken ved spilslut tæller antal skru.
+
 **Fejring af vinderen** når spillet er slut: skærmen går i sort med trommehvirvel og "Og vinderen er…",
 navnet smækkes ind i guld med airhorn, fyrværkeri, konfetti og vibration (Android), kommentatoren råber
 "Campeón" mens talesyntesen siger "Tillykke <navn>, du er Mexico-mester!", publikum synger "Olé, olé olé
