@@ -64,6 +64,13 @@ igangværende spil gemmes i browseren så en genindlæsning ikke koster runden. 
 Liv pr. spiller vælges under opsætningen (standard 6). *Fortryd* starter den aktuelle runde forfra
 eller går en runde tilbage, og *Nyt spil med samme spillere* lader vinderen starte.
 
+**Fejring af vinderen** når spillet er slut: skærmen går i sort med trommehvirvel og "Og vinderen er…",
+navnet smækkes ind i guld med airhorn, fyrværkeri, konfetti og vibration (Android), kommentatoren råber
+"Campeón" mens talesyntesen siger "Tillykke <navn>, du er Mexico-mester!", publikum synger "Olé, olé olé
+olé", og til sidst kommer podiet med guld, sølv og bronze og en kampstatistik (runder, liv tilbage, antal
+Mexico'er, første ud). Et tryk på skærmen springer fejringen over. Podiet og statistikken bliver stående i
+resultatkortet, og historikken viser sølv og bronze.
+
 **Historik** gemmes på telefonen: hvert færdigt spil med tidspunkt, vinder, antal runder og
 placeringer (rækkefølgen spillerne røg ud i), samt en sejrsliste pr. spiller med sejre, spil og
 andel. Fortrydes den sidste runde, fjernes spillet fra historikken igen. *Ryd historik* sletter
