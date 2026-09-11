@@ -44,6 +44,26 @@ Derudover: par kan justeres pr. hul, noter pr. runde, print/PDF, og eksport/impo
 turneringshistorikken som JSON (import lægger turneringer oveni i stedet for at overskrive).
 Siden følger telefonens lyse/mørke tilstand.
 
+## 🎲 Mexico – terningspil
+
+`public/mexico.html` er et selvstændigt terningspil til **et vilkårligt antal spillere på én telefon** –
+telefonen erstatter raflebægeret og sendes rundt om bordet. Ingen opsætning, virker offline, og det
+igangværende spil gemmes i browseren så en genindlæsning ikke koster runden. Ligger på
+`golf.vejleaa.dk/mexico.html`.
+
+| Regel | Sådan er den bygget ind |
+|---|---|
+| To terninger, højeste er tierne | 5 og 3 vises som **53**. |
+| Mexico (2 og 1) slår alt, derefter par 66–11, derefter 65…31 | Rangordenen er indbygget, og Mexico stopper turen automatisk. |
+| Startspilleren slår op til 3 gange og sætter loftet | Loftet vises for de øvrige, og turen stopper selv når loftet er nået. |
+| Laveste slag mister ét liv; ved delt laveste taber alle de laveste | Alle med rundens laveste slag mister liv. |
+| Tab mod Mexico koster 2 liv | Kan sættes til 1 under opsætningen. |
+| Vinderen (højeste slag) starter næste runde | Ved delt højeste starter den af dem der slog først. |
+| Sidste spiller med liv vinder | Ryger alle tilbageværende ud i samme runde, får de ét liv hver og spiller en afgørende runde. |
+
+Liv pr. spiller vælges under opsætningen (standard 6). *Fortryd* starter den aktuelle runde forfra
+eller går en runde tilbage, og *Nyt spil med samme spillere* lader vinderen starte.
+
 ## Kørsel lokalt
 
 Åbn `public/index.html` direkte i en browser, eller server mappen:
@@ -107,6 +127,7 @@ Har du ikke lyst til at lægge config'en i repoet, kan den i stedet indsættes d
 | Fil | Formål |
 |---|---|
 | `public/index.html` | Hele appen: layout, regler, pointberegning, turneringer og synk |
+| `public/mexico.html` | Terningspillet Mexico – selvstændig side uden synk |
 | `public/firebase-config.js` | Firebase web-config (pladsholdere indtil du udfylder dem) |
 | `firebase.json` | Firestore-regler + valgfri Firebase Hosting |
 | `firestore.rules` | Adgang til samlingen `spil` |

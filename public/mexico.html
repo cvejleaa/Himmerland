@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mexico – terningspil</title>
+<meta name="description" content="Terningspillet Mexico for et vilkårligt antal spillere på én telefon. To terninger, seks liv, Mexico slår alt.">
+<meta name="theme-color" content="#0d5c3f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#08160f" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎲</text></svg>">
+<style>
+:root{
+  --green:#0d5c3f; --green-2:#12784f; --green-3:#e8f4ee; --green-deep:#0a4630;
+  --on-accent:#fff;
+  --ink:#16241d; --muted:#5d6f66;
+  --line:#d8e2db; --card:#fff; --bg:#f2f6f3;
+  --gold:#b8860b; --gold-bg:#fff7dc; --gold-line:#e5c765;
+  --danger:#b91c1c; --danger-bg:#fee2e2; --danger-fg:#991b1b;
+  --win-bg:#e8f4ee; --win-fg:#0d5c3f;
+  --life:#c2410c; --life-off:#e5e9e6;
+  --die-bg:#fffdf5; --die-pip:#1a1a1a; --die-line:#d9d2b8;
+  --toast-bg:#16241d; --toast-fg:#fff;
+  --radius:14px; --shadow:0 1px 2px rgba(16,40,30,.06),0 6px 20px rgba(16,40,30,.07);
+}
+/* Mørk tilstand – følger telefonens indstilling */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --green:#3f9d72; --green-2:#5cbc8e; --green-3:#172b23; --green-deep:#08160f;
+    --on-accent:#07150f;
+    --ink:#e6efe9; --muted:#93a89e;
+    --line:#2b3a33; --card:#16211c; --bg:#0e1613;
+    --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
+    --danger:#f08a8a; --danger-bg:#3b1a1a; --danger-fg:#f7b4b4;
+    --win-bg:#172b23; --win-fg:#8fd4b4;
+    --life:#f0a172; --life-off:#2b3a33;
+    --die-bg:#f3efe0; --die-pip:#141414; --die-line:#b8b09a;
+    --toast-bg:#e6efe9; --toast-fg:#0e1613;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 20px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --green:#3f9d72; --green-2:#5cbc8e; --green-3:#172b23; --green-deep:#08160f;
+  --on-accent:#07150f;
+  --ink:#e6efe9; --muted:#93a89e;
+  --line:#2b3a33; --card:#16211c; --bg:#0e1613;
+  --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
+  --danger:#f08a8a; --danger-bg:#3b1a1a; --danger-fg:#f7b4b4;
+  --win-bg:#172b23; --win-fg:#8fd4b4;
+  --life:#f0a172; --life-off:#2b3a33;
+  --die-bg:#f3efe0; --die-pip:#141414; --die-line:#b8b09a;
+  --toast-bg:#e6efe9; --toast-fg:#0e1613;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 20px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{color-scheme:light dark}
+body{
+  background:var(--bg); color:var(--ink);
+  font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px 60px}
+a{color:var(--green-2)}
+button{font:inherit}
+
+/* ---------- Header ---------- */
+header.top{
+  background:linear-gradient(160deg,var(--green-deep) 0%,#061009 100%);
+  color:#fff;padding:18px 0 16px;margin-bottom:14px
+}
+header.top .wrap{padding-bottom:0;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+h1{margin:0;font-size:1.45rem;letter-spacing:.2px}
+h1 .em{opacity:.85;font-weight:400}
+.sub{margin:4px 0 0;opacity:.8;font-size:.85rem}
+header.top .btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff;flex:0 0 auto}
+header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45);color:#fff}
+
+/* ---------- Kort og knapper ---------- */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
+.card > h2{margin:0 0 4px;font-size:1.05rem}
+.card > h2 .hint{font-weight:400;font-size:.78rem;color:var(--muted);margin-left:6px}
+.card > p.help{margin:0 0 12px;color:var(--muted);font-size:.82rem}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:10px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);font-size:.9rem;font-weight:600;cursor:pointer;min-height:42px
+}
+.btn:hover{border-color:var(--green-2);color:var(--green-2)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.primary{background:var(--green);border-color:var(--green);color:var(--on-accent)}
+.btn.primary:hover{background:var(--green-2);color:var(--on-accent)}
+.btn.big{font-size:1.1rem;padding:14px 22px;min-height:56px;flex:1 1 auto}
+.btn.ghost{background:transparent}
+.btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btnrow.stretch .btn{flex:1 1 140px}
+.muted{color:var(--muted);font-size:.85rem}
+[hidden]{display:none!important}
+
+/* ---------- Opsætning ---------- */
+.setup-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.setup-grid label{display:flex;align-items:center;gap:8px;font-size:.85rem}
+.setup-grid label .nr{width:22px;height:22px;border-radius:50%;background:var(--green-3);color:var(--green);display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex:0 0 auto}
+.setup-grid input[type=text]{flex:1;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1rem;min-width:0}
+.setup-grid .rm{flex:0 0 auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;line-height:1}
+.setup-grid .rm:hover{border-color:var(--danger);color:var(--danger)}
+.settings{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.settings .field{flex:1 1 150px;border:1px solid var(--line);border-radius:12px;padding:10px 11px}
+.settings .field .lab{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.seg{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.seg button{
+  flex:1 1 auto;padding:7px 8px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);
+  font-size:.9rem;font-weight:600;cursor:pointer
+}
+.seg button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:var(--on-accent)}
+
+/* ---------- Stilling ---------- */
+.standings{display:grid;grid-template-columns:1fr;gap:6px}
+.prow{
+  display:grid;grid-template-columns:26px 1fr auto auto;gap:10px;align-items:center;
+  padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--card)
+}
+.prow.current{border-color:var(--green);background:var(--green-3)}
+.prow.out{opacity:.5}
+.prow.out .pname{text-decoration:line-through}
+.prow .idx{width:26px;height:26px;border-radius:50%;background:var(--green-3);color:var(--green);display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700}
+.prow.current .idx{background:var(--green);color:var(--on-accent)}
+.prow .pname{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .pname .tag{font-weight:500;font-size:.72rem;color:var(--muted);margin-left:6px}
+.prow .roll{font-variant-numeric:tabular-nums;font-weight:700;min-width:44px;text-align:right}
+.prow .roll.pending{color:var(--muted);font-weight:500;font-size:.8rem}
+.prow .roll.mexico{color:var(--gold)}
+.lives{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end;max-width:100px}
+.lives i{width:11px;height:11px;border-radius:50%;background:var(--life);display:inline-block}
+.lives i.off{background:var(--life-off)}
+
+/* ---------- Tur ---------- */
+.turn-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.turn-head .who{font-size:1.35rem;font-weight:700;margin:0}
+.turn-head .cap{font-size:.85rem;color:var(--muted)}
+.dice{display:flex;gap:18px;justify-content:center;align-items:center;padding:18px 0 10px}
+.die{
+  width:92px;height:92px;border-radius:18px;background:var(--die-bg);border:1px solid var(--die-line);
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,.08),0 4px 10px rgba(0,0,0,.15);
+  display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:12px;gap:4px;
+  transition:transform .12s
+}
+.die.rolling{animation:shake .12s infinite}
+.die span{border-radius:50%;background:var(--die-pip);opacity:0;transform:scale(.6)}
+.die span.on{opacity:1;transform:scale(1)}
+.die.blank span{opacity:0}
+.dice.mexico .die{box-shadow:0 0 0 3px var(--gold),0 0 22px var(--gold)}
+@keyframes shake{
+  0%{transform:translate(0,0) rotate(0)}
+  25%{transform:translate(3px,-2px) rotate(4deg)}
+  50%{transform:translate(-3px,2px) rotate(-4deg)}
+  75%{transform:translate(2px,3px) rotate(2deg)}
+  100%{transform:translate(0,0) rotate(0)}
+}
+.value{text-align:center;min-height:2.2rem;margin-bottom:8px}
+.value .big{font-size:1.9rem;font-weight:800;letter-spacing:.02em;line-height:1.1}
+.value .big.mexico{color:var(--gold)}
+.value .name{color:var(--muted);font-size:.85rem}
+.progress{display:flex;gap:6px;justify-content:center;margin-bottom:12px}
+.progress i{width:34px;height:6px;border-radius:3px;background:var(--life-off)}
+.progress i.done{background:var(--green)}
+.progress i.locked{background:transparent;border:1px dashed var(--line)}
+
+/* ---------- Resultat ---------- */
+.res-list{display:grid;gap:6px}
+.rrow{display:grid;grid-template-columns:28px 1fr auto auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:12px}
+.rrow.win{background:var(--win-bg);border-color:var(--green)}
+.rrow.lose{background:var(--danger-bg);border-color:var(--danger)}
+.rrow .medal{font-size:1.1rem;text-align:center}
+.rrow .rname{font-weight:600}
+.rrow .rname .tag{font-weight:500;font-size:.72rem;color:var(--muted);margin-left:6px}
+.rrow .rval{font-weight:700;font-variant-numeric:tabular-nums}
+.rrow .rval.mexico{color:var(--gold)}
+.badge{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.badge.lose{background:var(--danger-fg);color:#fff}
+.badge.win{background:var(--green);color:var(--on-accent)}
+.badge.out{background:var(--ink);color:var(--bg)}
+.summary{margin:10px 0 12px;font-size:.95rem}
+.summary strong{font-weight:700}
+.winner{
+  text-align:center;padding:18px 10px;border-radius:12px;background:var(--gold-bg);border:1px solid var(--gold-line);margin-bottom:12px
+}
+.winner .trophy{font-size:2.6rem;line-height:1}
+.winner .wname{font-size:1.4rem;font-weight:800;margin-top:6px}
+
+/* ---------- Log ---------- */
+.log{list-style:none;margin:0;padding:0;font-size:.85rem}
+.log li{padding:6px 0;border-top:1px solid var(--line);display:flex;gap:8px}
+.log li:first-child{border-top:0}
+.log li .rn{color:var(--muted);flex:0 0 3.4rem;font-variant-numeric:tabular-nums}
+
+/* ---------- Regler ---------- */
+details summary{cursor:pointer;font-weight:600}
+.rules{font-size:.9rem}
+.rules table{border-collapse:collapse;width:100%;margin:8px 0}
+.rules th,.rules td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.rules th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.rules ul{padding-left:18px}
+
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--toast-bg);color:var(--toast-fg);
+  padding:10px 16px;border-radius:10px;font-size:.85rem;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:90vw;text-align:center
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1>🎲 Mexico <span class="em">– terningspil</span></h1>
+      <p class="sub" id="subline">Én telefon, to terninger, seks liv. Mexico slår alt.</p>
+    </div>
+    <button class="btn" id="btnMenu" type="button" hidden>Nyt spil</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ===== Opsætning ===== -->
+  <section class="card" id="setup">
+    <h2>Spillere <span class="hint">mindst 2 – ellers så mange I er</span></h2>
+    <p class="help">Skriv navnene i den rækkefølge I sidder rundt om bordet. Tomme felter tæller ikke med.</p>
+    <div class="setup-grid" id="nameInputs"></div>
+    <div class="btnrow" style="margin-top:10px">
+      <button class="btn ghost" id="btnAddPlayer" type="button">+ Tilføj spiller</button>
+      <span class="muted" id="playerCount"></span>
+    </div>
+    <div class="settings">
+      <div class="field">
+        <div class="lab">Liv pr. spiller</div>
+        <div class="seg" id="segLives"></div>
+      </div>
+      <div class="field">
+        <div class="lab">Tab mod Mexico koster</div>
+        <div class="seg" id="segPenalty"></div>
+      </div>
+    </div>
+    <div class="btnrow" style="margin-top:14px">
+      <button class="btn primary big" id="btnStart" type="button">Start spillet</button>
+    </div>
+    <p class="muted" id="setupError" style="margin:8px 0 0"></p>
+  </section>
+
+  <!-- ===== Stilling ===== -->
+  <section class="card" id="standingsCard" hidden>
+    <h2>Stilling <span class="hint" id="roundLabel"></span></h2>
+    <div class="standings" id="standings"></div>
+  </section>
+
+  <!-- ===== Tur ===== -->
+  <section class="card" id="turnCard" hidden>
+    <div class="turn-head">
+      <p class="who" id="turnWho"></p>
+      <span class="cap" id="turnCap"></span>
+    </div>
+    <div class="dice" id="dice">
+      <div class="die blank" id="die1"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="die blank" id="die2"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="value" id="valueBox"><div class="name" id="valueHint">Tryk på Slå for at rafle</div></div>
+    <div class="progress" id="progress"></div>
+    <div class="btnrow stretch">
+      <button class="btn primary big" id="btnRoll" type="button">Slå</button>
+      <button class="btn big" id="btnStand" type="button" hidden>Stå</button>
+    </div>
+    <p class="muted" id="turnNote" style="margin:10px 0 0"></p>
+  </section>
+
+  <!-- ===== Resultat ===== -->
+  <section class="card" id="resultCard" hidden>
+    <h2 id="resultTitle">Runden er slut</h2>
+    <div class="winner" id="winnerBox" hidden>
+      <div class="trophy">🏆</div>
+      <div class="wname" id="winnerName"></div>
+      <div class="muted" id="winnerSub"></div>
+    </div>
+    <p class="summary" id="resultSummary"></p>
+    <div class="res-list" id="resultList"></div>
+    <div class="btnrow stretch" style="margin-top:14px">
+      <button class="btn primary big" id="btnNext" type="button">Næste runde</button>
+      <button class="btn big" id="btnRematch" type="button" hidden>Nyt spil med samme spillere</button>
+    </div>
+  </section>
+
+  <!-- ===== Fortryd ===== -->
+  <section class="card" id="toolsCard" hidden>
+    <div class="btnrow">
+      <button class="btn ghost" id="btnUndo" type="button">↶ Fortryd</button>
+      <span class="muted" id="undoHint"></span>
+    </div>
+  </section>
+
+  <!-- ===== Log ===== -->
+  <section class="card" id="logCard" hidden>
+    <h2>Rundeforløb</h2>
+    <ul class="log" id="log"></ul>
+  </section>
+
+  <!-- ===== Regler ===== -->
+  <section class="card">
+    <details class="rules">
+      <summary>Reglerne</summary>
+      <p>Der spilles med to terninger. Højeste terning er tierne, laveste er enerne: 5 og 3 er <strong>53</strong>.</p>
+      <table>
+        <tr><th>Rang</th><th>Slag</th></tr>
+        <tr><td>Højest</td><td><strong>Mexico</strong> – 2 og 1 (21). Slår alt.</td></tr>
+        <tr><td>Derefter</td><td>Par: 66, 55, 44, 33, 22, 11.</td></tr>
+        <tr><td>Lavest</td><td>Almindelige slag: 65, 64, 63, 62, 61, 54, 53, 52, 51, 43, 42, 41, 32, 31.</td></tr>
+      </table>
+      <ul>
+        <li><strong>Runden.</strong> Startspilleren slår op til 3 gange og må stoppe når som helst. Det antal slag, startspilleren bruger, er loftet for de øvrige i runden. Det sidste slag tæller.</li>
+        <li><strong>Tab.</strong> Laveste slag i runden mister ét liv. Deler flere det laveste slag, mister de alle et liv. Er rundens højeste slag Mexico, koster tabet to liv.</li>
+        <li><strong>Næste runde.</strong> Vinderen af runden (højeste slag) starter. Deler flere det højeste, starter den af dem der slog først.</li>
+        <li><strong>Slut.</strong> Spillere uden liv er ude. Sidste spiller med liv tilbage vinder. Ryger alle tilbageværende ud i samme runde, får de hver ét liv og spiller en afgørende runde.</li>
+      </ul>
+      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås.</p>
+    </details>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   Mexico – terningspil for et vilkårligt antal spillere på én telefon.
+   Alt ligger i denne fil; spillet gemmes i localStorage så en genindlæsning
+   ikke koster runden.
+   ===================================================================== */
+
+const STORE_KEY = 'mexico-spil-v1';
+const DEFAULT_ROWS = 6;      // felter der vises fra start – der kan tilføjes så mange man vil
+const MAX_ROLLS = 3;
+const LIVES_OPTIONS = [3, 4, 5, 6, 8, 10];
+const PENALTY_OPTIONS = [1, 2];
+const PIPS = {1:[4], 2:[2,6], 3:[2,4,6], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8]};
+
+const $ = id => document.getElementById(id);
+
+/* ---------- Terningværdier ---------- */
+function rollDie(){
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return (buf[0] % 6) + 1;
+}
+function makeRoll(a, b){
+  const hi = Math.max(a, b), lo = Math.min(a, b);
+  const mexico = hi === 2 && lo === 1;
+  const pair = a === b;
+  const rank = mexico ? 1000 : pair ? 100 + hi : hi * 10 + lo;
+  return {a, b, hi, lo, mexico, pair, rank};
+}
+function rollLabel(r){
+  if(r.mexico) return 'Mexico';
+  if(r.pair) return `Par ${r.hi}'ere`;
+  return String(r.hi * 10 + r.lo);
+}
+function rollShort(r){ return r.mexico ? 'MEX' : `${r.hi}${r.lo}`; }
+
+/* ---------- Tilstand ---------- */
+let game = null;          // null = opsætning
+let snapshots = [];       // tilstand ved starten af hver runde (til fortryd)
+let animating = false;
+
+function newGame(names, lives, penalty){
+  return {
+    players: names.map(n => ({name: n, lives})),
+    settings: {lives, penalty},
+    round: 0,
+    starter: 0,
+    phase: 'turn',          // 'turn' | 'result' | 'over'
+    order: [],              // spillerindeks i turrækkefølge for denne runde
+    pos: 0,                 // hvem i order der har turen
+    cap: null,              // loft for antal slag (sat af startspilleren)
+    rollsUsed: 0,
+    current: null,          // aktuelt slag for spilleren der har turen
+    results: {},            // spillerindeks -> slag
+    outcome: null,          // resultat af runden når phase = 'result'/'over'
+    log: []
+  };
+}
+function alive(){ return game.players.map((p, i) => p.lives > 0 ? i : -1).filter(i => i >= 0); }
+
+function startRound(){
+  game.round += 1;
+  const a = alive();
+  // Turrækkefølge: fra startspilleren og rundt om bordet, kun spillere med liv
+  const n = game.players.length;
+  const order = [];
+  for(let k = 0; k < n; k++){
+    const i = (game.starter + k) % n;
+    if(a.includes(i)) order.push(i);
+  }
+  game.order = order;
+  game.pos = 0;
+  game.cap = null;
+  game.rollsUsed = 0;
+  game.current = null;
+  game.results = {};
+  game.outcome = null;
+  game.phase = 'turn';
+  snapshots.length = game.round - 1;
+  snapshots.push(JSON.parse(JSON.stringify(game)));
+  save();
+  render();
+}
+
+function currentPlayer(){ return game.players[game.order[game.pos]]; }
+function isStarter(){ return game.pos === 0; }
+function rollLimit(){ return isStarter() ? MAX_ROLLS : game.cap; }
+
+function doRoll(){
+  if(animating || game.phase !== 'turn') return;
+  if(game.rollsUsed >= rollLimit()) return;
+  const r = makeRoll(rollDie(), rollDie());
+  game.rollsUsed += 1;
+  game.current = r;
+  animating = true;
+  updateTurnButtons();
+  animateDice(r, () => {
+    animating = false;
+    save();
+    render();
+    // Mexico kan ikke slås, og når loftet er nået tæller det sidste slag
+    if(r.mexico || game.rollsUsed >= rollLimit()){
+      setTimeout(stand, r.mexico ? 900 : 550);
+    }
+  });
+}
+
+function stand(){
+  if(animating || game.phase !== 'turn' || !game.current) return;
+  const idx = game.order[game.pos];
+  game.results[idx] = game.current;
+  if(isStarter()) game.cap = game.rollsUsed;
+  game.pos += 1;
+  game.rollsUsed = 0;
+  game.current = null;
+  if(game.pos >= game.order.length) finishRound();
+  else { save(); render(); }
+}
+
+function finishRound(){
+  const P = game.players;
+  const entries = game.order.map(i => ({i, r: game.results[i]}));
+  const topRank = Math.max(...entries.map(e => e.r.rank));
+  const lowRank = Math.min(...entries.map(e => e.r.rank));
+  const winner = entries.find(e => e.r.rank === topRank).i;   // først i turrækkefølgen ved delt højeste
+  const losers = entries.filter(e => e.r.rank === lowRank).map(e => e.i);
+  const mexicoOnTop = topRank === 1000;
+  const cost = mexicoOnTop ? game.settings.penalty : 1;
+
+  const before = P.map(p => p.lives);
+  losers.forEach(i => { P[i].lives = Math.max(0, P[i].lives - cost); });
+  let revived = false;
+  if(alive().length === 0){
+    // Alle tilbageværende røg ud samtidig: ét liv hver og en afgørende runde
+    game.order.forEach(i => { P[i].lives = 1; });
+    revived = true;
+  }
+  const eliminated = losers.filter(i => before[i] > 0 && P[i].lives === 0);
+
+  game.outcome = {winner, losers, cost, mexicoOnTop, eliminated, revived, topRank, lowRank};
+  game.starter = winner;
+
+  const loserNames = listNames(losers.map(i => P[i].name));
+  let line = `${loserNames} ${losers.length > 1 ? 'tabte' : 'tabte'} ${cost} liv på ${rollLabel(game.results[losers[0]])}` +
+             ` – ${P[winner].name} vandt med ${rollLabel(game.results[winner])}.`;
+  if(eliminated.length) line += ` ${listNames(eliminated.map(i => P[i].name))} er ude.`;
+  if(revived) line += ' Alle røg ud samtidig – afgørende runde med ét liv hver.';
+  game.log.unshift({round: game.round, text: line});
+
+  const a = alive();
+  game.phase = a.length <= 1 ? 'over' : 'result';
+  save();
+  render();
+}
+
+function nextRound(){
+  if(game.phase !== 'result') return;
+  startRound();
+}
+
+function undo(){
+  if(!game || animating) return;
+  // Er der ikke slået endnu i denne runde, går vi tilbage til starten af forrige runde
+  const midRound = game.phase !== 'turn' || game.pos > 0 || game.rollsUsed > 0;
+  const idx = midRound ? game.round - 1 : game.round - 2;
+  if(idx < 0 || !snapshots[idx]) { toast('Der er ikke noget at fortryde'); return; }
+  const snap = JSON.parse(JSON.stringify(snapshots[idx]));
+  snapshots.length = idx;
+  game = snap;
+  game.round -= 1;          // startRound tæller op igen
+  startRound();
+  toast(midRound ? `Runde ${game.round} startes forfra` : `Tilbage til runde ${game.round}`);
+}
+
+/* ---------- Lagring ---------- */
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify({game, snapshots})); }catch(e){}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    if(!d || !d.game || !Array.isArray(d.game.players)) return false;
+    game = d.game; snapshots = d.snapshots || [];
+    return true;
+  }catch(e){ return false; }
+}
+function clearSaved(){ try{ localStorage.removeItem(STORE_KEY); }catch(e){} }
+
+/* ---------- Terning-animation ---------- */
+function showFace(el, v){
+  el.classList.remove('blank');
+  const on = v ? PIPS[v] : [];
+  [...el.children].forEach((s, i) => s.classList.toggle('on', on.includes(i)));
+}
+function animateDice(r, done){
+  const d1 = $('die1'), d2 = $('die2');
+  $('dice').classList.remove('mexico');
+  d1.classList.add('rolling'); d2.classList.add('rolling');
+  const t0 = performance.now();
+  const tick = () => {
+    const t = performance.now() - t0;
+    if(t < 650){
+      // Kun pynt – det rigtige slag er allerede afgjort
+      showFace(d1, 1 + Math.floor(Math.random() * 6)); showFace(d2, 1 + Math.floor(Math.random() * 6));
+      setTimeout(tick, 70);
+    }else{
+      d1.classList.remove('rolling'); d2.classList.remove('rolling');
+      showFace(d1, r.a); showFace(d2, r.b);
+      if(r.mexico) $('dice').classList.add('mexico');
+      done();
+    }
+  };
+  tick();
+}
+
+/* ---------- Visning ---------- */
+function livesHtml(p){
+  const max = game.settings.lives;
+  let h = '';
+  for(let i = 0; i < max; i++) h += `<i class="${i < p.lives ? '' : 'off'}"></i>`;
+  return `<div class="lives" title="${p.lives} liv">${h}</div>`;
+}
+
+function render(){
+  const inGame = !!game;
+  $('setup').hidden = inGame;
+  $('btnMenu').hidden = !inGame;
+  $('standingsCard').hidden = !inGame;
+  $('toolsCard').hidden = !inGame;
+  $('logCard').hidden = !inGame || game.log.length === 0;
+  if(!inGame){
+    $('turnCard').hidden = true; $('resultCard').hidden = true;
+    $('subline').textContent = 'Én telefon, to terninger, seks liv. Mexico slår alt.';
+    return;
+  }
+  const P = game.players;
+  $('roundLabel').textContent = `runde ${game.round}`;
+  $('subline').textContent = `Runde ${game.round} · ${alive().length} af ${P.length} spillere er med`;
+
+  // Stilling
+  const cur = game.phase === 'turn' ? game.order[game.pos] : -1;
+  $('standings').innerHTML = P.map((p, i) => {
+    const r = game.results[i];
+    const inRound = game.order.includes(i);
+    let roll;
+    if(r) roll = `<span class="roll ${r.mexico ? 'mexico' : ''}">${rollShort(r)}</span>`;
+    else if(i === cur) roll = `<span class="roll pending">slår…</span>`;
+    else if(p.lives > 0 && inRound && game.phase === 'turn') roll = `<span class="roll pending">venter</span>`;
+    else roll = `<span class="roll pending"></span>`;
+    const tag = i === game.starter && game.phase === 'turn' ? '<span class="tag">starter</span>' : '';
+    return `<div class="prow ${i === cur ? 'current' : ''} ${p.lives <= 0 ? 'out' : ''}">
+      <span class="idx">${i + 1}</span>
+      <span class="pname">${esc(p.name)}${tag}</span>
+      ${roll}
+      ${livesHtml(p)}
+    </div>`;
+  }).join('');
+
+  // Tur / resultat
+  $('turnCard').hidden = game.phase !== 'turn';
+  $('resultCard').hidden = game.phase === 'turn';
+  if(game.phase === 'turn') renderTurn();
+  else renderResult();
+
+  // Fortryd
+  const midRound = game.phase !== 'turn' || game.pos > 0 || game.rollsUsed > 0;
+  const canUndo = midRound ? game.round >= 1 : game.round >= 2;
+  $('btnUndo').disabled = !canUndo;
+  $('undoHint').textContent = !canUndo ? 'Intet at fortryde endnu'
+    : midRound ? `Starter runde ${game.round} forfra` : `Går tilbage til runde ${game.round - 1}`;
+
+  // Log
+  $('log').innerHTML = game.log.slice(0, 12).map(l =>
+    `<li><span class="rn">R. ${l.round}</span><span>${esc(l.text)}</span></li>`).join('');
+}
+
+function renderTurn(){
+  const p = currentPlayer();
+  const starter = isStarter();
+  $('turnWho').textContent = `${p.name} har turen`;
+  $('turnCap').textContent = starter
+    ? `Startspiller · sætter loftet (op til ${MAX_ROLLS} slag)`
+    : `Loft: ${game.cap} ${game.cap === 1 ? 'slag' : 'slag'}`;
+
+  const r = game.current;
+  if(r){
+    $('valueBox').innerHTML = `<div class="big ${r.mexico ? 'mexico' : ''}">${r.mexico ? 'MEXICO!' : rollShort(r)}</div>
+      <div class="name">${r.mexico ? 'Højeste slag – kan ikke slås' : r.pair ? rollLabel(r) : ''}</div>`;
+  }else{
+    showFace($('die1'), 0); showFace($('die2'), 0);
+    $('die1').classList.add('blank'); $('die2').classList.add('blank');
+    $('dice').classList.remove('mexico');
+    $('valueBox').innerHTML = `<div class="name">${starter ? 'Slå op til 3 gange. Stopper du tidligt, må de andre heller ikke slå flere.' : 'Tryk på Slå for at rafle'}</div>`;
+  }
+
+  // Slag-indikator
+  const limit = rollLimit();
+  let ph = '';
+  for(let i = 0; i < MAX_ROLLS; i++){
+    ph += `<i class="${i < game.rollsUsed ? 'done' : i >= limit ? 'locked' : ''}"></i>`;
+  }
+  $('progress').innerHTML = ph;
+
+  updateTurnButtons();
+
+  // Note om hvad der skal slås
+  const done = game.order.slice(0, game.pos).map(i => game.results[i]);
+  if(done.length){
+    const low = done.reduce((m, x) => x.rank < m.rank ? x : m);
+    const high = done.reduce((m, x) => x.rank > m.rank ? x : m);
+    $('turnNote').textContent = `Lavest indtil nu: ${rollLabel(low)} · Højest: ${rollLabel(high)}`;
+  }else{
+    $('turnNote').textContent = '';
+  }
+}
+
+function updateTurnButtons(){
+  if(!game || game.phase !== 'turn') return;
+  const limit = rollLimit();
+  const r = game.current;
+  const canRoll = !animating && game.rollsUsed < limit && !(r && r.mexico);
+  $('btnRoll').disabled = !canRoll;
+  $('btnRoll').textContent = game.rollsUsed === 0 ? 'Slå' : `Slå igen (${game.rollsUsed + 1} af ${limit})`;
+  const showStand = !!r && !animating && game.rollsUsed < limit && !r.mexico;
+  $('btnStand').hidden = !showStand;
+  $('btnStand').textContent = r ? `Stå på ${rollShort(r)}` : 'Stå';
+}
+
+function renderResult(){
+  const P = game.players;
+  const o = game.outcome;
+  const over = game.phase === 'over';
+  $('resultTitle').textContent = over ? 'Spillet er slut' : `Runde ${game.round} er slut`;
+  $('winnerBox').hidden = !over;
+  $('btnNext').hidden = over;
+  $('btnRematch').hidden = !over;
+  if(over){
+    const a = alive();
+    if(a.length === 1){
+      $('winnerName').textContent = `${P[a[0]].name} vinder!`;
+      $('winnerSub').textContent = `Sidste spiller med liv efter ${game.round} runder`;
+    }else{
+      $('winnerName').textContent = 'Ingen vinder';
+      $('winnerSub').textContent = 'Alle er ude';
+    }
+  }
+
+  const lname = listNames(o.losers.map(i => `<strong>${esc(P[i].name)}</strong>`));
+  let s = `${lname} ${o.losers.length > 1 ? 'mister' : 'mister'} ${o.cost} liv`;
+  if(o.mexicoOnTop) s += ' – Mexico på bordet, så tabet koster dobbelt';
+  s += `. <strong>${esc(P[o.winner].name)}</strong> vandt runden${over ? '' : ' og starter næste'}.`;
+  if(o.revived) s += ' Alle tilbageværende røg ud samtidig, så de får ét liv hver og spiller en afgørende runde.';
+  $('resultSummary').innerHTML = s;
+
+  const rows = game.order.map(i => ({i, r: game.results[i]}))
+    .sort((x, y) => y.r.rank - x.r.rank || game.order.indexOf(x.i) - game.order.indexOf(y.i));
+  $('resultList').innerHTML = rows.map(e => {
+    const isWin = e.i === o.winner, isLose = o.losers.includes(e.i);
+    const out = o.eliminated.includes(e.i);
+    let badge = '';
+    if(out) badge = `<span class="badge out">ude</span>`;
+    else if(isLose) badge = `<span class="badge lose">−${o.cost} liv</span>`;
+    else if(isWin) badge = `<span class="badge win">starter</span>`;
+    const medal = isWin ? '🏆' : isLose ? '💀' : '';
+    return `<div class="rrow ${isWin ? 'win' : ''} ${isLose ? 'lose' : ''}">
+      <span class="medal">${medal}</span>
+      <span class="rname">${esc(P[e.i].name)}${e.r.pair && !e.r.mexico ? `<span class="tag">${rollLabel(e.r)}</span>` : ''}</span>
+      <span class="rval ${e.r.mexico ? 'mexico' : ''}">${e.r.mexico ? 'MEXICO' : rollShort(e.r)}</span>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
+/* ---------- Opsætning ---------- */
+let setupLives = 6, setupPenalty = 2;
+let setupNames = [];   // ét felt pr. række; tomme felter tæller ikke med når spillet startes
+
+function renderSetup(prefillNames){
+  setupNames = prefillNames && prefillNames.length ? [...prefillNames] : [];
+  while(setupNames.length < Math.max(DEFAULT_ROWS, 2)) setupNames.push('');
+  renderNameRows();
+  $('segLives').innerHTML = LIVES_OPTIONS.map(n =>
+    `<button type="button" data-v="${n}" aria-pressed="${n === setupLives}">${n}</button>`).join('');
+  $('segPenalty').innerHTML = PENALTY_OPTIONS.map(n =>
+    `<button type="button" data-v="${n}" aria-pressed="${n === setupPenalty}">${n} liv</button>`).join('');
+}
+function renderNameRows(){
+  $('nameInputs').innerHTML = setupNames.map((v, i) =>
+    `<label><span class="nr">${i + 1}</span><input type="text" maxlength="20" placeholder="Spiller ${i + 1}" value="${esc(v)}" autocomplete="off" enterkeyhint="next" data-i="${i}">` +
+    `<button type="button" class="rm" data-rm="${i}" title="Fjern felt" aria-label="Fjern spiller ${i + 1}">✕</button></label>`).join('');
+  const n = collectNames().length;
+  $('playerCount').textContent = n ? `${n} ${n === 1 ? 'spiller' : 'spillere'} med` : '';
+}
+function syncSetupNames(){
+  setupNames = [...$('nameInputs').querySelectorAll('input')].map(i => i.value);
+}
+$('btnAddPlayer').addEventListener('click', () => {
+  syncSetupNames();
+  setupNames.push('');
+  renderNameRows();
+  const inputs = $('nameInputs').querySelectorAll('input');
+  inputs[inputs.length - 1].focus();
+});
+$('nameInputs').addEventListener('click', e => {
+  const b = e.target.closest('button.rm'); if(!b) return;
+  syncSetupNames();
+  if(setupNames.length <= 2){ toast('Der skal være mindst to felter'); return; }
+  setupNames.splice(+b.dataset.rm, 1);
+  renderNameRows();
+});
+$('nameInputs').addEventListener('input', () => {
+  const n = collectNames().length;
+  $('playerCount').textContent = n ? `${n} ${n === 1 ? 'spiller' : 'spillere'} med` : '';
+});
+$('segLives').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  setupLives = +b.dataset.v; renderSetupSeg();
+});
+$('segPenalty').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  setupPenalty = +b.dataset.v; renderSetupSeg();
+});
+function renderSetupSeg(){
+  [...$('segLives').children].forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === setupLives));
+  [...$('segPenalty').children].forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === setupPenalty));
+}
+$('nameInputs').addEventListener('keydown', e => {
+  if(e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  const inputs = [...$('nameInputs').querySelectorAll('input')];
+  const i = inputs.indexOf(e.target);
+  e.preventDefault();
+  if(i >= 0 && i < inputs.length - 1){ inputs[i + 1].focus(); return; }
+  // Enter i sidste felt: tilføj et nyt felt hvis der stod noget, ellers start spillet
+  if(e.target.value.trim()) $('btnAddPlayer').click(); else $('btnStart').click();
+});
+
+function collectNames(){
+  return [...$('nameInputs').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
+}
+$('btnStart').addEventListener('click', () => {
+  syncSetupNames();
+  const names = collectNames();
+  if(names.length < 2){ $('setupError').textContent = 'Der skal mindst to spillere til.'; return; }
+  $('setupError').textContent = '';
+  game = newGame(names, setupLives, setupPenalty);
+  snapshots = [];
+  startRound();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+});
+
+$('btnMenu').addEventListener('click', () => {
+  if(game && game.phase !== 'over' && !confirm('Afslutte det igangværende spil og starte forfra?')) return;
+  const names = game ? game.players.map(p => p.name) : null;
+  if(game){ setupLives = game.settings.lives; setupPenalty = game.settings.penalty; }
+  game = null; snapshots = []; clearSaved();
+  renderSetup(names);
+  render();
+});
+$('btnRematch').addEventListener('click', () => {
+  const names = game.players.map(p => p.name);
+  const {lives, penalty} = game.settings;
+  // Vinderen starter det nye spil
+  const a = alive();
+  game = newGame(names, lives, penalty);
+  game.starter = a.length === 1 ? a[0] : 0;
+  snapshots = [];
+  startRound();
+  toast('Nyt spil – samme spillere');
+});
+
+$('btnRoll').addEventListener('click', doRoll);
+$('btnStand').addEventListener('click', stand);
+$('btnNext').addEventListener('click', nextRound);
+$('btnUndo').addEventListener('click', undo);
+
+document.addEventListener('keydown', e => {
+  if(!game || e.target.tagName === 'INPUT') return;
+  if(e.key === ' ' || e.key === 'Enter'){
+    if(game.phase === 'turn'){ if(!$('btnRoll').disabled){ doRoll(); e.preventDefault(); } }
+    else if(game.phase === 'result'){ nextRound(); e.preventDefault(); }
+  }else if(e.key.toLowerCase() === 's' && game.phase === 'turn' && !$('btnStand').hidden){
+    stand();
+  }
+});
+
+/* ---------- Hjælpere ---------- */
+function listNames(arr){ return arr.length <= 1 ? arr.join('') : arr.slice(0, -1).join(', ') + ' og ' + arr[arr.length - 1]; }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+let toastTimer;
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---------- Start ---------- */
+renderSetup(null);
+if(load()){
+  if(game.phase === 'turn' && game.current && !game.results[game.order[game.pos]]){
+    // Vis det slag der lå på bordet da siden blev lukket
+    showFace($('die1'), game.current.a); showFace($('die2'), game.current.b);
+  }
+  render();
+  if(game.current){ showFace($('die1'), game.current.a); showFace($('die2'), game.current.b); if(game.current.mexico) $('dice').classList.add('mexico'); }
+}else{
+  render();
+}
+</script>
+</body>
+</html>
