@@ -17,6 +17,7 @@
   --gold:#b8860b; --gold-bg:#fff7dc; --gold-line:#e5c765;
   --pair:#6d28d9; --pair-bg:#efe7fd;
   --danger:#b91c1c; --danger-bg:#fee2e2; --danger-fg:#991b1b;
+  --warn:#c2410c;
   --win-bg:#e8f4ee; --win-fg:#0d5c3f;
   --life:#c2410c; --life-off:#e5e9e6;
   --die-bg:#fffdf5; --die-pip:#1a1a1a; --die-line:#d9d2b8;
@@ -33,6 +34,7 @@
     --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
     --pair:#c4b0ff; --pair-bg:#251b3d;
     --danger:#f08a8a; --danger-bg:#3b1a1a; --danger-fg:#f7b4b4;
+    --warn:#e0733a;
     --win-bg:#172b23; --win-fg:#8fd4b4;
     --life:#f0a172; --life-off:#2b3a33;
     --die-bg:#f3efe0; --die-pip:#141414; --die-line:#b8b09a;
@@ -48,6 +50,7 @@
   --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
     --pair:#c4b0ff; --pair-bg:#251b3d;
   --danger:#f08a8a; --danger-bg:#3b1a1a; --danger-fg:#f7b4b4;
+    --warn:#e0733a;
   --win-bg:#172b23; --win-fg:#8fd4b4;
   --life:#f0a172; --life-off:#2b3a33;
   --die-bg:#f3efe0; --die-pip:#141414; --die-line:#b8b09a;
@@ -191,6 +194,7 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 .shout span{display:inline-block;font-size:clamp(2.4rem,13vw,4.6rem);font-weight:900;letter-spacing:.02em;color:#fff;padding:.18em .5em;border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.35);animation:shout 1.7s cubic-bezier(.2,.9,.3,1.2) forwards}
 .shout.mexico span{background:var(--gold)}
 .shout.ohno span{background:var(--danger)}
+.shout.notgood span{background:var(--warn);font-size:clamp(2rem,10vw,3.6rem)}
 @keyframes shout{0%{opacity:0;transform:scale(.4) rotate(-8deg)}15%{opacity:1;transform:scale(1.08) rotate(2deg)}25%{transform:scale(1) rotate(-1deg)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
 @media (prefers-reduced-motion: reduce){.shout span{animation-duration:1.2s}.die.rolling{animation:none}}
 .badge{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
@@ -372,7 +376,7 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Næste runde.</strong> Vinderen af runden (højeste slag) starter. Deler flere det højeste, starter den af dem der slog først.</li>
         <li><strong>Slut.</strong> Spillere uden liv er ude. Sidste spiller med liv tilbage vinder. Ryger alle tilbageværende ud i samme runde, får de hver ét liv og spiller en afgørende runde.</li>
       </ul>
-      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås. Par lyser lilla, og der råbes <em>Ecuador!</em> ved Mexico og <em>Ohh no!</em> ved 31. Raflelyd og udbrud slås til og fra med højttaler-knappen øverst.</p>
+      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås. Par lyser lilla, og der råbes <em>Ecuadooooooor!</em> ved Mexico, <em>Ohh no!</em> ved 31 og <em>Not good</em> ved 32. Raflelyd og udbrud slås til og fra med højttaler-knappen øverst.</p>
     </details>
   </section>
 
@@ -951,10 +955,20 @@ const Sound = {
     o.connect(g).connect(c.destination); o.start(at); o.stop(at + dur + 0.05);
   },
   // Mexico: stigende fanfare
-  fanfare(){
+  fanfare(delay){
+    const c = this.ensure(); if(!c) return;
+    const t = c.currentTime + (delay || 0.05);
+    [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.38]].forEach(([f, d]) => this.tone(f, t + d, 0.35, 'square', 0.1));
+  },
+  // 32: kort, lavt brum
+  grumble(){
     const c = this.ensure(); if(!c) return;
     const t = c.currentTime + 0.05;
-    [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.38]].forEach(([f, d]) => this.tone(f, t + d, 0.35, 'square', 0.18));
+    const o = c.createOscillator(); o.type = 'sawtooth';
+    o.frequency.setValueAtTime(220, t); o.frequency.linearRampToValueAtTime(150, t + 0.45);
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500;
+    const g = c.createGain(); g.gain.setValueAtTime(0.14, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    o.connect(lp).connect(g).connect(c.destination); o.start(t); o.stop(t + 0.55);
   },
   // 31: faldende wah-wah
   wahwah(){
@@ -1007,8 +1021,16 @@ function shout(text, cls){
 }
 // Udbrud når terningerne er landet: Ecuador ved Mexico, Ohh no ved 31
 function celebrate(r){
-  if(r.mexico){ shout('ECUADOR!', 'mexico'); Sound.fanfare(); Sound.say('Ecuador!', 'da-DK', 1.3, 0.95); }
-  else if(r.hi === 3 && r.lo === 1){ shout('OHH NO!', 'ohno'); Sound.wahwah(); Sound.say('Ohh no', 'en-US', 0.6, 0.8); }
+  if(r.mexico){
+    // Råbet først og alene, så det ikke drukner i fanfaren – langsomt og trukket ud
+    shout('ECUADOR!', 'mexico');
+    Sound.say('Ecuadooooooor!', 'da-DK', 1.2, 0.7);
+    Sound.fanfare(1.8);
+  }else if(r.hi === 3 && r.lo === 1){
+    shout('OHH NO!', 'ohno'); Sound.wahwah(); Sound.say('Ohh no', 'en-US', 0.6, 0.8);
+  }else if(r.hi === 3 && r.lo === 2){
+    shout('NOT GOOD', 'notgood'); Sound.grumble(); Sound.say('Not good', 'en-US', 0.7, 0.85);
+  }
 }
 
 /* ---------- Historik på tværs af spil ---------- */

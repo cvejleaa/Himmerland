@@ -71,8 +71,8 @@ alt. Rundeforløbet i det igangværende spil viser alle runder med *Vis alle* n�
 
 Par lyser lilla med et *PAR*-mærke på terningerne, i turkortet, i stillingen og i resultatet, så de
 ikke forveksles med almindelige slag. Der er raflelyd når der slås (lavet med Web Audio, ingen
-lydfiler), og udbrud på skærmen og via telefonens talesyntese: **Ecuador!** ved Mexico og
-**Ohh no!** ved 31. Højttaler-knappen øverst slår lyd og råb til og fra, og valget huskes.
+lydfiler), og udbrud på skærmen og via telefonens talesyntese: **Ecuadooooooor!** ved Mexico (råbt langsomt og
+trukket ud, med fanfaren bagefter), **Ohh no!** ved 31 og **Not good** ved 32. Højttaler-knappen øverst slår lyd og råb til og fra, og valget huskes.
 
 ## Kørsel lokalt
 
