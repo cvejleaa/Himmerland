@@ -17,6 +17,7 @@
   --gold:#b8860b; --gold-bg:#fff7dc; --gold-line:#e5c765;
   --pair:#6d28d9; --pair-bg:#efe7fd;
   --danger:#b91c1c; --danger-bg:#fee2e2; --danger-fg:#991b1b;
+  --warn:#c2410c;
   --win-bg:#e8f4ee; --win-fg:#0d5c3f;
   --life:#c2410c; --life-off:#e5e9e6;
   --die-bg:#fffdf5; --die-pip:#1a1a1a; --die-line:#d9d2b8;
@@ -33,6 +34,7 @@
     --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
     --pair:#c4b0ff; --pair-bg:#251b3d;
     --danger:#f08a8a; --danger-bg:#3b1a1a; --danger-fg:#f7b4b4;
+    --warn:#e0733a;
     --win-bg:#172b23; --win-fg:#8fd4b4;
     --life:#f0a172; --life-off:#2b3a33;
     --die-bg:#f3efe0; --die-pip:#141414; --die-line:#b8b09a;
@@ -48,6 +50,7 @@
   --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
     --pair:#c4b0ff; --pair-bg:#251b3d;
   --danger:#f08a8a; --danger-bg:#3b1a1a; --danger-fg:#f7b4b4;
+    --warn:#e0733a;
   --win-bg:#172b23; --win-fg:#8fd4b4;
   --life:#f0a172; --life-off:#2b3a33;
   --die-bg:#f3efe0; --die-pip:#141414; --die-line:#b8b09a;
@@ -191,6 +194,7 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 .shout span{display:inline-block;font-size:clamp(2.4rem,13vw,4.6rem);font-weight:900;letter-spacing:.02em;color:#fff;padding:.18em .5em;border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.35);animation:shout 1.7s cubic-bezier(.2,.9,.3,1.2) forwards}
 .shout.mexico span{background:var(--gold)}
 .shout.ohno span{background:var(--danger)}
+.shout.notgood span{background:var(--warn);font-size:clamp(2rem,10vw,3.6rem)}
 @keyframes shout{0%{opacity:0;transform:scale(.4) rotate(-8deg)}15%{opacity:1;transform:scale(1.08) rotate(2deg)}25%{transform:scale(1) rotate(-1deg)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
 @media (prefers-reduced-motion: reduce){.shout span{animation-duration:1.2s}.die.rolling{animation:none}}
 .badge{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
@@ -210,6 +214,21 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 .log li{padding:6px 0;border-top:1px solid var(--line);display:flex;gap:8px}
 .log li:first-child{border-top:0}
 .log li .rn{color:var(--muted);flex:0 0 3.4rem;font-variant-numeric:tabular-nums}
+
+/* ---------- Historik ---------- */
+.subh{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 4px;font-weight:600}
+.hist-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.hist-table th,.hist-table td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.hist-table th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.hist-table td.num,.hist-table th.num{text-align:right;font-variant-numeric:tabular-nums}
+.hist-table tr.top td{font-weight:700}
+.hist-game{padding:8px 0;border-top:1px solid var(--line)}
+.hist-game:first-child{border-top:0}
+.hg-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.hg-when{color:var(--muted);font-size:.8rem}
+.hg-win{font-weight:700}
+.hg-players{font-size:.82rem;color:var(--muted);margin-top:2px}
+.log li.more{border-top:0;padding-top:2px}
 
 /* ---------- Regler ---------- */
 details summary{cursor:pointer;font-weight:600}
@@ -323,6 +342,23 @@ details summary{cursor:pointer;font-weight:600}
     <ul class="log" id="log"></ul>
   </section>
 
+  <!-- ===== Historik ===== -->
+  <section class="card" id="historyCard">
+    <details id="historyDetails">
+      <summary>Historik <span class="hint" id="historyHint"></span></summary>
+      <p class="muted" id="historyEmpty" style="margin:8px 0 0">Ingen færdige spil endnu. Historikken gemmes på denne telefon.</p>
+      <div id="historyBody" hidden>
+        <h3 class="subh">Sejre</h3>
+        <table class="hist-table" id="leaderboard"></table>
+        <h3 class="subh">Spil</h3>
+        <div id="historyGames"></div>
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn ghost danger" id="btnClearHistory" type="button">Ryd historik</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
   <!-- ===== Regler ===== -->
   <section class="card">
     <details class="rules">
@@ -340,7 +376,7 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Næste runde.</strong> Vinderen af runden (højeste slag) starter. Deler flere det højeste, starter den af dem der slog først.</li>
         <li><strong>Slut.</strong> Spillere uden liv er ude. Sidste spiller med liv tilbage vinder. Ryger alle tilbageværende ud i samme runde, får de hver ét liv og spiller en afgørende runde.</li>
       </ul>
-      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås. Par lyser lilla, og der råbes <em>Ecuador!</em> ved Mexico og <em>Ohh no!</em> ved 31. Raflelyd og udbrud slås til og fra med højttaler-knappen øverst.</p>
+      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås. Par lyser lilla, og der råbes <em>Ecuadooooooor!</em> ved Mexico, <em>Ohh no!</em> ved 31 og <em>Not good</em> ved 32. Raflelyd og udbrud slås til og fra med højttaler-knappen øverst.</p>
     </details>
   </section>
 
@@ -357,6 +393,8 @@ details summary{cursor:pointer;font-weight:600}
    ===================================================================== */
 
 const STORE_KEY = 'mexico-spil-v1';
+const HISTORY_KEY = 'mexico-historik-v1';
+const LOG_PREVIEW = 8;        // runder der vises i rundeforløbet før 'Vis alle'
 const DEFAULT_ROWS = 6;      // felter der vises fra start – der kan tilføjes så mange man vil
 const MAX_ROLLS = 3;
 const MIN_CAP = 2;            // de øvrige må altid slå mindst 2 gange, uanset startspilleren
@@ -390,6 +428,7 @@ function rollShort(r){ return r.mexico ? 'MEX' : `${r.hi}${r.lo}`; }
 let game = null;          // null = opsætning
 let snapshots = [];       // tilstand ved starten af hver runde (til fortryd)
 let animating = false;
+let logExpanded = false;
 
 function newGame(names, lives, penalty){
   return {
@@ -491,6 +530,7 @@ function finishRound(){
     revived = true;
   }
   const eliminated = losers.filter(i => before[i] > 0 && P[i].lives === 0);
+  eliminated.forEach(i => { P[i].outRound = game.round; });
 
   game.outcome = {winner, losers, cost, mexicoOnTop, eliminated, revived, topRank, lowRank};
   game.starter = winner;
@@ -504,6 +544,7 @@ function finishRound(){
 
   const a = alive();
   game.phase = a.length <= 1 ? 'over' : 'result';
+  if(game.phase === 'over'){ recordGame(); $('historyDetails').open = true; }
   save();
   render();
 }
@@ -519,6 +560,7 @@ function undo(){
   const midRound = game.phase !== 'turn' || game.pos > 0 || game.rollsUsed > 0;
   const idx = midRound ? game.round - 1 : game.round - 2;
   if(idx < 0 || !snapshots[idx]) { toast('Der er ikke noget at fortryde'); return; }
+  forgetRecordedGame();
   const snap = JSON.parse(JSON.stringify(snapshots[idx]));
   snapshots.length = idx;
   game = snap;
@@ -581,6 +623,7 @@ function livesHtml(p){
 
 function render(){
   const inGame = !!game;
+  renderHistory();
   $('setup').hidden = inGame;
   $('btnMenu').hidden = !inGame;
   $('standingsCard').hidden = !inGame;
@@ -627,10 +670,18 @@ function render(){
   $('undoHint').textContent = !canUndo ? 'Intet at fortryde endnu'
     : midRound ? `Starter runde ${game.round} forfra` : `Går tilbage til runde ${game.round - 1}`;
 
-  // Log
-  $('log').innerHTML = game.log.slice(0, 12).map(l =>
-    `<li><span class="rn">R. ${l.round}</span><span>${esc(l.text)}</span></li>`).join('');
+  // Rundeforløb – alle runder, de seneste øverst
+  const showAll = logExpanded || game.log.length <= LOG_PREVIEW;
+  const items = showAll ? game.log : game.log.slice(0, LOG_PREVIEW);
+  let lh = items.map(l => `<li><span class="rn">R. ${l.round}</span><span>${esc(l.text)}</span></li>`).join('');
+  if(game.log.length > LOG_PREVIEW){
+    lh += `<li class="more"><button class="btn ghost showall" type="button">${logExpanded ? 'Vis kun de seneste' : `Vis alle ${game.log.length} runder`}</button></li>`;
+  }
+  $('log').innerHTML = lh;
 }
+$('log').addEventListener('click', e => {
+  if(e.target.closest('button.showall')){ logExpanded = !logExpanded; render(); }
+});
 
 function renderTurn(){
   const p = currentPlayer();
@@ -803,6 +854,8 @@ $('btnStart').addEventListener('click', () => {
   $('setupError').textContent = '';
   game = newGame(names, setupLives, setupPenalty);
   snapshots = [];
+  logExpanded = false;
+  $('historyDetails').open = false;
   startRound();
   window.scrollTo({top: 0, behavior: 'smooth'});
 });
@@ -813,6 +866,7 @@ $('btnMenu').addEventListener('click', () => {
   if(game){ setupLives = game.settings.lives; setupPenalty = game.settings.penalty; }
   game = null; snapshots = []; clearSaved();
   renderSetup(names);
+  $('historyDetails').open = true;
   render();
 });
 $('btnRematch').addEventListener('click', () => {
@@ -823,6 +877,8 @@ $('btnRematch').addEventListener('click', () => {
   game = newGame(names, lives, penalty);
   game.starter = a.length === 1 ? a[0] : 0;
   snapshots = [];
+  logExpanded = false;
+  $('historyDetails').open = false;
   startRound();
   toast('Nyt spil – samme spillere');
 });
@@ -899,10 +955,20 @@ const Sound = {
     o.connect(g).connect(c.destination); o.start(at); o.stop(at + dur + 0.05);
   },
   // Mexico: stigende fanfare
-  fanfare(){
+  fanfare(delay){
+    const c = this.ensure(); if(!c) return;
+    const t = c.currentTime + (delay || 0.05);
+    [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.38]].forEach(([f, d]) => this.tone(f, t + d, 0.35, 'square', 0.1));
+  },
+  // 32: kort, lavt brum
+  grumble(){
     const c = this.ensure(); if(!c) return;
     const t = c.currentTime + 0.05;
-    [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.38]].forEach(([f, d]) => this.tone(f, t + d, 0.35, 'square', 0.18));
+    const o = c.createOscillator(); o.type = 'sawtooth';
+    o.frequency.setValueAtTime(220, t); o.frequency.linearRampToValueAtTime(150, t + 0.45);
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500;
+    const g = c.createGain(); g.gain.setValueAtTime(0.14, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    o.connect(lp).connect(g).connect(c.destination); o.start(t); o.stop(t + 0.55);
   },
   // 31: faldende wah-wah
   wahwah(){
@@ -955,9 +1021,98 @@ function shout(text, cls){
 }
 // Udbrud når terningerne er landet: Ecuador ved Mexico, Ohh no ved 31
 function celebrate(r){
-  if(r.mexico){ shout('ECUADOR!', 'mexico'); Sound.fanfare(); Sound.say('Ecuador!', 'da-DK', 1.3, 0.95); }
-  else if(r.hi === 3 && r.lo === 1){ shout('OHH NO!', 'ohno'); Sound.wahwah(); Sound.say('Ohh no', 'en-US', 0.6, 0.8); }
+  if(r.mexico){
+    // Råbet først og alene, så det ikke drukner i fanfaren – langsomt og trukket ud
+    shout('ECUADOR!', 'mexico');
+    Sound.say('Ecuadooooooor!', 'da-DK', 1.2, 0.7);
+    Sound.fanfare(1.8);
+  }else if(r.hi === 3 && r.lo === 1){
+    shout('OHH NO!', 'ohno'); Sound.wahwah(); Sound.say('Ohh no', 'en-US', 0.6, 0.8);
+  }else if(r.hi === 3 && r.lo === 2){
+    shout('NOT GOOD', 'notgood'); Sound.grumble(); Sound.say('Not good', 'en-US', 0.7, 0.85);
+  }
 }
+
+/* ---------- Historik på tværs af spil ---------- */
+let history = loadHistory();
+function loadHistory(){
+  try{ const d = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); return Array.isArray(d) ? d : []; }catch(e){ return []; }
+}
+function saveHistory(){ try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); }catch(e){} }
+// Gemmer det færdige spil én gang; fortrydes den sidste runde, fjernes det igen
+function recordGame(){
+  if(game.historyId) return;
+  const a = alive();
+  const entry = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    endedAt: new Date().toISOString(),
+    rounds: game.round,
+    winner: a.length === 1 ? game.players[a[0]].name : null,
+    players: game.players.map(p => ({name: p.name, lives: p.lives, outRound: p.outRound ?? null}))
+  };
+  history.unshift(entry);
+  if(history.length > 200) history.length = 200;
+  saveHistory();
+  game.historyId = entry.id;
+}
+function forgetRecordedGame(){
+  if(!game || !game.historyId) return;
+  history = history.filter(h => h.id !== game.historyId);
+  saveHistory();
+  game.historyId = null;
+}
+// Vinderen først, derefter dem der røg ud senest
+function placements(h){
+  return [...h.players].sort((x, y) => {
+    if(x.name === h.winner) return -1;
+    if(y.name === h.winner) return 1;
+    return (y.outRound ?? 0) - (x.outRound ?? 0) || y.lives - x.lives;
+  });
+}
+function fmtWhen(iso){
+  const d = new Date(iso); if(isNaN(d)) return '';
+  const opts = {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'};
+  if(d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+  return d.toLocaleString('da-DK', opts);
+}
+function renderHistory(){
+  const n = history.length;
+  $('historyHint').textContent = n ? `${n} spil` : '';
+  $('historyEmpty').hidden = n > 0;
+  $('historyBody').hidden = n === 0;
+  if(!n) return;
+  // Sejrsliste pr. navn
+  const stats = new Map();
+  history.forEach(h => h.players.forEach(p => {
+    const st = stats.get(p.name) || {name: p.name, wins: 0, games: 0};
+    st.games += 1; if(p.name === h.winner) st.wins += 1;
+    stats.set(p.name, st);
+  }));
+  const rows = [...stats.values()].sort((a, b) => b.wins - a.wins || a.games - b.games || a.name.localeCompare(b.name, 'da'));
+  $('leaderboard').innerHTML = '<tr><th>Spiller</th><th class="num">Sejre</th><th class="num">Spil</th><th class="num">Andel</th></tr>' +
+    rows.map((r, i) => {
+      const top = i === 0 && r.wins > 0;
+      return `<tr class="${top ? 'top' : ''}"><td>${top ? '🏆 ' : ''}${esc(r.name)}</td><td class="num">${r.wins}</td><td class="num">${r.games}</td><td class="num">${Math.round(100 * r.wins / r.games)} %</td></tr>`;
+    }).join('');
+  // Spil, nyeste øverst
+  $('historyGames').innerHTML = history.map(h => {
+    const rest = placements(h).filter(p => p.name !== h.winner).map((p, i) => `${i + 2}. ${esc(p.name)}`).join(' · ');
+    return `<div class="hist-game">
+      <div class="hg-head">
+        <span class="hg-win">${h.winner ? '🏆 ' + esc(h.winner) + ' vandt' : 'Ingen vinder'}</span>
+        <span class="hg-when">${esc(fmtWhen(h.endedAt))} · ${h.rounds} ${h.rounds === 1 ? 'runde' : 'runder'} · ${h.players.length} spillere</span>
+      </div>
+      <div class="hg-players">${rest}</div>
+    </div>`;
+  }).join('');
+}
+$('btnClearHistory').addEventListener('click', () => {
+  if(!confirm('Slette hele historikken på denne telefon?')) return;
+  history = []; saveHistory();
+  if(game) game.historyId = null;
+  renderHistory();
+  toast('Historikken er ryddet');
+});
 
 /* ---------- Hjælpere ---------- */
 function listNames(arr){ return arr.length <= 1 ? arr.join('') : arr.slice(0, -1).join(', ') + ' og ' + arr[arr.length - 1]; }
@@ -971,6 +1126,7 @@ function toast(msg){
 /* ---------- Start ---------- */
 renderSoundButton();
 renderSetup(null);
+try{ $('historyDetails').open = !localStorage.getItem(STORE_KEY); }catch(e){ $('historyDetails').open = true; }
 if(load()){
   if(game.phase === 'turn' && game.current && !game.results[game.order[game.pos]]){
     // Vis det slag der lå på bordet da siden blev lukket
