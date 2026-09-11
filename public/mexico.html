@@ -810,7 +810,7 @@ function renderResult(){
   $('resultTitle').textContent = over ? 'Spillet er slut' : `Runde ${game.round} er slut`;
   $('winnerBox').hidden = !over;
   $('podiumBox').hidden = !over;
-  if(over) $('podiumBox').innerHTML = podiumHtml() + statsHtml();
+  if(over) $('podiumBox').innerHTML = '<div class="podium">' + podiumHtml() + '</div>' + statsHtml();
   $('btnNext').hidden = over;
   $('btnRematch').hidden = !over;
   if(over){
@@ -1422,7 +1422,7 @@ function placementsNow(){
 function podiumHtml(){
   const P = game.players, pl = placementsNow();
   const step = (i, cls, medal) => i == null ? '' : `<div class="step ${cls}"><div class="medal">${medal}</div><div class="pn">${esc(P[i].name)}</div></div>`;
-  return `<div class="podium">${step(pl[1], 'p2', '🥈')}${step(pl[0], 'p1', '🥇')}${step(pl[2], 'p3', '🥉')}</div>`;
+  return step(pl[1], 'p2', '🥈') + step(pl[0], 'p1', '🥇') + step(pl[2], 'p3', '🥉');
 }
 function statsHtml(){
   const P = game.players, pl = placementsNow();
