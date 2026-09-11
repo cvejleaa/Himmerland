@@ -64,6 +64,11 @@ igangværende spil gemmes i browseren så en genindlæsning ikke koster runden. 
 Liv pr. spiller vælges under opsætningen (standard 6). *Fortryd* starter den aktuelle runde forfra
 eller går en runde tilbage, og *Nyt spil med samme spillere* lader vinderen starte.
 
+**Historik** gemmes på telefonen: hvert færdigt spil med tidspunkt, vinder, antal runder og
+placeringer (rækkefølgen spillerne røg ud i), samt en sejrsliste pr. spiller med sejre, spil og
+andel. Fortrydes den sidste runde, fjernes spillet fra historikken igen. *Ryd historik* sletter
+alt. Rundeforløbet i det igangværende spil viser alle runder med *Vis alle* når der er mange.
+
 Par lyser lilla med et *PAR*-mærke på terningerne, i turkortet, i stillingen og i resultatet, så de
 ikke forveksles med almindelige slag. Der er raflelyd når der slås (lavet med Web Audio, ingen
 lydfiler), og udbrud på skærmen og via telefonens talesyntese: **Ecuador!** ved Mexico og
