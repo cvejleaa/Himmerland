@@ -72,8 +72,9 @@ Mexico'er, første ud). Et tryk på skærmen springer fejringen over. Podiet og 
 resultatkortet, og historikken viser sølv og bronze.
 
 **Historik** gemmes på telefonen: hvert færdigt spil med tidspunkt, vinder, antal runder og
-placeringer (rækkefølgen spillerne røg ud i), samt en sejrsliste pr. spiller med sejre, spil og
-andel. Fortrydes den sidste runde, fjernes spillet fra historikken igen. *Ryd historik* sletter
+placeringer (rækkefølgen spillerne røg ud i), samt en samlet rangliste: hver placering giver lige så mange point som
+placeringen (1. plads 1 point, 5. plads 5 point), og færrest point fører. Ved siden af står antal spil,
+gennemsnitsplacering og sejre. Ryger flere ud i samme runde, deler de placeringen. Fortrydes den sidste runde, fjernes spillet fra historikken igen. *Ryd historik* sletter
 alt. Rundeforløbet i det igangværende spil viser alle runder med *Vis alle* når der er mange.
 
 Par lyser lilla med et *PAR*-mærke på terningerne, i turkortet, i stillingen og i resultatet, så de

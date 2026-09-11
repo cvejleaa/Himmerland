@@ -218,6 +218,7 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 
 /* ---------- Historik ---------- */
 .subh{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 4px;font-weight:600}
+.subh .hint{text-transform:none;letter-spacing:0;font-weight:400;margin-left:6px}
 .hist-table{width:100%;border-collapse:collapse;font-size:.85rem}
 .hist-table th,.hist-table td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:top}
 .hist-table th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
@@ -384,7 +385,7 @@ details summary{cursor:pointer;font-weight:600}
       <summary>Historik <span class="hint" id="historyHint"></span></summary>
       <p class="muted" id="historyEmpty" style="margin:8px 0 0">Ingen færdige spil endnu. Historikken gemmes på denne telefon.</p>
       <div id="historyBody" hidden>
-        <h3 class="subh">Sejre</h3>
+        <h3 class="subh">Rangliste <span class="hint">placering = point · færrest fører</span></h3>
         <table class="hist-table" id="leaderboard"></table>
         <h3 class="subh">Spil</h3>
         <div id="historyGames"></div>
@@ -1506,6 +1507,19 @@ function placements(h){
     return (y.outRound ?? 0) - (x.outRound ?? 0) || y.lives - x.lives;
   });
 }
+// Placering pr. spiller i et færdigt spil: vinderen er 1, derefter dem der røg ud senest.
+// Ryger flere ud i samme runde, deler de placeringen, og den næste springer tilsvarende.
+function gameRanks(h){
+  const pl = placements(h);
+  const ranks = new Map(); let rank = 1;
+  pl.forEach((p, i) => {
+    const prev = pl[i - 1];
+    const shared = i >= 2 && prev.name !== h.winner && (prev.outRound ?? 0) === (p.outRound ?? 0) && prev.lives === p.lives;
+    if(!shared) rank = i + 1;
+    ranks.set(p.name, rank);
+  });
+  return ranks;
+}
 function fmtWhen(iso){
   const d = new Date(iso); if(isNaN(d)) return '';
   const opts = {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'};
@@ -1518,18 +1532,22 @@ function renderHistory(){
   $('historyEmpty').hidden = n > 0;
   $('historyBody').hidden = n === 0;
   if(!n) return;
-  // Sejrsliste pr. navn
+  // Rangliste på tværs af spil: hver placering giver lige så mange point som placeringen,
+  // og færrest point fører. Ved lige point vinder flest sejre, så laveste snit.
   const stats = new Map();
-  history.forEach(h => h.players.forEach(p => {
-    const st = stats.get(p.name) || {name: p.name, wins: 0, games: 0};
-    st.games += 1; if(p.name === h.winner) st.wins += 1;
-    stats.set(p.name, st);
-  }));
-  const rows = [...stats.values()].sort((a, b) => b.wins - a.wins || a.games - b.games || a.name.localeCompare(b.name, 'da'));
-  $('leaderboard').innerHTML = '<tr><th>Spiller</th><th class="num">Sejre</th><th class="num">Spil</th><th class="num">Andel</th></tr>' +
+  history.forEach(h => {
+    const ranks = gameRanks(h);
+    h.players.forEach(p => {
+      const st = stats.get(p.name) || {name: p.name, points: 0, games: 0, wins: 0};
+      st.games += 1; st.points += ranks.get(p.name) || h.players.length; if(p.name === h.winner) st.wins += 1;
+      stats.set(p.name, st);
+    });
+  });
+  const rows = [...stats.values()].sort((a, b) => a.points - b.points || b.wins - a.wins || (a.points / a.games) - (b.points / b.games) || a.name.localeCompare(b.name, 'da'));
+  $('leaderboard').innerHTML = '<tr><th>Spiller</th><th class="num">Point</th><th class="num">Spil</th><th class="num">Snit</th><th class="num">Sejre</th></tr>' +
     rows.map((r, i) => {
-      const top = i === 0 && r.wins > 0;
-      return `<tr class="${top ? 'top' : ''}"><td>${top ? '🏆 ' : ''}${esc(r.name)}</td><td class="num">${r.wins}</td><td class="num">${r.games}</td><td class="num">${Math.round(100 * r.wins / r.games)} %</td></tr>`;
+      const top = i === 0;
+      return `<tr class="${top ? 'top' : ''}"><td>${top ? '👑 ' : ''}${esc(r.name)}</td><td class="num">${r.points}</td><td class="num">${r.games}</td><td class="num">${(r.points / r.games).toFixed(1).replace('.', ',')}</td><td class="num">${r.wins}</td></tr>`;
     }).join('');
   // Spil, nyeste øverst
   $('historyGames').innerHTML = history.map(h => {
