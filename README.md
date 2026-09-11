@@ -64,6 +64,11 @@ igangværende spil gemmes i browseren så en genindlæsning ikke koster runden. 
 Liv pr. spiller vælges under opsætningen (standard 6). *Fortryd* starter den aktuelle runde forfra
 eller går en runde tilbage, og *Nyt spil med samme spillere* lader vinderen starte.
 
+Par lyser lilla med et *PAR*-mærke på terningerne, i turkortet, i stillingen og i resultatet, så de
+ikke forveksles med almindelige slag. Der er raflelyd når der slås (lavet med Web Audio, ingen
+lydfiler), og udbrud på skærmen og via telefonens talesyntese: **Ecuador!** ved Mexico og
+**Ohh no!** ved 31. Højttaler-knappen øverst slår lyd og råb til og fra, og valget huskes.
+
 ## Kørsel lokalt
 
 Åbn `public/index.html` direkte i en browser, eller server mappen:

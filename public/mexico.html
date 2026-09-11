@@ -15,6 +15,7 @@
   --ink:#16241d; --muted:#5d6f66;
   --line:#d8e2db; --card:#fff; --bg:#f2f6f3;
   --gold:#b8860b; --gold-bg:#fff7dc; --gold-line:#e5c765;
+  --pair:#6d28d9; --pair-bg:#efe7fd;
   --danger:#b91c1c; --danger-bg:#fee2e2; --danger-fg:#991b1b;
   --win-bg:#e8f4ee; --win-fg:#0d5c3f;
   --life:#c2410c; --life-off:#e5e9e6;
@@ -30,6 +31,7 @@
     --ink:#e6efe9; --muted:#93a89e;
     --line:#2b3a33; --card:#16211c; --bg:#0e1613;
     --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
+    --pair:#c4b0ff; --pair-bg:#251b3d;
     --danger:#f08a8a; --danger-bg:#3b1a1a; --danger-fg:#f7b4b4;
     --win-bg:#172b23; --win-fg:#8fd4b4;
     --life:#f0a172; --life-off:#2b3a33;
@@ -44,6 +46,7 @@
   --ink:#e6efe9; --muted:#93a89e;
   --line:#2b3a33; --card:#16211c; --bg:#0e1613;
   --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
+    --pair:#c4b0ff; --pair-bg:#251b3d;
   --danger:#f08a8a; --danger-bg:#3b1a1a; --danger-fg:#f7b4b4;
   --win-bg:#172b23; --win-fg:#8fd4b4;
   --life:#f0a172; --life-off:#2b3a33;
@@ -129,6 +132,10 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 .prow .roll{font-variant-numeric:tabular-nums;font-weight:700;min-width:44px;text-align:right}
 .prow .roll.pending{color:var(--muted);font-weight:500;font-size:.8rem}
 .prow .roll.mexico{color:var(--gold)}
+.prow .roll.pair{color:var(--pair)}
+.pill{display:inline-block;font-size:.64rem;font-weight:800;letter-spacing:.08em;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;line-height:1.4}
+.pill.pair{background:var(--pair);color:#fff}
+.pill.mexico{background:var(--gold);color:#fff}
 .lives{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end;max-width:100px}
 .lives i{width:11px;height:11px;border-radius:50%;background:var(--life);display:inline-block}
 .lives i.off{background:var(--life-off)}
@@ -149,6 +156,7 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 .die span.on{opacity:1;transform:scale(1)}
 .die.blank span{opacity:0}
 .dice.mexico .die{box-shadow:0 0 0 3px var(--gold),0 0 22px var(--gold)}
+.dice.pair .die{box-shadow:0 0 0 3px var(--pair),0 0 18px var(--pair)}
 @keyframes shake{
   0%{transform:translate(0,0) rotate(0)}
   25%{transform:translate(3px,-2px) rotate(4deg)}
@@ -159,6 +167,7 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 .value{text-align:center;min-height:2.2rem;margin-bottom:8px}
 .value .big{font-size:1.9rem;font-weight:800;letter-spacing:.02em;line-height:1.1}
 .value .big.mexico{color:var(--gold)}
+.value .big.pair{color:var(--pair)}
 .value .name{color:var(--muted);font-size:.85rem}
 .progress{display:flex;gap:6px;justify-content:center;margin-bottom:12px}
 .progress i{width:34px;height:6px;border-radius:3px;background:var(--life-off)}
@@ -175,6 +184,15 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 .rrow .rname .tag{font-weight:500;font-size:.72rem;color:var(--muted);margin-left:6px}
 .rrow .rval{font-weight:700;font-variant-numeric:tabular-nums}
 .rrow .rval.mexico{color:var(--gold)}
+.rrow .rval.pair{color:var(--pair)}
+
+/* ---------- Udbrud ---------- */
+.shout{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:60}
+.shout span{display:inline-block;font-size:clamp(2.4rem,13vw,4.6rem);font-weight:900;letter-spacing:.02em;color:#fff;padding:.18em .5em;border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.35);animation:shout 1.7s cubic-bezier(.2,.9,.3,1.2) forwards}
+.shout.mexico span{background:var(--gold)}
+.shout.ohno span{background:var(--danger)}
+@keyframes shout{0%{opacity:0;transform:scale(.4) rotate(-8deg)}15%{opacity:1;transform:scale(1.08) rotate(2deg)}25%{transform:scale(1) rotate(-1deg)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
+@media (prefers-reduced-motion: reduce){.shout span{animation-duration:1.2s}.die.rolling{animation:none}}
 .badge{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
 .badge.lose{background:var(--danger-fg);color:#fff}
 .badge.win{background:var(--green);color:var(--on-accent)}
@@ -216,7 +234,10 @@ details summary{cursor:pointer;font-weight:600}
       <h1>🎲 Mexico <span class="em">– terningspil</span></h1>
       <p class="sub" id="subline">Én telefon, to terninger, seks liv. Mexico slår alt.</p>
     </div>
-    <button class="btn" id="btnMenu" type="button" hidden>Nyt spil</button>
+    <div class="btnrow">
+      <button class="btn" id="btnSound" type="button" aria-pressed="true" title="Slå lyd fra">🔊</button>
+      <button class="btn" id="btnMenu" type="button" hidden>Nyt spil</button>
+    </div>
   </div>
 </header>
 
@@ -319,7 +340,7 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Næste runde.</strong> Vinderen af runden (højeste slag) starter. Deler flere det højeste, starter den af dem der slog først.</li>
         <li><strong>Slut.</strong> Spillere uden liv er ude. Sidste spiller med liv tilbage vinder. Ryger alle tilbageværende ud i samme runde, får de hver ét liv og spiller en afgørende runde.</li>
       </ul>
-      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås.</p>
+      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås. Par lyser lilla, og der råbes <em>Ecuador!</em> ved Mexico og <em>Ohh no!</em> ved 31. Raflelyd og udbrud slås til og fra med højttaler-knappen øverst.</p>
     </details>
   </section>
 
@@ -424,8 +445,10 @@ function doRoll(){
   game.current = r;
   animating = true;
   updateTurnButtons();
+  Sound.rattle(650);
   animateDice(r, () => {
     animating = false;
+    celebrate(r);
     save();
     render();
     // Mexico kan ikke slås, og når loftet er nået tæller det sidste slag
@@ -526,7 +549,7 @@ function showFace(el, v){
 }
 function animateDice(r, done){
   const d1 = $('die1'), d2 = $('die2');
-  $('dice').classList.remove('mexico');
+  $('dice').classList.remove('mexico', 'pair');
   d1.classList.add('rolling'); d2.classList.add('rolling');
   const t0 = performance.now();
   const tick = () => {
@@ -539,6 +562,7 @@ function animateDice(r, done){
       d1.classList.remove('rolling'); d2.classList.remove('rolling');
       showFace(d1, r.a); showFace(d2, r.b);
       if(r.mexico) $('dice').classList.add('mexico');
+      else if(r.pair) $('dice').classList.add('pair');
       done();
     }
   };
@@ -575,7 +599,7 @@ function render(){
     const r = game.results[i];
     const inRound = game.order.includes(i);
     let roll;
-    if(r) roll = `<span class="roll ${r.mexico ? 'mexico' : ''}">${rollShort(r)}</span>`;
+    if(r) roll = `<span class="roll ${r.mexico ? 'mexico' : r.pair ? 'pair' : ''}">${rollShort(r)}${r.pair && !r.mexico ? '<span class="pill pair">PAR</span>' : ''}</span>`;
     else if(i === cur) roll = `<span class="roll pending">slår…</span>`;
     else if(p.lives > 0 && inRound && game.phase === 'turn') roll = `<span class="roll pending">venter</span>`;
     else roll = `<span class="roll pending"></span>`;
@@ -612,16 +636,17 @@ function renderTurn(){
   $('turnWho').textContent = `${p.name} har turen`;
   $('turnCap').textContent = starter
     ? `Startspiller · sætter loftet (op til ${MAX_ROLLS} slag)`
-    : `Loft: ${game.cap} ${game.cap === 1 ? 'slag' : 'slag'}`;
+    : `Loft: ${game.cap} slag · ${game.players[game.order[0]].name} brugte ${game.cap}`;
 
   const r = game.current;
   if(r){
-    $('valueBox').innerHTML = `<div class="big ${r.mexico ? 'mexico' : ''}">${r.mexico ? 'MEXICO!' : rollShort(r)}</div>
-      <div class="name">${r.mexico ? 'Højeste slag – kan ikke slås' : r.pair ? rollLabel(r) : ''}</div>`;
+    const pill = r.mexico ? '<span class="pill mexico">HØJEST</span>' : r.pair ? '<span class="pill pair">PAR</span>' : '';
+    $('valueBox').innerHTML = `<div class="big ${r.mexico ? 'mexico' : r.pair ? 'pair' : ''}">${r.mexico ? 'MEXICO!' : rollShort(r)}${pill}</div>
+      <div class="name">${r.mexico ? 'Højeste slag – kan ikke slås' : r.pair ? rollLabel(r) + ' – slår alle almindelige slag' : ''}</div>`;
   }else{
     showFace($('die1'), 0); showFace($('die2'), 0);
     $('die1').classList.add('blank'); $('die2').classList.add('blank');
-    $('dice').classList.remove('mexico');
+    $('dice').classList.remove('mexico', 'pair');
     $('valueBox').innerHTML = `<div class="name">${starter ? 'Slå op til 3 gange. Stopper du tidligt, må de andre heller ikke slå flere.' : 'Tryk på Slå for at rafle'}</div>`;
   }
 
@@ -655,7 +680,7 @@ function updateTurnButtons(){
   $('btnRoll').textContent = game.rollsUsed === 0 ? 'Slå' : `Slå igen (${game.rollsUsed + 1} af ${limit})`;
   const showStand = !!r && !animating && game.rollsUsed < limit && !r.mexico;
   $('btnStand').hidden = !showStand;
-  $('btnStand').textContent = r ? `Stå på ${rollShort(r)}` : 'Stå';
+  $('btnStand').textContent = r ? `Stå på ${r.pair ? rollLabel(r) : rollShort(r)}` : 'Stå';
 }
 
 function renderResult(){
@@ -696,8 +721,8 @@ function renderResult(){
     const medal = isWin ? '🏆' : isLose ? '💀' : '';
     return `<div class="rrow ${isWin ? 'win' : ''} ${isLose ? 'lose' : ''}">
       <span class="medal">${medal}</span>
-      <span class="rname">${esc(P[e.i].name)}${e.r.pair && !e.r.mexico ? `<span class="tag">${rollLabel(e.r)}</span>` : ''}</span>
-      <span class="rval ${e.r.mexico ? 'mexico' : ''}">${e.r.mexico ? 'MEXICO' : rollShort(e.r)}</span>
+      <span class="rname">${esc(P[e.i].name)}</span>
+      <span class="rval ${e.r.mexico ? 'mexico' : e.r.pair ? 'pair' : ''}">${e.r.mexico ? 'MEXICO' : rollShort(e.r)}${e.r.pair && !e.r.mexico ? '<span class="pill pair">PAR</span>' : ''}</span>
       ${badge}
     </div>`;
   }).join('');
@@ -815,6 +840,123 @@ document.addEventListener('keydown', e => {
   }
 });
 
+/* ---------- Lyd og udbrud ---------- */
+const SOUND_KEY = 'mexico-lyd';
+const Sound = {
+  on: (() => { try{ return localStorage.getItem(SOUND_KEY) !== '0'; }catch(e){ return true; } })(),
+  ctx: null,
+  noise: null,
+  // Lydmotoren må først startes efter et tryk, så den oprettes ved første slag
+  ensure(){
+    if(!this.on) return null;
+    try{
+      if(!this.ctx){
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if(!AC) return null;
+        this.ctx = new AC();
+        const len = Math.floor(this.ctx.sampleRate * 0.08);
+        const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for(let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+        this.noise = buf;
+      }
+      if(this.ctx.state === 'suspended') this.ctx.resume();
+      return this.ctx;
+    }catch(e){ return null; }
+  },
+  // Ét klak af terning mod bæger eller bord
+  clack(at, gain, freq){
+    const c = this.ctx;
+    const src = c.createBufferSource(); src.buffer = this.noise;
+    const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 1.2;
+    const g = c.createGain(); g.gain.setValueAtTime(gain, at); g.gain.exponentialRampToValueAtTime(0.001, at + 0.09);
+    src.connect(bp).connect(g).connect(c.destination);
+    src.start(at); src.stop(at + 0.1);
+    const o = c.createOscillator(); o.type = 'triangle';
+    o.frequency.setValueAtTime(freq * 1.5, at); o.frequency.exponentialRampToValueAtTime(freq * 0.7, at + 0.05);
+    const og = c.createGain(); og.gain.setValueAtTime(gain * 0.35, at); og.gain.exponentialRampToValueAtTime(0.001, at + 0.06);
+    o.connect(og).connect(c.destination); o.start(at); o.stop(at + 0.07);
+  },
+  // Rafling i bægeret mens terningerne ruller på skærmen, og et tydeligt klak når de lander
+  rattle(ms){
+    const c = this.ensure(); if(!c) return;
+    let t = c.currentTime + 0.02;
+    const end = c.currentTime + ms / 1000;
+    while(t < end){
+      this.clack(t, 0.25 + Math.random() * 0.3, 1200 + Math.random() * 1800);
+      t += 0.045 + Math.random() * 0.07;
+    }
+    this.clack(end + 0.02, 0.7, 900);
+    this.clack(end + 0.07, 0.5, 1400);
+  },
+  tone(freq, at, dur, type, gain){
+    const c = this.ctx;
+    const o = c.createOscillator(); o.type = type; o.frequency.value = freq;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(gain, at + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    o.connect(g).connect(c.destination); o.start(at); o.stop(at + dur + 0.05);
+  },
+  // Mexico: stigende fanfare
+  fanfare(){
+    const c = this.ensure(); if(!c) return;
+    const t = c.currentTime + 0.05;
+    [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.38]].forEach(([f, d]) => this.tone(f, t + d, 0.35, 'square', 0.18));
+  },
+  // 31: faldende wah-wah
+  wahwah(){
+    const c = this.ensure(); if(!c) return;
+    const t = c.currentTime + 0.05;
+    const o = c.createOscillator(); o.type = 'sawtooth';
+    o.frequency.setValueAtTime(330, t); o.frequency.linearRampToValueAtTime(180, t + 0.9);
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(1200, t); lp.frequency.linearRampToValueAtTime(300, t + 0.9);
+    const g = c.createGain(); g.gain.setValueAtTime(0.22, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+    o.connect(lp).connect(g).connect(c.destination); o.start(t); o.stop(t + 1);
+  },
+  // Råb via telefonens talesyntese, hvis den findes
+  say(text, lang, pitch, rate){
+    if(!this.on) return;
+    try{
+      if(!('speechSynthesis' in window)) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang; u.pitch = pitch; u.rate = rate; u.volume = 1;
+      const want = lang.slice(0, 2).toLowerCase();
+      const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith(want));
+      if(v) u.voice = v;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    }catch(e){}
+  },
+  toggle(){
+    this.on = !this.on;
+    try{ localStorage.setItem(SOUND_KEY, this.on ? '1' : '0'); }catch(e){}
+    if(!this.on){ try{ speechSynthesis.cancel(); }catch(e){} }
+    renderSoundButton();
+    toast(this.on ? 'Lyd slået til' : 'Lyd slået fra');
+  }
+};
+function renderSoundButton(){
+  const b = $('btnSound');
+  b.textContent = Sound.on ? '🔊' : '🔇';
+  b.setAttribute('aria-pressed', Sound.on);
+  b.title = Sound.on ? 'Slå lyd fra' : 'Slå lyd til';
+}
+$('btnSound').addEventListener('click', () => Sound.toggle());
+
+let shoutTimer;
+function shout(text, cls){
+  const old = document.querySelector('.shout'); if(old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'shout ' + cls; el.setAttribute('role', 'status');
+  el.innerHTML = `<span>${esc(text)}</span>`;
+  document.body.appendChild(el);
+  clearTimeout(shoutTimer); shoutTimer = setTimeout(() => el.remove(), 1800);
+}
+// Udbrud når terningerne er landet: Ecuador ved Mexico, Ohh no ved 31
+function celebrate(r){
+  if(r.mexico){ shout('ECUADOR!', 'mexico'); Sound.fanfare(); Sound.say('Ecuador!', 'da-DK', 1.3, 0.95); }
+  else if(r.hi === 3 && r.lo === 1){ shout('OHH NO!', 'ohno'); Sound.wahwah(); Sound.say('Ohh no', 'en-US', 0.6, 0.8); }
+}
+
 /* ---------- Hjælpere ---------- */
 function listNames(arr){ return arr.length <= 1 ? arr.join('') : arr.slice(0, -1).join(', ') + ' og ' + arr[arr.length - 1]; }
 function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -825,6 +967,7 @@ function toast(msg){
 }
 
 /* ---------- Start ---------- */
+renderSoundButton();
 renderSetup(null);
 if(load()){
   if(game.phase === 'turn' && game.current && !game.results[game.order[game.pos]]){
@@ -832,7 +975,7 @@ if(load()){
     showFace($('die1'), game.current.a); showFace($('die2'), game.current.b);
   }
   render();
-  if(game.current){ showFace($('die1'), game.current.a); showFace($('die2'), game.current.b); if(game.current.mexico) $('dice').classList.add('mexico'); }
+  if(game.current){ showFace($('die1'), game.current.a); showFace($('die2'), game.current.b); if(game.current.mexico) $('dice').classList.add('mexico'); else if(game.current.pair) $('dice').classList.add('pair'); }
 }else{
   render();
 }
