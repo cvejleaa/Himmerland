@@ -55,7 +55,7 @@ igangværende spil gemmes i browseren så en genindlæsning ikke koster runden. 
 |---|---|
 | To terninger, højeste er tierne | 5 og 3 vises som **53**. |
 | Mexico (2 og 1) slår alt, derefter par 66–11, derefter 65…31 | Rangordenen er indbygget, og Mexico stopper turen automatisk. |
-| Startspilleren slår op til 3 gange og sætter loftet | Loftet vises for de øvrige, og turen stopper selv når loftet er nået. |
+| Startspilleren slår op til 3 gange og sætter loftet, dog mindst 2 | Loftet vises for de øvrige med hvem der satte det, og turen stopper selv når loftet er nået. |
 | Laveste slag mister ét liv; ved delt laveste taber alle de laveste | Alle med rundens laveste slag mister liv. |
 | Tab mod Mexico koster 2 liv | Kan sættes til 1 under opsætningen. |
 | Vinderen (højeste slag) starter næste runde | Ved delt højeste starter den af dem der slog først. |
