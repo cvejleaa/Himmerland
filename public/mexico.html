@@ -195,6 +195,7 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 .shout.mexico span{background:var(--gold)}
 .shout.ohno span{background:var(--danger)}
 .shout.notgood span{background:var(--warn);font-size:clamp(2rem,10vw,3.6rem)}
+.shout.bye span{background:var(--ink);color:var(--bg);font-size:clamp(1.5rem,7.5vw,2.8rem);max-width:92vw;text-align:center;overflow-wrap:anywhere}
 @keyframes shout{0%{opacity:0;transform:scale(.4) rotate(-8deg)}15%{opacity:1;transform:scale(1.08) rotate(2deg)}25%{transform:scale(1) rotate(-1deg)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
 @media (prefers-reduced-motion: reduce){.shout span{animation-duration:1.2s}.die.rolling{animation:none}}
 .badge{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
@@ -376,7 +377,7 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Næste runde.</strong> Vinderen af runden (højeste slag) starter. Deler flere det højeste, starter den af dem der slog først.</li>
         <li><strong>Slut.</strong> Spillere uden liv er ude. Sidste spiller med liv tilbage vinder. Ryger alle tilbageværende ud i samme runde, får de hver ét liv og spiller en afgørende runde.</li>
       </ul>
-      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås. Par lyser lilla, og der råbes <em>Ecuadooooooor!</em> ved Mexico, <em>Ohh no!</em> ved 31 og <em>Not good</em> ved 32. Raflelyd og udbrud slås til og fra med højttaler-knappen øverst.</p>
+      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås. Par lyser lilla, og der råbes <em>Ecuadooooooor!</em> ved Mexico som en sydamerikansk fodboldkommentator, <em>Ohh no!</em> ved 31 og <em>Not good</em> ved 32. Ryger en spiller ud, siger spillet <em>Farvel</em> med navn. Raflelyd og udbrud slås til og fra med højttaler-knappen øverst.</p>
     </details>
   </section>
 
@@ -541,6 +542,15 @@ function finishRound(){
   if(eliminated.length) line += ` ${listNames(eliminated.map(i => P[i].name))} er ude.`;
   if(revived) line += ' Alle røg ud samtidig – afgørende runde med ét liv hver.';
   game.log.unshift({round: game.round, text: line});
+
+  if(eliminated.length){
+    // Vent til et evt. udbrud fra det sidste slag er væk, og sig så farvel
+    const names = listNames(eliminated.map(i => P[i].name));
+    setTimeout(() => {
+      shout('FARVEL ' + names.toUpperCase(), 'bye', 2600);
+      Sound.say('Farvel ' + names, 'da-DK', 1.0, 0.9, true);
+    }, document.querySelector('.shout') ? 1300 : 250);
+  }
 
   const a = alive();
   game.phase = a.length <= 1 ? 'over' : 'result';
@@ -904,6 +914,7 @@ const Sound = {
   on: (() => { try{ return localStorage.getItem(SOUND_KEY) !== '0'; }catch(e){ return true; } })(),
   ctx: null,
   noise: null,
+  bus: null,
   // Lydmotoren må først startes efter et tryk, så den oprettes ved første slag
   ensure(){
     if(!this.on) return null;
@@ -912,63 +923,179 @@ const Sound = {
         const AC = window.AudioContext || window.webkitAudioContext;
         if(!AC) return null;
         this.ctx = new AC();
-        const len = Math.floor(this.ctx.sampleRate * 0.08);
+        const len = Math.floor(this.ctx.sampleRate * 0.05);
         const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
         const d = buf.getChannelData(0);
-        for(let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+        for(let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
         this.noise = buf;
+        // Alt går gennem en kompressor, så det kan spille højt uden at klippe
+        const comp = this.ctx.createDynamicsCompressor();
+        comp.threshold.value = -10; comp.knee.value = 18; comp.ratio.value = 5;
+        comp.attack.value = 0.002; comp.release.value = 0.12;
+        const lim = this.ctx.createWaveShaper();
+        const curve = new Float32Array(1025);
+        for(let i = 0; i < curve.length; i++){ const x = (i / 512) - 1; curve[i] = Math.tanh(1.6 * x) / Math.tanh(1.6); }
+        lim.curve = curve; lim.oversample = 'none';
+        comp.connect(lim).connect(this.ctx.destination);
+        this.bus = comp;
       }
       if(this.ctx.state === 'suspended') this.ctx.resume();
       return this.ctx;
     }catch(e){ return null; }
   },
-  // Ét klak af terning mod bæger eller bord
-  clack(at, gain, freq){
-    const c = this.ctx;
+  // Ét hårdt, kort slag af en terning mod bægerets væg eller bordet:
+  // et klik med resonans i plastik-området plus en kort, dyb dunk fra det den rammer
+  knock(at, gain, o){
+    const c = this.ctx; o = o || {};
     const src = c.createBufferSource(); src.buffer = this.noise;
-    const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 1.2;
-    const g = c.createGain(); g.gain.setValueAtTime(gain, at); g.gain.exponentialRampToValueAtTime(0.001, at + 0.09);
-    src.connect(bp).connect(g).connect(c.destination);
-    src.start(at); src.stop(at + 0.1);
-    const o = c.createOscillator(); o.type = 'triangle';
-    o.frequency.setValueAtTime(freq * 1.5, at); o.frequency.exponentialRampToValueAtTime(freq * 0.7, at + 0.05);
-    const og = c.createGain(); og.gain.setValueAtTime(gain * 0.35, at); og.gain.exponentialRampToValueAtTime(0.001, at + 0.06);
-    o.connect(og).connect(c.destination); o.start(at); o.stop(at + 0.07);
+    const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = o.hp || 1800;
+    const res = c.createBiquadFilter(); res.type = 'peaking';
+    res.frequency.value = o.res || (2400 + Math.random() * 2600); res.Q.value = 7; res.gain.value = 14;
+    const g = c.createGain();
+    g.gain.setValueAtTime(gain, at); g.gain.exponentialRampToValueAtTime(0.001, at + (o.dur || 0.022));
+    src.connect(hp).connect(res).connect(g).connect(this.bus);
+    src.start(at); src.stop(at + 0.05);
+    const th = c.createOscillator(); th.type = 'sine';
+    const f = o.thud || 260;
+    th.frequency.setValueAtTime(f, at); th.frequency.exponentialRampToValueAtTime(f * 0.55, at + 0.045);
+    const tg = c.createGain();
+    tg.gain.setValueAtTime(gain * (o.thudGain == null ? 0.5 : o.thudGain), at);
+    tg.gain.exponentialRampToValueAtTime(0.001, at + 0.055);
+    th.connect(tg).connect(this.bus); th.start(at); th.stop(at + 0.07);
   },
-  // Rafling i bægeret mens terningerne ruller på skærmen, og et tydeligt klak når de lander
+  // En terning lander: et hårdt slag, hop der kommer tættere og tættere, og et lille vip til sidst
+  land(at, gain){
+    const gaps = [0, 0.085, 0.058, 0.04, 0.027, 0.018, 0.012];
+    const lv = [1, 0.62, 0.42, 0.3, 0.2, 0.13, 0.09];
+    let t = at;
+    const res = 2800 + Math.random() * 1800;
+    for(let i = 0; i < gaps.length; i++){
+      t += gaps[i];
+      this.knock(t, gain * lv[i], {thud: 330, thudGain: 0.7, res, dur: 0.028 - i * 0.002});
+    }
+    for(let i = 0; i < 4; i++){ t += 0.009; this.knock(t, gain * 0.06, {thud: 400, thudGain: 0.2, res, dur: 0.01}); }
+  },
+  // Rafling: bægeret rystes nogle gange, og for hver rystelse rammer terningerne væggen
+  // et par gange – derefter kastes de på bordet
   rattle(ms){
     const c = this.ensure(); if(!c) return;
-    let t = c.currentTime + 0.02;
-    const end = c.currentTime + ms / 1000;
-    while(t < end){
-      this.clack(t, 0.25 + Math.random() * 0.3, 1200 + Math.random() * 1800);
-      t += 0.045 + Math.random() * 0.07;
+    const t0 = c.currentTime + 0.02;
+    const end = t0 + ms / 1000;
+    let t = t0;
+    while(t < end - 0.1){
+      const hits = 2 + Math.floor(Math.random() * 3);
+      for(let i = 0; i < hits; i++){
+        this.knock(t + Math.random() * 0.07, 0.22 + Math.random() * 0.28,
+          {thud: 190 + Math.random() * 110, thudGain: 0.65, dur: 0.018 + Math.random() * 0.016});
+      }
+      t += 0.1 + Math.random() * 0.05;
     }
-    this.clack(end + 0.02, 0.7, 900);
-    this.clack(end + 0.07, 0.5, 1400);
+    this.land(end + 0.03, 0.72);
+    this.land(end + 0.1, 0.6);
   },
   tone(freq, at, dur, type, gain){
     const c = this.ctx;
     const o = c.createOscillator(); o.type = type; o.frequency.value = freq;
     const g = c.createGain();
     g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(gain, at + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
-    o.connect(g).connect(c.destination); o.start(at); o.stop(at + dur + 0.05);
+    o.connect(g).connect(this.bus); o.start(at); o.stop(at + dur + 0.05);
   },
-  // Mexico: stigende fanfare
+  // Mexico: stigende fanfare, udskudt til råbet er færdigt
   fanfare(delay){
     const c = this.ensure(); if(!c) return;
     const t = c.currentTime + (delay || 0.05);
-    [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.38]].forEach(([f, d]) => this.tone(f, t + d, 0.35, 'square', 0.1));
+    [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.38]].forEach(([f, d]) => this.tone(f, t + d, 0.35, 'square', 0.12));
   },
-  // 32: kort, lavt brum
-  grumble(){
-    const c = this.ensure(); if(!c) return;
-    const t = c.currentTime + 0.05;
-    const o = c.createOscillator(); o.type = 'sawtooth';
-    o.frequency.setValueAtTime(220, t); o.frequency.linearRampToValueAtTime(150, t + 0.45);
-    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500;
-    const g = c.createGain(); g.gain.setValueAtTime(0.14, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
-    o.connect(lp).connect(g).connect(c.destination); o.start(t); o.stop(t + 0.55);
+  // Mexico: en syntetisk stemme råber "E-cu-a-dooooooooor!" som en sydamerikansk
+  // fodboldkommentator råber "GOOOOOL": et kort tilløb, en lang holdt vokal med voksende
+  // styrke og vibrato og langsomt stigende tone, og til sidst et hårdt "-or!" med et knæk
+  // i tonen. Stadionekko og et publikum der rejser sig under råbet. Vokalerne laves med
+  // formantfiltre, k og d som korte brag, r som en ru, hakkende afslutning.
+  // Ligger ovenpå talesyntesen, som ikke kan skrues højere op end telefonens loft.
+  // Giver råbets længde i sekunder.
+  ecuador(delay){
+    const c = this.ensure(); if(!c) return 0;
+    const t0 = c.currentTime + (delay || 0.05);
+    const V = {e: [430, 2100, 2900], u: [340, 900, 2500], a: [740, 1250, 2700], o: [560, 920, 2800]};
+    const seg = [['e', 0.00, 0.30], ['u', 0.38, 0.56], ['a', 0.56, 0.92], ['o', 1.02, 7.30]];
+    const HOLD_END = 7.30, END = 8.1;
+    const out = c.createGain(); out.gain.value = ECUADOR_GAIN;
+    // Stadionekko: kort tilbagekobling, dæmpet i toppen
+    const dl = c.createDelay(1); dl.delayTime.value = 0.24;
+    const fb = c.createGain(); fb.gain.value = 0.32;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2500;
+    const wet = c.createGain(); wet.gain.value = 0.35;
+    out.connect(this.bus); out.connect(dl); dl.connect(lp).connect(fb).connect(dl); lp.connect(wet).connect(this.bus);
+    // Formanter for vokalerne og et "sangerformant"-løft, der giver råbet bid
+    const mix = c.createGain();
+    const ring = c.createBiquadFilter(); ring.type = 'peaking'; ring.frequency.value = 3100; ring.Q.value = 2; ring.gain.value = 9;
+    mix.connect(ring).connect(out);
+    const forms = [[6, 1], [8, 0.55], [10, 0.2]].map(([q, g]) => {
+      const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = q;
+      const gg = c.createGain(); gg.gain.value = g; bp.connect(gg).connect(mix); return bp;
+    });
+    forms.forEach((bp, i) => {
+      bp.frequency.setValueAtTime(V.e[i], t0);
+      seg.forEach(([v, a, b], k) => {
+        if(k > 0) bp.frequency.linearRampToValueAtTime(V[v][i], t0 + a + 0.05);
+        bp.frequency.setValueAtTime(V[v][i], t0 + b);
+      });
+    });
+    // Hæs, presset stemme: let overstyring før filtrene
+    const rasp = c.createWaveShaper();
+    const curve = new Float32Array(257);
+    for(let i = 0; i < curve.length; i++){ const x = (i / 128) - 1; curve[i] = Math.tanh(2.2 * x); }
+    rasp.curve = curve; forms.forEach(bp => rasp.connect(bp));
+    // Styrke: åben i vokalerne, lukket i k og d, og et langt crescendo gennem det holdte o
+    const voice = c.createGain(); voice.gain.setValueAtTime(0.0001, t0);
+    seg.forEach(([v, a, b], k) => {
+      voice.gain.exponentialRampToValueAtTime(v === 'o' ? 0.5 : 0.9, t0 + a + 0.05);
+      if(v === 'o'){ voice.gain.linearRampToValueAtTime(1, t0 + HOLD_END - 0.6); voice.gain.setValueAtTime(1, t0 + HOLD_END); }
+      else { voice.gain.setValueAtTime(0.9, t0 + b - 0.03); voice.gain.exponentialRampToValueAtTime(0.0001, t0 + b + 0.02); }
+    });
+    // "-or!": hakkende r og hårdt slut
+    for(let i = 0; i < 8; i++){
+      const r = t0 + HOLD_END + 0.2 + i * 0.038;
+      voice.gain.setValueAtTime(0.95, r); voice.gain.linearRampToValueAtTime(0.2, r + 0.019); voice.gain.linearRampToValueAtTime(0.95, r + 0.038);
+    }
+    voice.gain.setValueAtTime(0.9, t0 + END - 0.08); voice.gain.linearRampToValueAtTime(0.0001, t0 + END);
+    voice.connect(rasp);
+    // Fire stemmer i kor, lidt forstemte, med vibrato der vokser gennem råbet.
+    // Tonen ligger højt som et råb, stiger langsomt, knækker op og falder i "-or!"
+    [[0, 5.3, 0.6], [6, 5.9, 0.6], [-8, 5.0, 0.6], [1200, 6.4, 0.2]].forEach(([cents, vr, vol]) => {
+      const f0 = 225 * Math.pow(2, cents / 1200);
+      const o = c.createOscillator(); o.type = 'sawtooth';
+      o.frequency.setValueAtTime(f0 * 0.97, t0);
+      o.frequency.setValueAtTime(f0, t0 + 1.02);
+      o.frequency.linearRampToValueAtTime(f0 * 1.12, t0 + HOLD_END - 0.4);
+      o.frequency.linearRampToValueAtTime(f0 * 1.22, t0 + HOLD_END + 0.12);
+      o.frequency.linearRampToValueAtTime(f0 * 0.86, t0 + END);
+      const vib = c.createOscillator(); vib.frequency.setValueAtTime(vr, t0); vib.frequency.linearRampToValueAtTime(vr + 1.4, t0 + HOLD_END);
+      const vg = c.createGain(); vg.gain.setValueAtTime(f0 * 0.008, t0); vg.gain.linearRampToValueAtTime(f0 * 0.045, t0 + HOLD_END);
+      vib.connect(vg).connect(o.frequency); vib.start(t0); vib.stop(t0 + END);
+      const og = c.createGain(); og.gain.value = vol;
+      o.connect(og).connect(voice); o.start(t0); o.stop(t0 + END + 0.05);
+    });
+    // k: hvæsende brag. d: kort, lukket klik. r: ru støj under hakkene.
+    this.knock(t0 + 0.33, 0.5, {hp: 1800, res: 3200, dur: 0.05, thud: 150, thudGain: 0.1});
+    this.knock(t0 + 0.96, 0.45, {hp: 300, res: 900, dur: 0.03, thud: 180, thudGain: 0.6});
+    this.knock(t0 + HOLD_END + 0.22, 0.4, {hp: 700, res: 1300, dur: 0.3, thud: 110, thudGain: 0.3});
+    // Publikum rejser sig: bredbåndet brus, der vokser gennem råbet og ebber ud bagefter
+    const crowdLen = END + 2.4;
+    const cb = c.createBuffer(1, Math.ceil(c.sampleRate * crowdLen), c.sampleRate);
+    const cd = cb.getChannelData(0);
+    let lp1 = 0, lp2 = 0;
+    for(let i = 0; i < cd.length; i++){ const w = Math.random() * 2 - 1; lp1 += 0.04 * (w - lp1); lp2 += 0.2 * (w - lp2); cd[i] = lp2 - lp1 + w * 0.15; }
+    const cs = c.createBufferSource(); cs.buffer = cb;
+    const cf = c.createBiquadFilter(); cf.type = 'bandpass'; cf.frequency.value = 900; cf.Q.value = 0.5;
+    const cg = c.createGain();
+    cg.gain.setValueAtTime(0.02, t0); cg.gain.linearRampToValueAtTime(0.12, t0 + 1.0);
+    cg.gain.linearRampToValueAtTime(0.42, t0 + HOLD_END); cg.gain.setValueAtTime(0.42, t0 + END);
+    cg.gain.linearRampToValueAtTime(0.0001, t0 + crowdLen);
+    const sw = c.createOscillator(); sw.frequency.value = 0.7;
+    const swg = c.createGain(); swg.gain.value = 0.08; sw.connect(swg).connect(cg.gain); sw.start(t0); sw.stop(t0 + crowdLen);
+    cs.connect(cf).connect(cg).connect(this.bus); cs.start(t0); cs.stop(t0 + crowdLen);
+    return END;
   },
   // 31: faldende wah-wah
   wahwah(){
@@ -978,21 +1105,35 @@ const Sound = {
     o.frequency.setValueAtTime(330, t); o.frequency.linearRampToValueAtTime(180, t + 0.9);
     const lp = c.createBiquadFilter(); lp.type = 'lowpass';
     lp.frequency.setValueAtTime(1200, t); lp.frequency.linearRampToValueAtTime(300, t + 0.9);
-    const g = c.createGain(); g.gain.setValueAtTime(0.22, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
-    o.connect(lp).connect(g).connect(c.destination); o.start(t); o.stop(t + 1);
+    const g = c.createGain(); g.gain.setValueAtTime(0.35, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+    o.connect(lp).connect(g).connect(this.bus); o.start(t); o.stop(t + 1);
   },
-  // Råb via telefonens talesyntese, hvis den findes
-  say(text, lang, pitch, rate){
-    if(!this.on) return;
+  // 32: kort, lavt brum
+  grumble(){
+    const c = this.ensure(); if(!c) return;
+    const t = c.currentTime + 0.05;
+    const o = c.createOscillator(); o.type = 'sawtooth';
+    o.frequency.setValueAtTime(220, t); o.frequency.linearRampToValueAtTime(150, t + 0.45);
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500;
+    const g = c.createGain(); g.gain.setValueAtTime(0.22, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    o.connect(lp).connect(g).connect(this.bus); o.start(t); o.stop(t + 0.55);
+  },
+  // Råb via telefonens talesyntese, hvis den findes. Giver true hvis der blev sagt noget.
+  say(text, lang, pitch, rate, queue){
+    if(!this.on) return false;
     try{
-      if(!('speechSynthesis' in window)) return;
+      if(!('speechSynthesis' in window)) return false;
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = lang; u.pitch = pitch; u.rate = rate; u.volume = 1;
-      const want = lang.slice(0, 2).toLowerCase();
-      const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith(want));
-      if(v) u.voice = v;
-      speechSynthesis.cancel(); speechSynthesis.speak(u);
-    }catch(e){}
+      const prefs = (Array.isArray(lang) ? lang : [lang]).map(l => l.toLowerCase());
+      u.lang = prefs[0]; u.pitch = pitch; u.rate = rate; u.volume = 1;
+      const voices = speechSynthesis.getVoices();
+      let v = null;
+      for(const pr of prefs){ v = voices.find(x => x.lang && x.lang.toLowerCase().replace('_', '-').startsWith(pr)); if(v) break; }
+      if(v){ u.voice = v; u.lang = v.lang; }
+      if(!queue) speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+      return true;
+    }catch(e){ return false; }
   },
   toggle(){
     this.on = !this.on;
@@ -1002,6 +1143,10 @@ const Sound = {
     toast(this.on ? 'Lyd slået til' : 'Lyd slået fra');
   }
 };
+const ECUADOR_GAIN = 1.15;   // opmålt så råbet rammer fuld styrke efter formantfiltrene
+// Latinamerikansk spansk stemme hvis telefonen har en, ellers spansk, ellers dansk
+const ECUADOR_VOICE = ['es-MX', 'es-US', 'es-419', 'es-AR', 'es-CO', 'es', 'da-DK'];
+const ECUADOR_TEXT = '¡Ecuadooooooooooooor!';
 function renderSoundButton(){
   const b = $('btnSound');
   b.textContent = Sound.on ? '🔊' : '🔇';
@@ -1011,21 +1156,23 @@ function renderSoundButton(){
 $('btnSound').addEventListener('click', () => Sound.toggle());
 
 let shoutTimer;
-function shout(text, cls){
+function shout(text, cls, ms){
+  ms = ms || 1700;
   const old = document.querySelector('.shout'); if(old) old.remove();
   const el = document.createElement('div');
   el.className = 'shout ' + cls; el.setAttribute('role', 'status');
-  el.innerHTML = `<span>${esc(text)}</span>`;
+  el.innerHTML = `<span style="animation-duration:${ms}ms">${esc(text)}</span>`;
   document.body.appendChild(el);
-  clearTimeout(shoutTimer); shoutTimer = setTimeout(() => el.remove(), 1800);
+  clearTimeout(shoutTimer); shoutTimer = setTimeout(() => el.remove(), ms + 100);
 }
-// Udbrud når terningerne er landet: Ecuador ved Mexico, Ohh no ved 31
+// Udbrud når terningerne er landet: Ecuador ved Mexico, Ohh no ved 31, Not good ved 32
 function celebrate(r){
   if(r.mexico){
-    // Råbet først og alene, så det ikke drukner i fanfaren – langsomt og trukket ud
-    shout('ECUADOR!', 'mexico');
-    Sound.say('Ecuadooooooor!', 'da-DK', 1.2, 0.7);
-    Sound.fanfare(1.8);
+    // Kommentator-råbet bærer det hele: banneret står så længe råbet varer, og talesyntesen
+    // siger ordet samtidig med latinamerikansk stemme, så det er tydeligt.
+    const len = Sound.ecuador(0.05) || 8.1;
+    shout('ECUADOR!', 'mexico', Math.round(len * 1000) + 400);
+    Sound.say(ECUADOR_TEXT, ECUADOR_VOICE, 1.15, 0.5);
   }else if(r.hi === 3 && r.lo === 1){
     shout('OHH NO!', 'ohno'); Sound.wahwah(); Sound.say('Ohh no', 'en-US', 0.6, 0.8);
   }else if(r.hi === 3 && r.lo === 2){

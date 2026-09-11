@@ -70,9 +70,11 @@ andel. Fortrydes den sidste runde, fjernes spillet fra historikken igen. *Ryd hi
 alt. Rundeforløbet i det igangværende spil viser alle runder med *Vis alle* når der er mange.
 
 Par lyser lilla med et *PAR*-mærke på terningerne, i turkortet, i stillingen og i resultatet, så de
-ikke forveksles med almindelige slag. Der er raflelyd når der slås (lavet med Web Audio, ingen
-lydfiler), og udbrud på skærmen og via telefonens talesyntese: **Ecuadooooooor!** ved Mexico (råbt langsomt og
-trukket ud, med fanfaren bagefter), **Ohh no!** ved 31 og **Not good** ved 32. Højttaler-knappen øverst slår lyd og råb til og fra, og valget huskes.
+ikke forveksles med almindelige slag. Der er raflelyd når der slås – terningerne klaprer i bægeret og lander med hop på bordet (lavet
+med Web Audio, ingen lydfiler), og udbrud på skærmen og via telefonens talesyntese: **Ecuadooooooor!** ved Mexico (råbt langsomt og
+trukket ud, som en sydamerikansk
+fodboldkommentators "GOOOOOL": en syntetisk stemme holder ordet i otte sekunder med voksende styrke og
+vibrato, stadionekko og publikum under, mens talesyntesen siger det med latinamerikansk stemme), **Ohh no!** ved 31, **Not good** ved 32, og **Farvel <navn>** når en spiller ryger ud. Højttaler-knappen øverst slår lyd og råb til og fra, og valget huskes.
 
 ## Kørsel lokalt
 
