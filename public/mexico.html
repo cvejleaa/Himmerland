@@ -377,7 +377,7 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Næste runde.</strong> Vinderen af runden (højeste slag) starter. Deler flere det højeste, starter den af dem der slog først.</li>
         <li><strong>Slut.</strong> Spillere uden liv er ude. Sidste spiller med liv tilbage vinder. Ryger alle tilbageværende ud i samme runde, får de hver ét liv og spiller en afgørende runde.</li>
       </ul>
-      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås. Par lyser lilla, og der råbes <em>Ecuadooooooor!</em> ved Mexico, <em>Ohh no!</em> ved 31 og <em>Not good</em> ved 32. Ryger en spiller ud, siger spillet <em>Farvel</em> med navn. Raflelyd og udbrud slås til og fra med højttaler-knappen øverst.</p>
+      <p class="muted">Slår du Mexico, stopper turen automatisk – det kan ikke slås. Par lyser lilla, og der råbes <em>Ecuadooooooor!</em> ved Mexico som en sydamerikansk fodboldkommentator, <em>Ohh no!</em> ved 31 og <em>Not good</em> ved 32. Ryger en spiller ud, siger spillet <em>Farvel</em> med navn. Raflelyd og udbrud slås til og fra med højttaler-knappen øverst.</p>
     </details>
   </section>
 
@@ -1006,24 +1006,34 @@ const Sound = {
     const t = c.currentTime + (delay || 0.05);
     [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.38]].forEach(([f, d]) => this.tone(f, t + d, 0.35, 'square', 0.12));
   },
-  // Mexico: en syntetisk stemme råber hele ordet "Ecuadoooooooor" trukket langt ud.
-  // Vokalerne laves med formantfiltre, k og d som korte brag, r som en ru, hakkende
-  // afslutning. Ligger ovenpå talesyntesen, som ikke kan skrues højere op end
-  // telefonens loft. Giver ordets længde i sekunder.
+  // Mexico: en syntetisk stemme råber "E-cu-a-dooooooooor!" som en sydamerikansk
+  // fodboldkommentator råber "GOOOOOL": et kort tilløb, en lang holdt vokal med voksende
+  // styrke og vibrato og langsomt stigende tone, og til sidst et hårdt "-or!" med et knæk
+  // i tonen. Stadionekko og et publikum der rejser sig under råbet. Vokalerne laves med
+  // formantfiltre, k og d som korte brag, r som en ru, hakkende afslutning.
+  // Ligger ovenpå talesyntesen, som ikke kan skrues højere op end telefonens loft.
+  // Giver råbets længde i sekunder.
   ecuador(delay){
     const c = this.ensure(); if(!c) return 0;
     const t0 = c.currentTime + (delay || 0.05);
-    const V = {e: [420, 2100, 2900], u: [330, 900, 2400], a: [720, 1250, 2600], o: [460, 850, 2600]};
-    const seg = [['e', 0.00, 0.55], ['u', 0.66, 1.05], ['a', 1.05, 1.55], ['o', 1.66, 3.60]];
-    const END = 3.9;
+    const V = {e: [430, 2100, 2900], u: [340, 900, 2500], a: [740, 1250, 2700], o: [560, 920, 2800]};
+    const seg = [['e', 0.00, 0.30], ['u', 0.38, 0.56], ['a', 0.56, 0.92], ['o', 1.02, 7.30]];
+    const HOLD_END = 7.30, END = 8.1;
     const out = c.createGain(); out.gain.value = ECUADOR_GAIN;
+    // Stadionekko: kort tilbagekobling, dæmpet i toppen
+    const dl = c.createDelay(1); dl.delayTime.value = 0.24;
+    const fb = c.createGain(); fb.gain.value = 0.32;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2500;
+    const wet = c.createGain(); wet.gain.value = 0.35;
+    out.connect(this.bus); out.connect(dl); dl.connect(lp).connect(fb).connect(dl); lp.connect(wet).connect(this.bus);
+    // Formanter for vokalerne og et "sangerformant"-løft, der giver råbet bid
     const mix = c.createGain();
-    const forms = [[6, 1], [8, 0.5], [10, 0.15]].map(([q, g]) => {
+    const ring = c.createBiquadFilter(); ring.type = 'peaking'; ring.frequency.value = 3100; ring.Q.value = 2; ring.gain.value = 9;
+    mix.connect(ring).connect(out);
+    const forms = [[6, 1], [8, 0.55], [10, 0.2]].map(([q, g]) => {
       const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = q;
       const gg = c.createGain(); gg.gain.value = g; bp.connect(gg).connect(mix); return bp;
     });
-    mix.connect(out).connect(this.bus);
-    // Formanterne glider fra vokal til vokal
     forms.forEach((bp, i) => {
       bp.frequency.setValueAtTime(V.e[i], t0);
       seg.forEach(([v, a, b], k) => {
@@ -1031,38 +1041,60 @@ const Sound = {
         bp.frequency.setValueAtTime(V[v][i], t0 + b);
       });
     });
-    // Stemmen er åben i vokalerne og lukket i k og d
+    // Hæs, presset stemme: let overstyring før filtrene
+    const rasp = c.createWaveShaper();
+    const curve = new Float32Array(257);
+    for(let i = 0; i < curve.length; i++){ const x = (i / 128) - 1; curve[i] = Math.tanh(2.2 * x); }
+    rasp.curve = curve; forms.forEach(bp => rasp.connect(bp));
+    // Styrke: åben i vokalerne, lukket i k og d, og et langt crescendo gennem det holdte o
     const voice = c.createGain(); voice.gain.setValueAtTime(0.0001, t0);
     seg.forEach(([v, a, b], k) => {
-      voice.gain.exponentialRampToValueAtTime(1, t0 + a + 0.05);
-      voice.gain.setValueAtTime(1, t0 + b - 0.03);
-      if(k < seg.length - 1) voice.gain.exponentialRampToValueAtTime(0.0001, t0 + b + 0.02);
+      voice.gain.exponentialRampToValueAtTime(v === 'o' ? 0.5 : 0.9, t0 + a + 0.05);
+      if(v === 'o'){ voice.gain.linearRampToValueAtTime(1, t0 + HOLD_END - 0.6); voice.gain.setValueAtTime(1, t0 + HOLD_END); }
+      else { voice.gain.setValueAtTime(0.9, t0 + b - 0.03); voice.gain.exponentialRampToValueAtTime(0.0001, t0 + b + 0.02); }
     });
-    // r: hakkende afslutning, så ud
-    for(let i = 0; i < 7; i++){
-      const r = t0 + 3.60 + i * 0.036;
-      voice.gain.setValueAtTime(0.7, r); voice.gain.linearRampToValueAtTime(0.15, r + 0.018); voice.gain.linearRampToValueAtTime(0.7, r + 0.036);
+    // "-or!": hakkende r og hårdt slut
+    for(let i = 0; i < 8; i++){
+      const r = t0 + HOLD_END + 0.2 + i * 0.038;
+      voice.gain.setValueAtTime(0.95, r); voice.gain.linearRampToValueAtTime(0.2, r + 0.019); voice.gain.linearRampToValueAtTime(0.95, r + 0.038);
     }
-    voice.gain.linearRampToValueAtTime(0.0001, t0 + END);
-    forms.forEach(bp => voice.connect(bp));
-    // Fire stemmer, lidt forstemte og med hver sin vibrato; tonen stiger gennem det lange o
-    [[0, 5.2, 0.6], [7, 5.8, 0.6], [-9, 4.9, 0.6], [1200, 6.3, 0.22]].forEach(([cents, vr, vol]) => {
-      const f0 = 180 * Math.pow(2, cents / 1200);
+    voice.gain.setValueAtTime(0.9, t0 + END - 0.08); voice.gain.linearRampToValueAtTime(0.0001, t0 + END);
+    voice.connect(rasp);
+    // Fire stemmer i kor, lidt forstemte, med vibrato der vokser gennem råbet.
+    // Tonen ligger højt som et råb, stiger langsomt, knækker op og falder i "-or!"
+    [[0, 5.3, 0.6], [6, 5.9, 0.6], [-8, 5.0, 0.6], [1200, 6.4, 0.2]].forEach(([cents, vr, vol]) => {
+      const f0 = 225 * Math.pow(2, cents / 1200);
       const o = c.createOscillator(); o.type = 'sawtooth';
-      o.frequency.setValueAtTime(f0, t0);
-      o.frequency.setValueAtTime(f0, t0 + 1.66);
-      o.frequency.linearRampToValueAtTime(f0 * 1.14, t0 + 3.0);
-      o.frequency.linearRampToValueAtTime(f0 * 0.95, t0 + END);
-      const vib = c.createOscillator(); vib.frequency.value = vr;
-      const vg = c.createGain(); vg.gain.setValueAtTime(f0 * 0.01, t0); vg.gain.linearRampToValueAtTime(f0 * 0.03, t0 + 3.2);
+      o.frequency.setValueAtTime(f0 * 0.97, t0);
+      o.frequency.setValueAtTime(f0, t0 + 1.02);
+      o.frequency.linearRampToValueAtTime(f0 * 1.12, t0 + HOLD_END - 0.4);
+      o.frequency.linearRampToValueAtTime(f0 * 1.22, t0 + HOLD_END + 0.12);
+      o.frequency.linearRampToValueAtTime(f0 * 0.86, t0 + END);
+      const vib = c.createOscillator(); vib.frequency.setValueAtTime(vr, t0); vib.frequency.linearRampToValueAtTime(vr + 1.4, t0 + HOLD_END);
+      const vg = c.createGain(); vg.gain.setValueAtTime(f0 * 0.008, t0); vg.gain.linearRampToValueAtTime(f0 * 0.045, t0 + HOLD_END);
       vib.connect(vg).connect(o.frequency); vib.start(t0); vib.stop(t0 + END);
       const og = c.createGain(); og.gain.value = vol;
       o.connect(og).connect(voice); o.start(t0); o.stop(t0 + END + 0.05);
     });
     // k: hvæsende brag. d: kort, lukket klik. r: ru støj under hakkene.
-    this.knock(t0 + 0.58, 0.5, {hp: 1800, res: 3200, dur: 0.05, thud: 150, thudGain: 0.1});
-    this.knock(t0 + 1.58, 0.45, {hp: 300, res: 900, dur: 0.03, thud: 180, thudGain: 0.6});
-    this.knock(t0 + 3.62, 0.4, {hp: 700, res: 1300, dur: 0.22, thud: 110, thudGain: 0.3});
+    this.knock(t0 + 0.33, 0.5, {hp: 1800, res: 3200, dur: 0.05, thud: 150, thudGain: 0.1});
+    this.knock(t0 + 0.96, 0.45, {hp: 300, res: 900, dur: 0.03, thud: 180, thudGain: 0.6});
+    this.knock(t0 + HOLD_END + 0.22, 0.4, {hp: 700, res: 1300, dur: 0.3, thud: 110, thudGain: 0.3});
+    // Publikum rejser sig: bredbåndet brus, der vokser gennem råbet og ebber ud bagefter
+    const crowdLen = END + 2.4;
+    const cb = c.createBuffer(1, Math.ceil(c.sampleRate * crowdLen), c.sampleRate);
+    const cd = cb.getChannelData(0);
+    let lp1 = 0, lp2 = 0;
+    for(let i = 0; i < cd.length; i++){ const w = Math.random() * 2 - 1; lp1 += 0.04 * (w - lp1); lp2 += 0.2 * (w - lp2); cd[i] = lp2 - lp1 + w * 0.15; }
+    const cs = c.createBufferSource(); cs.buffer = cb;
+    const cf = c.createBiquadFilter(); cf.type = 'bandpass'; cf.frequency.value = 900; cf.Q.value = 0.5;
+    const cg = c.createGain();
+    cg.gain.setValueAtTime(0.02, t0); cg.gain.linearRampToValueAtTime(0.12, t0 + 1.0);
+    cg.gain.linearRampToValueAtTime(0.42, t0 + HOLD_END); cg.gain.setValueAtTime(0.42, t0 + END);
+    cg.gain.linearRampToValueAtTime(0.0001, t0 + crowdLen);
+    const sw = c.createOscillator(); sw.frequency.value = 0.7;
+    const swg = c.createGain(); swg.gain.value = 0.08; sw.connect(swg).connect(cg.gain); sw.start(t0); sw.stop(t0 + crowdLen);
+    cs.connect(cf).connect(cg).connect(this.bus); cs.start(t0); cs.stop(t0 + crowdLen);
     return END;
   },
   // 31: faldende wah-wah
@@ -1092,10 +1124,12 @@ const Sound = {
     try{
       if(!('speechSynthesis' in window)) return false;
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = lang; u.pitch = pitch; u.rate = rate; u.volume = 1;
-      const want = lang.slice(0, 2).toLowerCase();
-      const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith(want));
-      if(v) u.voice = v;
+      const prefs = (Array.isArray(lang) ? lang : [lang]).map(l => l.toLowerCase());
+      u.lang = prefs[0]; u.pitch = pitch; u.rate = rate; u.volume = 1;
+      const voices = speechSynthesis.getVoices();
+      let v = null;
+      for(const pr of prefs){ v = voices.find(x => x.lang && x.lang.toLowerCase().replace('_', '-').startsWith(pr)); if(v) break; }
+      if(v){ u.voice = v; u.lang = v.lang; }
       if(!queue) speechSynthesis.cancel();
       speechSynthesis.speak(u);
       return true;
@@ -1109,8 +1143,10 @@ const Sound = {
     toast(this.on ? 'Lyd slået til' : 'Lyd slået fra');
   }
 };
-const ECUADOR_GAIN = 2.0;   // opmålt så stemmen rammer fuld styrke efter formantfiltrene
-const ECUADOR_TEXT = 'Ecuadooooooooooooor!';
+const ECUADOR_GAIN = 1.15;   // opmålt så råbet rammer fuld styrke efter formantfiltrene
+// Latinamerikansk spansk stemme hvis telefonen har en, ellers spansk, ellers dansk
+const ECUADOR_VOICE = ['es-MX', 'es-US', 'es-419', 'es-AR', 'es-CO', 'es', 'da-DK'];
+const ECUADOR_TEXT = '¡Ecuadooooooooooooor!';
 function renderSoundButton(){
   const b = $('btnSound');
   b.textContent = Sound.on ? '🔊' : '🔇';
@@ -1132,12 +1168,11 @@ function shout(text, cls, ms){
 // Udbrud når terningerne er landet: Ecuador ved Mexico, Ohh no ved 31, Not good ved 32
 function celebrate(r){
   if(r.mexico){
-    // Banner i godt fire sekunder. Talesyntesen råber langsomt, og den syntetiske stemme
-    // råber hele ordet langt og højt ovenpå. Fanfaren venter til det hele er færdigt.
-    shout('ECUADOR!', 'mexico', 4400);
-    Sound.say(ECUADOR_TEXT, 'da-DK', 1.4, 0.5);
-    const len = Sound.ecuador(0.05);
-    Sound.fanfare((len || 3.9) + 0.35);
+    // Kommentator-råbet bærer det hele: banneret står så længe råbet varer, og talesyntesen
+    // siger ordet samtidig med latinamerikansk stemme, så det er tydeligt.
+    const len = Sound.ecuador(0.05) || 8.1;
+    shout('ECUADOR!', 'mexico', Math.round(len * 1000) + 400);
+    Sound.say(ECUADOR_TEXT, ECUADOR_VOICE, 1.15, 0.5);
   }else if(r.hi === 3 && r.lo === 1){
     shout('OHH NO!', 'ohno'); Sound.wahwah(); Sound.say('Ohh no', 'en-US', 0.6, 0.8);
   }else if(r.hi === 3 && r.lo === 2){
