@@ -335,7 +335,7 @@ details summary{cursor:pointer;font-weight:600}
         <tr><td>Lavest</td><td>Almindelige slag: 65, 64, 63, 62, 61, 54, 53, 52, 51, 43, 42, 41, 32, 31.</td></tr>
       </table>
       <ul>
-        <li><strong>Runden.</strong> Startspilleren slår op til 3 gange og må stoppe når som helst. Det antal slag, startspilleren bruger, er loftet for de øvrige i runden. Det sidste slag tæller.</li>
+        <li><strong>Runden.</strong> Startspilleren slår op til 3 gange og må stoppe når som helst. Det antal slag, startspilleren bruger, er loftet for de øvrige i runden – dog altid mindst 2. Det sidste slag tæller.</li>
         <li><strong>Tab.</strong> Laveste slag i runden mister ét liv. Deler flere det laveste slag, mister de alle et liv. Er rundens højeste slag Mexico, koster tabet to liv.</li>
         <li><strong>Næste runde.</strong> Vinderen af runden (højeste slag) starter. Deler flere det højeste, starter den af dem der slog først.</li>
         <li><strong>Slut.</strong> Spillere uden liv er ude. Sidste spiller med liv tilbage vinder. Ryger alle tilbageværende ud i samme runde, får de hver ét liv og spiller en afgørende runde.</li>
@@ -359,6 +359,7 @@ details summary{cursor:pointer;font-weight:600}
 const STORE_KEY = 'mexico-spil-v1';
 const DEFAULT_ROWS = 6;      // felter der vises fra start – der kan tilføjes så mange man vil
 const MAX_ROLLS = 3;
+const MIN_CAP = 2;            // de øvrige må altid slå mindst 2 gange, uanset startspilleren
 const LIVES_OPTIONS = [3, 4, 5, 6, 8, 10];
 const PENALTY_OPTIONS = [1, 2];
 const PIPS = {1:[4], 2:[2,6], 3:[2,4,6], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8]};
@@ -422,6 +423,7 @@ function startRound(){
   game.order = order;
   game.pos = 0;
   game.cap = null;
+  game.starterRolls = null;
   game.rollsUsed = 0;
   game.current = null;
   game.results = {};
@@ -462,7 +464,7 @@ function stand(){
   if(animating || game.phase !== 'turn' || !game.current) return;
   const idx = game.order[game.pos];
   game.results[idx] = game.current;
-  if(isStarter()) game.cap = game.rollsUsed;
+  if(isStarter()){ game.starterRolls = game.rollsUsed; game.cap = Math.max(MIN_CAP, game.rollsUsed); }
   game.pos += 1;
   game.rollsUsed = 0;
   game.current = null;
@@ -636,7 +638,7 @@ function renderTurn(){
   $('turnWho').textContent = `${p.name} har turen`;
   $('turnCap').textContent = starter
     ? `Startspiller · sætter loftet (op til ${MAX_ROLLS} slag)`
-    : `Loft: ${game.cap} slag · ${game.players[game.order[0]].name} brugte ${game.cap}`;
+    : `Loft: ${game.cap} slag · ${game.players[game.order[0]].name} brugte ${game.starterRolls ?? game.cap}${(game.starterRolls ?? game.cap) < game.cap ? ` (mindst ${MIN_CAP})` : ''}`;
 
   const r = game.current;
   if(r){
@@ -647,7 +649,7 @@ function renderTurn(){
     showFace($('die1'), 0); showFace($('die2'), 0);
     $('die1').classList.add('blank'); $('die2').classList.add('blank');
     $('dice').classList.remove('mexico', 'pair');
-    $('valueBox').innerHTML = `<div class="name">${starter ? 'Slå op til 3 gange. Stopper du tidligt, må de andre heller ikke slå flere.' : 'Tryk på Slå for at rafle'}</div>`;
+    $('valueBox').innerHTML = `<div class="name">${starter ? `Slå op til ${MAX_ROLLS} gange. Bruger du alle ${MAX_ROLLS}, må de andre også – ellers må de slå ${MIN_CAP}.` : 'Tryk på Slå for at rafle'}</div>`;
   }
 
   // Slag-indikator
