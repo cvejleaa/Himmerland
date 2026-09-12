@@ -105,13 +105,16 @@ mellem de to spil i sidefoden. Ligger på `golf.vejleaa.dk/10000.html`.
 | Tre ens = øjne × 100, tre 1'ere = 1000 | Fire, fem og seks ens i ét slag giver ×2, ×4 og ×8. |
 | Tre par i ét slag og lige række 1–6 | Standard 500 og 1000, begge kan ændres under opsætningen. |
 | Kæde: tre ens og derefter samme øjne i slaget lige efter fordobler | Hver ny terning med kædens øjne fordobler kædens værdi: 3 × 3 = 300, én 3'er i næste slag 600, to 3'ere 1200, én 3'er i slaget efter 2400. Kæden vises i turkortet, matchende terninger lyser lilla, og der råbes ×2/×4. Et slag uden match bryder kæden, men værdien beholdes. Kæden stopper når alle terninger er brugt. |
-| Alle seks terninger brugt = frit slag | Man slår igen med alle seks og beholder pointene ("FRIT SLAG!"). |
+| Alle seks terninger brugt = frit slag | Man slår igen med alle seks og beholder pointene ("FRIT SLAG!"). Man kan ikke banke, når alle terninger er brugt, heller ikke hvis udvalget ville bruge dem alle – *Bank* er låst, og noten siger hvorfor. |
 | Død tur = ingen point i slaget | Turens point mistes, og turen går videre af sig selv ("DØD TUR!"). |
 | Åbningskrav (standard 350) | Første gang man banker skal turen give mindst kravet, ellers er *Bank* låst. Kan sættes til intet krav. |
 | Mål (standard 10.000) og slutspil | Når en spiller passerer målet, får de øvrige én tur mere. Højeste total vinder, ved lige stilling den der nåede målet først. |
 
-*Bank* lægger turens point på tavlen. *Fortryd* starter den aktuelle tur forfra eller går en tur tilbage, og
-*Nyt spil med samme spillere* lader vinderen starte. Der er raflelyd, kasse-lyd ved bank, udbrud på skærmen og
+*Bank* lægger turens point på tavlen. Stillingen sorteres efter point ved hver bankning, så nummer 1 altid står
+øverst, og turkortet viser hvem der er næste. *Rækkefølge* åbner et panel, hvor spillerne kan flyttes op og ned i
+spillerækkefølgen midt i spillet (ikke i sidste runde); under opsætningen flytter pilene ved navnene på samme
+måde. *Fortryd* starter den aktuelle tur forfra eller går en tur tilbage, og *Nyt spil med samme spillere* lader
+vinderen starte. Der er raflelyd, kasse-lyd ved bank, udbrud på skærmen og
 via talesyntesen, og fejring af vinderen med konfetti og "Tillykke <navn>". Mellemrum slår, B banker.
 Terningerne trækkes med `crypto.getRandomValues`.
 

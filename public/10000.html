@@ -89,11 +89,20 @@ header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255
 
 /* ---------- Opsætning ---------- */
 .setup-grid{display:grid;grid-template-columns:1fr;gap:8px}
-.setup-grid label{display:flex;align-items:center;gap:8px;font-size:.85rem}
+.setup-grid label{display:flex;align-items:center;gap:8px;font-size:.85rem;min-width:0}
 .setup-grid label .nr{width:22px;height:22px;border-radius:50%;background:var(--green-3);color:var(--green);display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex:0 0 auto}
 .setup-grid input[type=text]{flex:1;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1rem;min-width:0}
 .setup-grid .rm{flex:0 0 auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;line-height:1}
 .setup-grid .rm:hover{border-color:var(--danger);color:var(--danger)}
+.setup-grid .mv{flex:0 0 auto;width:28px;height:34px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-size:.8rem;line-height:1;padding:0}
+.setup-grid .mv:disabled{opacity:.3;cursor:default}
+.order{display:grid;gap:6px;margin-top:10px}
+.order .orow{display:grid;grid-template-columns:26px 1fr auto auto;gap:8px;align-items:center;padding:6px 10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.order .orow.current{border-color:var(--green);background:var(--green-3)}
+.order .orow .idx{width:26px;height:26px;border-radius:50%;background:var(--green-3);color:var(--green);display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700}
+.order .orow .oname{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.order .mv{width:36px;height:34px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:.85rem;line-height:1;padding:0}
+.order .mv:disabled{opacity:.3;cursor:default}
 .settings{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .settings .field{border:1px solid var(--line);border-radius:12px;padding:10px 11px}
 .settings .field .lab{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
@@ -217,7 +226,7 @@ details summary{cursor:pointer;font-weight:600}
   <!-- ===== Opsætning ===== -->
   <section class="card" id="setup">
     <h2>Spillere <span class="hint">mindst 2 – ellers så mange I er</span></h2>
-    <p class="help">Skriv navnene i den rækkefølge I sidder rundt om bordet. Tomme felter tæller ikke med.</p>
+    <p class="help">Skriv navnene i den rækkefølge I sidder rundt om bordet – pilene flytter en spiller op eller ned. Tomme felter tæller ikke med.</p>
     <div class="setup-grid" id="nameInputs"></div>
     <div class="btnrow" style="margin-top:10px">
       <button class="btn ghost" id="btnAddPlayer" type="button">+ Tilføj spiller</button>
@@ -298,6 +307,11 @@ details summary{cursor:pointer;font-weight:600}
       <button class="btn ghost" id="btnUndo" type="button">↶ Fortryd</button>
       <span class="muted" id="undoHint"></span>
     </div>
+    <div class="btnrow" style="margin-top:8px">
+      <button class="btn ghost" id="btnOrder" type="button" aria-expanded="false">⇅ Rækkefølge</button>
+      <span class="muted">Flyt spillerne i den rækkefølge, der spilles i</span>
+    </div>
+    <div class="order" id="orderPanel" hidden></div>
   </section>
 
   <!-- ===== Log ===== -->
@@ -324,6 +338,7 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Kæden.</strong> Slår man tre ens, og i slaget lige efter mindst én terning med samme øjne, fordobles værdien pr. ekstra terning: tre 3'ere = 300, én 3'er mere i næste slag = 600, to 3'ere mere = 1200. En ekstra 1'er eller 5'er i kæden tæller som fordobling, ikke som 100 eller 50. Et slag uden match bryder kæden, men de opnåede point beholdes. Kæden slutter, når alle terninger er brugt.</li>
         <li><strong>Død tur.</strong> Giver et slag ingen point, mister man turens point, og turen går videre.</li>
         <li><strong>Frit slag.</strong> Er alle seks terninger taget fra, slår man videre med alle seks igen – eller banker.</li>
+        <li><strong>Alle terninger brugt.</strong> Har man brugt alle seks terninger, kan man ikke banke – man skal slå igen med alle seks (frit slag).</li>
         <li><strong>Åbning.</strong> Første gang man banker, skal turen give mindst åbningskravet (<span id="ruleOpening">350</span>). Ellers kan man ikke banke, men må slå videre.</li>
         <li><strong>Slut.</strong> Passerer en spiller målet (<span id="ruleTarget">10.000</span>), får de øvrige én tur mere. Højeste total vinder. Ved lige stilling vinder den, der nåede målet først.</li>
       </ul>
@@ -438,6 +453,7 @@ let game = null;
 let snapshots = [];
 let animating = false;
 let logExpanded = false;
+let orderOpen = false;
 
 function freshTurn(){ return {remaining: 6, rolled: [], sel: [], points: 0, chain: null, kept: [], rolls: 0, dead: false, hot: false}; }
 function newGame(names, settings){
@@ -530,8 +546,11 @@ function doBank(){
   if(animating || game.phase !== 'turn') return;
   const t = game.turn;
   if(t.dead) return;
+  if(t.hot && !t.rolled.length){ toast('Alle terninger er brugt – du skal slå igen'); return; }
   if(t.rolled.length){
-    if(!currentSelection().ok){ toast('Vælg mindst én terning, der giver point'); return; }
+    const s = currentSelection();
+    if(!s.ok){ toast('Vælg mindst én terning, der giver point'); return; }
+    if(s.vals.length === t.remaining){ toast('Udvalget bruger alle terninger – du skal slå igen'); return; }
     applyTake();
   }
   if(t.points <= 0) return;
@@ -592,6 +611,22 @@ function undo(){
   toast(mid ? `${currentPlayer().name}s tur startes forfra` : `Tilbage til ${currentPlayer().name}s tur`);
 }
 
+function permuteGame(g, order){
+  const map = []; order.forEach((oldI, newI) => { map[oldI] = newI; });
+  g.players = order.map(i => g.players[i]);
+  g.cur = map[g.cur];
+  if(g.winner != null) g.winner = map[g.winner];
+  if(g.finalRound){ g.finalRound.trigger = map[g.finalRound.trigger]; g.finalRound.left = g.finalRound.left.map(i => map[i]); }
+}
+function movePlayer(i, dir){
+  if(!game || animating) return;
+  if(game.finalRound){ toast('Rækkefølgen kan ikke ændres i sidste runde'); return; }
+  const j = i + dir; if(j < 0 || j >= game.players.length) return;
+  const order = game.players.map((p, k) => k); order[i] = j; order[j] = i;
+  permuteGame(game, order); snapshots.forEach(s => permuteGame(s, order));
+  save(); render();
+}
+
 /* ---------- Lagring ---------- */
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify({game, snapshots})); }catch(e){} }
 function load(){
@@ -648,7 +683,9 @@ function render(){
   $('roundLabel').textContent = game.finalRound ? 'sidste runde' : `mål ${fmt(S.target)}`;
   $('subline').textContent = game.phase === 'over' ? 'Spillet er slut' : `${P.length} spillere · mål ${fmt(S.target)}${game.finalRound ? ' · sidste runde' : ''}`;
 
-  $('standings').innerHTML = P.map((p, i) => {
+  const byPoints = P.map((p, i) => i).sort((a, b) => P[b].total - P[a].total || a - b);
+  $('standings').innerHTML = byPoints.map((i, rank) => {
+    const p = P[i];
     const cur = game.phase === 'turn' && i === game.cur;
     const tags = [];
     if(!p.opened && S.opening > 0) tags.push('ikke åbnet');
@@ -656,12 +693,19 @@ function render(){
     if(game.phase === 'over' && i === game.winner) tags.push('vinder');
     const w = Math.min(100, Math.round(100 * p.total / S.target));
     return `<div class="prow ${cur ? 'current' : ''}">
-      <span class="idx">${i + 1}</span>
+      <span class="idx">${rank + 1}</span>
       <span class="pname">${esc(p.name)}${tags.map(t => `<span class="tag">${t}</span>`).join('')}</span>
       <span class="total">${fmt(p.total)}${p.total === leader && leader > 0 ? '<small>fører</small>' : ''}</span>
       <div class="bar"><i style="width:${w}%"></i></div>
     </div>`;
   }).join('');
+
+  $('btnOrder').setAttribute('aria-expanded', orderOpen);
+  $('orderPanel').hidden = !orderOpen;
+  if(orderOpen) $('orderPanel').innerHTML = P.map((p, i) => `<div class="orow ${game.phase === 'turn' && i === game.cur ? 'current' : ''}">
+      <span class="idx">${i + 1}</span><span class="oname">${esc(p.name)}${game.phase === 'turn' && i === game.cur ? ' <span class="tag">har turen</span>' : ''}</span>
+      <button type="button" class="mv" data-up="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Flyt ${esc(p.name)} op">▲</button>
+      <button type="button" class="mv" data-down="${i}" ${i === P.length - 1 ? 'disabled' : ''} aria-label="Flyt ${esc(p.name)} ned">▼</button></div>`).join('');
 
   $('turnCard').hidden = game.phase !== 'turn';
   $('resultCard').hidden = game.phase !== 'over';
@@ -684,7 +728,8 @@ function render(){
 
 function renderTurn(){
   const t = game.turn, p = currentPlayer(), S = game.settings;
-  $('turnWho').textContent = `${p.name} har turen`;
+  const nextI = game.finalRound ? (game.finalRound.left[0] ?? -1) : (game.cur + 1) % game.players.length;
+  $('turnWho').textContent = `${p.name} har turen${nextI >= 0 ? ` · derefter ${game.players[nextI].name}` : ' · sidste tur'}`;
   $('turnInfo').textContent = game.finalRound ? 'Sidste runde – én tur' : `${fmt(p.total)} på tavlen${!p.opened && S.opening > 0 ? ` · skal åbne med ${fmt(S.opening)}` : ''}`;
 
   const sel = t.rolled.length && !t.dead ? currentSelection() : null;
@@ -715,11 +760,13 @@ function renderTurn(){
   $('btnRoll').disabled = animating || t.dead || (t.rolled.length > 0 && !ok);
   $('btnRoll').textContent = !t.rolled.length ? `Slå ${t.remaining} terninger${t.hot ? ' (frit slag)' : ''}` : `Tag fra og slå igen (${nRoll})`;
   const bankPts = t.points + (ok ? sel.points : 0);
-  const canBank = !animating && !t.dead && bankPts > 0 && (!t.rolled.length || ok) && (p.opened || bankPts >= S.opening);
+  const mustRoll = t.hot && !t.rolled.length;                    // alle terninger brugt: der skal slås igen
+  const usesAll = t.rolled.length > 0 && ok && sel.vals.length === t.remaining;
+  const canBank = !animating && !t.dead && bankPts > 0 && (!t.rolled.length || ok) && (p.opened || bankPts >= S.opening) && !mustRoll && !usesAll;
   $('btnBank').hidden = !t.rolled.length && t.points === 0;
   $('btnBank').disabled = !canBank;
   $('btnBank').textContent = `Bank ${fmt(bankPts)}`;
-  $('turnNote').textContent = !p.opened && S.opening > 0 && bankPts > 0 && bankPts < S.opening ? `Mangler ${fmt(S.opening - bankPts)} for at kunne banke (åbningskrav ${fmt(S.opening)})` : t.remaining < 6 && !t.rolled.length ? `${t.remaining} terninger tilbage` : '';
+  $('turnNote').textContent = mustRoll ? 'Alle terninger er brugt – du skal slå igen med alle seks' : usesAll ? 'Udvalget bruger alle terninger – der skal slås igen, så der kan ikke bankes nu' : !p.opened && S.opening > 0 && bankPts > 0 && bankPts < S.opening ? `Mangler ${fmt(S.opening - bankPts)} for at kunne banke (åbningskrav ${fmt(S.opening)})` : t.remaining < 6 && !t.rolled.length ? `${t.remaining} terninger tilbage` : '';
 }
 function groupLabel(g){
   if(g.kind === 'straight') return 'Lige række';
@@ -749,6 +796,8 @@ function renderSetup(prefill){
 function renderNameRows(){
   $('nameInputs').innerHTML = setupNames.map((v, i) =>
     `<label><span class="nr">${i + 1}</span><input type="text" maxlength="20" placeholder="Spiller ${i + 1}" value="${esc(v)}" autocomplete="off" enterkeyhint="next">` +
+    `<button type="button" class="mv" data-up="${i}" ${i === 0 ? 'disabled' : ''} title="Flyt op" aria-label="Flyt spiller ${i + 1} op">▲</button>` +
+    `<button type="button" class="mv" data-down="${i}" ${i === setupNames.length - 1 ? 'disabled' : ''} title="Flyt ned" aria-label="Flyt spiller ${i + 1} ned">▼</button>` +
     `<button type="button" class="rm" data-rm="${i}" title="Fjern felt" aria-label="Fjern spiller ${i + 1}">✕</button></label>`).join('');
   updateCount();
 }
@@ -757,6 +806,14 @@ function syncSetupNames(){ setupNames = [...$('nameInputs').querySelectorAll('in
 function collectNames(){ return [...$('nameInputs').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean); }
 $('btnAddPlayer').addEventListener('click', () => { syncSetupNames(); setupNames.push(''); renderNameRows(); const ins = $('nameInputs').querySelectorAll('input'); ins[ins.length - 1].focus(); });
 $('nameInputs').addEventListener('click', e => {
+  const m = e.target.closest('button.mv');
+  if(m){
+    syncSetupNames();
+    const i = m.dataset.up != null ? +m.dataset.up : +m.dataset.down, j = m.dataset.up != null ? i - 1 : i + 1;
+    if(j < 0 || j >= setupNames.length) return;
+    [setupNames[i], setupNames[j]] = [setupNames[j], setupNames[i]];
+    renderNameRows(); return;
+  }
   const b = e.target.closest('button.rm'); if(!b) return;
   syncSetupNames();
   if(setupNames.length <= 2){ toast('Der skal være mindst to felter'); return; }
@@ -783,7 +840,7 @@ $('btnStart').addEventListener('click', () => {
   if(names.length < 2){ $('setupError').textContent = 'Der skal mindst to spillere til.'; return; }
   $('setupError').textContent = '';
   game = newGame(names, readSettings());
-  snapshots = []; logExpanded = false;
+  snapshots = []; logExpanded = false; orderOpen = false;
   startTurn();
   window.scrollTo({top: 0, behavior: 'smooth'});
 });
@@ -807,6 +864,11 @@ $('btnRematch').addEventListener('click', () => {
 $('btnRoll').addEventListener('click', doRoll);
 $('btnBank').addEventListener('click', doBank);
 $('btnUndo').addEventListener('click', undo);
+$('btnOrder').addEventListener('click', () => { orderOpen = !orderOpen; render(); });
+$('orderPanel').addEventListener('click', e => {
+  const m = e.target.closest('button.mv'); if(!m) return;
+  if(m.dataset.up != null) movePlayer(+m.dataset.up, -1); else movePlayer(+m.dataset.down, 1);
+});
 $('dice').addEventListener('click', e => { const b = e.target.closest('button.die'); if(b) toggleDie(+b.dataset.i); });
 $('log').addEventListener('click', e => { if(e.target.closest('button.showall')){ logExpanded = !logExpanded; render(); } });
 document.addEventListener('keydown', e => {
