@@ -277,6 +277,15 @@ details summary{cursor:pointer;font-weight:600}
 #podiumBox .stats{color:var(--muted);opacity:1;text-align:center}
 @media (prefers-reduced-motion: reduce){.party-who,.party-trophy,.party-name,.party.phase-reveal,.podium .step{animation:none}}
 
+/* ---------- Slagstatistik ---------- */
+.rollsum{margin-top:6px;opacity:1;color:var(--ink)}
+.rollsum span{display:block;margin:2px 0}
+.rolltable td.bar{width:34%;position:relative;padding:6px 4px}
+.rolltable td.bar i{display:block;height:10px;border-radius:5px;background:var(--green-2)}
+.rolltable tr.mexico td.bar i{background:var(--gold)}
+.rolltable tr.pair td.bar i{background:var(--pair)}
+.rolltable td.bar b{position:absolute;top:4px;bottom:4px;width:2px;background:var(--ink);opacity:.5}
+
 .toast{
   position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--toast-bg);color:var(--toast-fg);
   padding:10px 16px;border-radius:10px;font-size:.85rem;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:90vw;text-align:center
@@ -395,6 +404,25 @@ details summary{cursor:pointer;font-weight:600}
         <div id="historyGames"></div>
         <div class="btnrow" style="margin-top:12px">
           <button class="btn ghost danger" id="btnClearHistory" type="button">Ryd historik</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===== Slagstatistik ===== -->
+  <section class="card" id="rollCard">
+    <details id="rollDetails">
+      <summary>Slagstatistik <span class="hint" id="rollHint"></span></summary>
+      <p class="muted" id="rollEmpty" style="margin:8px 0 0">Ingen slag registreret endnu. Hvert slag tælles med her på tværs af spil, så I kan se om terningerne opfører sig som de skal.</p>
+      <div id="rollBody" hidden>
+        <p class="muted" style="margin:8px 0 4px">Med fair terninger er Mexico 2 af 36 udfald (5,6 %) og par 6 af 36 (16,7 %). Med mange spillere og op til 3 slag hver falder der typisk et Mexico i omkring hver anden runde. Stregen i søjlerne viser det forventede.</p>
+        <div class="stats rollsum" id="rollSummary"></div>
+        <h3 class="subh">Alle slag</h3>
+        <table class="hist-table rolltable" id="rollTable"></table>
+        <h3 class="subh">Pr. spiller</h3>
+        <table class="hist-table" id="rollPlayers"></table>
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn ghost danger" id="btnClearRolls" type="button">Nulstil slagstatistik</button>
         </div>
       </div>
     </details>
@@ -544,6 +572,7 @@ function doRoll(skru){
   game.stats = game.stats || {mexicos: 0, skru: 0};
   if(r.mexico) game.stats.mexicos = (game.stats.mexicos || 0) + 1;
   if(skru) game.stats.skru = (game.stats.skru || 0) + 1;
+  recordRoll(r, currentPlayer().name, !!skru);
   animating = true;
   updateTurnButtons();
   // Et skru er den berusede måde at ryste bægeret på: længere, vildere og med snurren og hik.
@@ -710,6 +739,7 @@ function livesHtml(p){
 function render(){
   const inGame = !!game;
   renderHistory();
+  renderRollStats();
   $('setup').hidden = inGame;
   $('btnMenu').hidden = !inGame;
   $('standingsCard').hidden = !inGame;
@@ -1619,6 +1649,65 @@ $('btnClearHistory').addEventListener('click', () => {
   if(game) game.historyId = null;
   renderHistory();
   toast('Historikken er ryddet');
+});
+
+/* ---------- Slagstatistik på tværs af spil ---------- */
+const ROLLS_KEY = 'mexico-slag-v1';
+let rollStats = loadRollStats();
+function emptyRollStats(){ return {total: 0, counts: {}, byPlayer: {}, skru: 0, since: new Date().toISOString()}; }
+function loadRollStats(){
+  try{ const d = JSON.parse(localStorage.getItem(ROLLS_KEY) || 'null'); if(d && d.counts) return d; }catch(e){}
+  return emptyRollStats();
+}
+function saveRollStats(){ try{ localStorage.setItem(ROLLS_KEY, JSON.stringify(rollStats)); }catch(e){} }
+// Hvert slag tælles, også dem der fortrydes – de blev jo slået
+function recordRoll(r, name, skru){
+  const key = r.mexico ? '21' : `${r.hi}${r.lo}`;
+  rollStats.total += 1;
+  rollStats.counts[key] = (rollStats.counts[key] || 0) + 1;
+  const p = rollStats.byPlayer[name] || {rolls: 0, mexico: 0, pairs: 0};
+  p.rolls += 1; if(r.mexico) p.mexico += 1; if(r.pair) p.pairs += 1;
+  rollStats.byPlayer[name] = p;
+  if(skru) rollStats.skru += 1;
+  saveRollStats();
+}
+// Alle 21 udfald i rangorden, med den andel fair terninger giver
+const OUTCOMES = (() => {
+  const list = [['21', 'Mexico', 2 / 36]];
+  for(let d = 6; d >= 1; d--) list.push([`${d}${d}`, `Par ${d}'ere`, 1 / 36]);
+  for(let hi = 6; hi >= 2; hi--) for(let lo = hi - 1; lo >= 1; lo--){ if(hi === 2 && lo === 1) continue; list.push([`${hi}${lo}`, `${hi}${lo}`, 2 / 36]); }
+  return list;
+})();
+function pct(x){ return (100 * x).toFixed(1).replace('.', ',') + ' %'; }
+function renderRollStats(){
+  const s = rollStats, n = s.total;
+  $('rollHint').textContent = n ? `${n} slag` : '';
+  $('rollEmpty').hidden = n > 0; $('rollBody').hidden = n === 0;
+  if(!n) return;
+  const mex = s.counts['21'] || 0;
+  const pairs = [1, 2, 3, 4, 5, 6].reduce((a, d) => a + (s.counts[`${d}${d}`] || 0), 0);
+  $('rollSummary').innerHTML =
+    `<span>🎲 ${n} slag siden ${esc(fmtWhen(s.since))}</span>` +
+    `<span>Mexico: <strong>${mex}</strong> (${pct(mex / n)}) – forventet ${pct(2 / 36)}</span>` +
+    `<span>Par: <strong>${pairs}</strong> (${pct(pairs / n)}) – forventet ${pct(6 / 36)}</span>` +
+    (s.skru ? `<span>🌀 ${s.skru} skru</span>` : '');
+  const maxShare = Math.max(2 / 36, ...OUTCOMES.map(([k]) => (s.counts[k] || 0) / n));
+  $('rollTable').innerHTML = '<tr><th>Slag</th><th class="num">Antal</th><th class="num">Andel</th><th class="num">Forventet</th><th></th></tr>' +
+    OUTCOMES.map(([k, label, exp]) => {
+      const c = s.counts[k] || 0, share = c / n;
+      const w = Math.round(100 * share / maxShare), we = Math.round(100 * exp / maxShare);
+      const cls = k === '21' ? 'mexico' : k[0] === k[1] ? 'pair' : '';
+      return `<tr class="${cls}"><td>${label}</td><td class="num">${c}</td><td class="num">${pct(share)}</td><td class="num">${pct(exp)}</td>` +
+        `<td class="bar"><i style="width:${w}%"></i><b style="left:${we}%"></b></td></tr>`;
+    }).join('');
+  const rows = Object.entries(s.byPlayer).sort((a, b) => b[1].rolls - a[1].rolls || a[0].localeCompare(b[0], 'da'));
+  $('rollPlayers').innerHTML = '<tr><th>Spiller</th><th class="num">Slag</th><th class="num">Mexico</th><th class="num">Andel</th><th class="num">Par</th></tr>' +
+    rows.map(([name, p]) => `<tr><td>${esc(name)}</td><td class="num">${p.rolls}</td><td class="num">${p.mexico}</td><td class="num">${pct(p.mexico / p.rolls)}</td><td class="num">${p.pairs}</td></tr>`).join('');
+}
+$('btnClearRolls').addEventListener('click', () => {
+  if(!confirm('Nulstille slagstatistikken på denne telefon?')) return;
+  rollStats = emptyRollStats(); saveRollStats(); renderRollStats();
+  toast('Slagstatistikken er nulstillet');
 });
 
 /* ---------- Hjælpere ---------- */

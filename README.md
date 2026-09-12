@@ -75,6 +75,11 @@ olé", og til sidst kommer podiet med guld, sølv og bronze og en kampstatistik 
 Mexico'er, første ud). Et tryk på skærmen springer fejringen over. Podiet og statistikken bliver stående i
 resultatkortet, og historikken viser sølv og bronze.
 
+**Slagstatistik**: hvert slag tælles på tværs af spil og vises under historikken – antal slag, Mexico'er og
+par mod det forventede (Mexico 5,6 %, par 16,7 %), fordelingen af alle 21 udfald med søjler og en streg for det
+forventede, og pr. spiller. Terningerne trækkes med `crypto.getRandomValues`, så statistikken er til at se, om
+noget afviger. *Nulstil slagstatistik* tømmer den.
+
 **Historik** gemmes på telefonen: hvert færdigt spil med tidspunkt, vinder, antal runder og
 placeringer (rækkefølgen spillerne røg ud i), samt en samlet rangliste: hver placering giver lige så mange point som
 placeringen (1. plads 1 point, 5. plads 5 point), og færrest point fører. Ved siden af står antal spil,
