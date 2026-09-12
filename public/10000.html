@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>10.000 – terningspil</title>
+<meta name="description" content="Terningspillet 10.000 for et vilkårligt antal spillere på én telefon. Seks terninger, 1'ere og 5'ere, tre ens, kæde-fordobling og sidste runde.">
+<meta name="theme-color" content="#0d5c3f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#08160f" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎲</text></svg>">
+<style>
+:root{
+  --green:#0d5c3f; --green-2:#12784f; --green-3:#e8f4ee; --green-deep:#0a4630;
+  --on-accent:#fff;
+  --ink:#16241d; --muted:#5d6f66;
+  --line:#d8e2db; --card:#fff; --bg:#f2f6f3;
+  --gold:#b8860b; --gold-bg:#fff7dc; --gold-line:#e5c765;
+  --pair:#6d28d9; --pair-bg:#efe7fd;
+  --danger:#b91c1c; --danger-bg:#fee2e2; --danger-fg:#991b1b;
+  --warn:#c2410c;
+  --die-bg:#fffdf5; --die-pip:#1a1a1a; --die-line:#d9d2b8;
+  --toast-bg:#16241d; --toast-fg:#fff;
+  --radius:14px; --shadow:0 1px 2px rgba(16,40,30,.06),0 6px 20px rgba(16,40,30,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --green:#3f9d72; --green-2:#5cbc8e; --green-3:#172b23; --green-deep:#08160f;
+    --on-accent:#07150f;
+    --ink:#e6efe9; --muted:#93a89e;
+    --line:#2b3a33; --card:#16211c; --bg:#0e1613;
+    --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
+    --pair:#c4b0ff; --pair-bg:#251b3d;
+    --danger:#f08a8a; --danger-bg:#3b1a1a; --danger-fg:#f7b4b4;
+    --warn:#e0733a;
+    --die-bg:#f3efe0; --die-pip:#141414; --die-line:#b8b09a;
+    --toast-bg:#e6efe9; --toast-fg:#0e1613;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 20px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --green:#3f9d72; --green-2:#5cbc8e; --green-3:#172b23; --green-deep:#08160f;
+  --on-accent:#07150f;
+  --ink:#e6efe9; --muted:#93a89e;
+  --line:#2b3a33; --card:#16211c; --bg:#0e1613;
+  --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
+  --pair:#c4b0ff; --pair-bg:#251b3d;
+  --danger:#f08a8a; --danger-bg:#3b1a1a; --danger-fg:#f7b4b4;
+  --warn:#e0733a;
+  --die-bg:#f3efe0; --die-pip:#141414; --die-line:#b8b09a;
+  --toast-bg:#e6efe9; --toast-fg:#0e1613;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 20px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{color-scheme:light dark}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px 60px}
+a{color:var(--green-2)}
+button{font:inherit}
+[hidden]{display:none!important}
+
+/* ---------- Header ---------- */
+header.top{background:linear-gradient(160deg,var(--green-deep) 0%,#061009 100%);color:#fff;padding:18px 0 16px;margin-bottom:14px}
+header.top .wrap{padding-bottom:0;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+h1{margin:0;font-size:1.45rem;letter-spacing:.2px}
+h1 .em{opacity:.85;font-weight:400}
+.sub{margin:4px 0 0;opacity:.8;font-size:.85rem}
+header.top .btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff;flex:0 0 auto}
+header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45);color:#fff}
+
+/* ---------- Kort og knapper ---------- */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
+.card > h2{margin:0 0 4px;font-size:1.05rem}
+.card > h2 .hint{font-weight:400;font-size:.78rem;color:var(--muted);margin-left:6px}
+.card > p.help{margin:0 0 12px;color:var(--muted);font-size:.82rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:.9rem;font-weight:600;cursor:pointer;min-height:42px}
+.btn:hover{border-color:var(--green-2);color:var(--green-2)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.primary{background:var(--green);border-color:var(--green);color:var(--on-accent)}
+.btn.primary:hover{background:var(--green-2);color:var(--on-accent)}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn.gold:hover{filter:brightness(1.08);color:#fff}
+.btn.big{font-size:1.05rem;padding:14px 18px;min-height:56px;flex:1 1 auto}
+.btn.ghost{background:transparent}
+.btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btnrow.stretch .btn{flex:1 1 150px}
+.muted{color:var(--muted);font-size:.85rem}
+
+/* ---------- Opsætning ---------- */
+.setup-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.setup-grid label{display:flex;align-items:center;gap:8px;font-size:.85rem}
+.setup-grid label .nr{width:22px;height:22px;border-radius:50%;background:var(--green-3);color:var(--green);display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex:0 0 auto}
+.setup-grid input[type=text]{flex:1;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1rem;min-width:0}
+.setup-grid .rm{flex:0 0 auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;line-height:1}
+.setup-grid .rm:hover{border-color:var(--danger);color:var(--danger)}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.settings .field{border:1px solid var(--line);border-radius:12px;padding:10px 11px}
+.settings .field .lab{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.settings input[type=number]{width:100%;margin-top:6px;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1rem;font-weight:600}
+.chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.chips button{padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:.78rem;font-weight:600;cursor:pointer}
+.chips button:hover{border-color:var(--green-2);color:var(--green-2)}
+
+/* ---------- Stilling ---------- */
+.standings{display:grid;grid-template-columns:1fr;gap:6px}
+.prow{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.prow.current{border-color:var(--green);background:var(--green-3)}
+.prow .idx{width:26px;height:26px;border-radius:50%;background:var(--green-3);color:var(--green);display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700}
+.prow.current .idx{background:var(--green);color:var(--on-accent)}
+.prow .pname{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .pname .tag{font-weight:500;font-size:.72rem;color:var(--muted);margin-left:6px}
+.prow .total{font-variant-numeric:tabular-nums;font-weight:800;font-size:1.05rem}
+.prow .total small{font-weight:500;color:var(--green-2);font-size:.75rem;margin-left:4px}
+.bar{height:5px;border-radius:3px;background:var(--line);grid-column:2 / 4;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green-2)}
+
+/* ---------- Tur ---------- */
+.turn-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.turn-head .who{font-size:1.35rem;font-weight:700;margin:0}
+.turn-head .tp{font-size:.85rem;color:var(--muted)}
+.turnpoints{text-align:center;margin:8px 0 2px}
+.turnpoints .big{font-size:2.4rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.turnpoints .big .plus{color:var(--green-2);font-size:1.3rem;font-weight:700;margin-left:6px}
+.turnpoints .name{color:var(--muted);font-size:.85rem;min-height:1.3rem}
+.chain{margin:6px auto 0;display:inline-block;padding:4px 10px;border-radius:999px;background:var(--pair-bg);color:var(--pair);font-weight:700;font-size:.85rem}
+.kept{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0 4px;min-height:10px}
+.kept .grp{display:flex;align-items:center;gap:3px;padding:4px 6px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.kept .grp .pts{font-size:.75rem;font-weight:700;margin-left:4px;color:var(--green-2)}
+.kept .grp.chain{border-color:var(--pair)}
+.dice{display:flex;gap:8px;justify-content:center;align-items:center;padding:12px 0 6px;flex-wrap:wrap}
+.die{width:min(56px,calc((100vw - 104px) / 6));height:min(56px,calc((100vw - 104px) / 6));border-radius:12px;background:var(--die-bg);border:1px solid var(--die-line);box-shadow:inset 0 -3px 0 rgba(0,0,0,.08),0 3px 8px rgba(0,0,0,.15);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:7px;gap:3px;transition:transform .12s,box-shadow .12s;cursor:default;position:relative}
+.die.sm{width:30px !important;height:30px !important;border-radius:7px;padding:4px;gap:2px;box-shadow:none}
+.die span{border-radius:50%;background:var(--die-pip);opacity:0;transform:scale(.6)}
+.die span.on{opacity:1;transform:scale(1)}
+.die.blank span{opacity:0}
+.die.rolling{animation:shake .12s infinite}
+button.die{cursor:pointer;-webkit-tap-highlight-color:transparent}
+button.die.scoring{box-shadow:inset 0 -3px 0 rgba(0,0,0,.08),0 0 0 2px var(--green-2)}
+button.die.sel{transform:translateY(-8px) scale(1.06);box-shadow:0 0 0 3px var(--green),0 10px 18px rgba(0,0,0,.25)}
+button.die.chainhit{box-shadow:inset 0 -3px 0 rgba(0,0,0,.08),0 0 0 2px var(--pair)}
+button.die.sel.chainhit{box-shadow:0 0 0 3px var(--pair),0 10px 18px rgba(0,0,0,.25)}
+button.die.deadface{opacity:.55}
+@keyframes shake{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(3px,-2px) rotate(4deg)}50%{transform:translate(-3px,2px) rotate(-4deg)}75%{transform:translate(2px,3px) rotate(2deg)}100%{transform:translate(0,0) rotate(0)}}
+.selinfo{text-align:center;min-height:1.4rem;font-size:.9rem;margin-bottom:8px}
+.selinfo.bad{color:var(--danger)}
+.selinfo .pts{font-weight:800;color:var(--green-2)}
+
+/* ---------- Resultat ---------- */
+.winner{text-align:center;padding:18px 10px;border-radius:12px;background:var(--gold-bg);border:1px solid var(--gold-line);margin-bottom:12px}
+.winner .trophy{font-size:2.6rem;line-height:1}
+.winner .wname{font-size:1.4rem;font-weight:800;margin-top:6px}
+.res-list{display:grid;gap:6px}
+.rrow{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:12px}
+.rrow.win{background:var(--green-3);border-color:var(--green)}
+.rrow .medal{font-size:1.1rem;text-align:center}
+.rrow .rname{font-weight:600}
+.rrow .rval{font-weight:700;font-variant-numeric:tabular-nums}
+
+/* ---------- Log og regler ---------- */
+.log{list-style:none;margin:0;padding:0;font-size:.85rem}
+.log li{padding:6px 0;border-top:1px solid var(--line);display:flex;gap:8px}
+.log li:first-child{border-top:0}
+.log li .rn{color:var(--muted);flex:0 0 3.2rem;font-variant-numeric:tabular-nums}
+.log li.more{border-top:0;padding-top:2px}
+details summary{cursor:pointer;font-weight:600}
+.rules{font-size:.9rem}
+.rules table{border-collapse:collapse;width:100%;margin:8px 0}
+.rules th,.rules td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.rules th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.rules ul{padding-left:18px}
+
+/* ---------- Udbrud ---------- */
+.shout{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:60}
+.shout span{display:inline-block;font-size:clamp(2.2rem,12vw,4.4rem);font-weight:900;letter-spacing:.02em;color:#fff;padding:.18em .5em;border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.35);animation:shout 1.7s cubic-bezier(.2,.9,.3,1.2) forwards;max-width:92vw;text-align:center;overflow-wrap:anywhere}
+.shout.dead span{background:var(--danger)}
+.shout.chain span{background:var(--pair)}
+.shout.final span{background:var(--gold);font-size:clamp(1.8rem,9vw,3.4rem)}
+.shout.hot span{background:var(--green);font-size:clamp(1.6rem,8vw,3rem)}
+@keyframes shout{0%{opacity:0;transform:scale(.4) rotate(-8deg)}15%{opacity:1;transform:scale(1.08) rotate(2deg)}25%{transform:scale(1) rotate(-1deg)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
+
+/* ---------- Fejring ---------- */
+.party{position:fixed;inset:0;z-index:70;background:rgba(6,16,10,.92);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden}
+.party canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.party-inner{position:relative;text-align:center;padding:20px 16px;width:92vw;max-width:520px}
+.party-trophy{font-size:clamp(4rem,22vw,8rem);line-height:1;animation:drop .6s cubic-bezier(.2,.9,.3,1.3) both}
+.party-name{font-size:clamp(2.2rem,12vw,5rem);font-weight:900;line-height:1.05;color:#ffd54a;text-shadow:0 0 30px rgba(255,213,74,.7),0 4px 0 #8a6a00;overflow-wrap:anywhere;animation:smack .55s cubic-bezier(.2,.9,.3,1.3) both;animation-delay:.15s}
+.party-sub{margin-top:8px;font-size:clamp(.9rem,4vw,1.3rem);font-weight:700;letter-spacing:.2em;opacity:.9}
+.party-score{margin-top:10px;font-size:1.1rem;opacity:.9}
+.party-hint{margin-top:22px;font-size:.8rem;opacity:.6}
+@keyframes drop{0%{opacity:0;transform:translateY(-80px) scale(.6)}100%{opacity:1;transform:none}}
+@keyframes smack{0%{opacity:0;transform:scale(2.2) rotate(-6deg)}100%{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.shout span,.party-trophy,.party-name{animation:none}.die.rolling{animation:none}}
+
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--toast-bg);color:var(--toast-fg);padding:10px 16px;border-radius:10px;font-size:.85rem;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.foot{color:var(--muted);font-size:.8rem;text-align:center;margin-top:6px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1>🎲 10.000 <span class="em">– terningspil</span></h1>
+      <p class="sub" id="subline">Seks terninger, én telefon. Først til 10.000.</p>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="btnSound" type="button" aria-pressed="true" title="Slå lyd fra">🔊</button>
+      <button class="btn" id="btnMenu" type="button" hidden>Nyt spil</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ===== Opsætning ===== -->
+  <section class="card" id="setup">
+    <h2>Spillere <span class="hint">mindst 2 – ellers så mange I er</span></h2>
+    <p class="help">Skriv navnene i den rækkefølge I sidder rundt om bordet. Tomme felter tæller ikke med.</p>
+    <div class="setup-grid" id="nameInputs"></div>
+    <div class="btnrow" style="margin-top:10px">
+      <button class="btn ghost" id="btnAddPlayer" type="button">+ Tilføj spiller</button>
+      <span class="muted" id="playerCount"></span>
+    </div>
+    <div class="settings">
+      <div class="field">
+        <div class="lab">Mål</div>
+        <input type="number" id="setTarget" min="1000" step="500" value="10000" inputmode="numeric">
+        <div class="chips"><button type="button" data-set="setTarget" data-v="5000">5.000</button><button type="button" data-set="setTarget" data-v="10000">10.000</button></div>
+      </div>
+      <div class="field">
+        <div class="lab">Åbningskrav</div>
+        <input type="number" id="setOpening" min="0" step="50" value="350" inputmode="numeric">
+        <div class="chips"><button type="button" data-set="setOpening" data-v="0">intet</button><button type="button" data-set="setOpening" data-v="350">350</button><button type="button" data-set="setOpening" data-v="500">500</button><button type="button" data-set="setOpening" data-v="1000">1000</button></div>
+      </div>
+      <div class="field">
+        <div class="lab">Tre par</div>
+        <input type="number" id="setPairs" min="0" step="50" value="500" inputmode="numeric">
+        <div class="chips"><button type="button" data-set="setPairs" data-v="500">500</button><button type="button" data-set="setPairs" data-v="1500">1500</button></div>
+      </div>
+      <div class="field">
+        <div class="lab">Lige række 1–6</div>
+        <input type="number" id="setStraight" min="0" step="50" value="1000" inputmode="numeric">
+        <div class="chips"><button type="button" data-set="setStraight" data-v="1000">1000</button><button type="button" data-set="setStraight" data-v="1500">1500</button><button type="button" data-set="setStraight" data-v="2000">2000</button></div>
+      </div>
+    </div>
+    <div class="btnrow" style="margin-top:14px">
+      <button class="btn primary big" id="btnStart" type="button">Start spillet</button>
+    </div>
+    <p class="muted" id="setupError" style="margin:8px 0 0"></p>
+  </section>
+
+  <!-- ===== Stilling ===== -->
+  <section class="card" id="standingsCard" hidden>
+    <h2>Stilling <span class="hint" id="roundLabel"></span></h2>
+    <div class="standings" id="standings"></div>
+  </section>
+
+  <!-- ===== Tur ===== -->
+  <section class="card" id="turnCard" hidden>
+    <div class="turn-head">
+      <p class="who" id="turnWho"></p>
+      <span class="tp" id="turnInfo"></span>
+    </div>
+    <div class="turnpoints">
+      <div class="big"><span id="turnPoints">0</span><span class="plus" id="turnPlus"></span></div>
+      <div class="name" id="turnName"></div>
+      <div id="chainBox" hidden><span class="chain" id="chainText"></span></div>
+    </div>
+    <div class="kept" id="kept"></div>
+    <div class="dice" id="dice"></div>
+    <div class="selinfo" id="selInfo"></div>
+    <div class="btnrow stretch">
+      <button class="btn primary big" id="btnRoll" type="button">Slå 6 terninger</button>
+      <button class="btn gold big" id="btnBank" type="button" hidden>Bank</button>
+    </div>
+    <p class="muted" id="turnNote" style="margin:10px 0 0"></p>
+  </section>
+
+  <!-- ===== Resultat ===== -->
+  <section class="card" id="resultCard" hidden>
+    <h2>Spillet er slut</h2>
+    <div class="winner">
+      <div class="trophy">🏆</div>
+      <div class="wname" id="winnerName"></div>
+      <div class="muted" id="winnerSub"></div>
+    </div>
+    <div class="res-list" id="resultList"></div>
+    <div class="btnrow stretch" style="margin-top:14px">
+      <button class="btn big" id="btnRematch" type="button">Nyt spil med samme spillere</button>
+    </div>
+  </section>
+
+  <!-- ===== Fortryd ===== -->
+  <section class="card" id="toolsCard" hidden>
+    <div class="btnrow">
+      <button class="btn ghost" id="btnUndo" type="button">↶ Fortryd</button>
+      <span class="muted" id="undoHint"></span>
+    </div>
+  </section>
+
+  <!-- ===== Log ===== -->
+  <section class="card" id="logCard" hidden>
+    <h2>Turforløb</h2>
+    <ul class="log" id="log"></ul>
+  </section>
+
+  <!-- ===== Regler ===== -->
+  <section class="card">
+    <details class="rules">
+      <summary>Reglerne</summary>
+      <p>Der spilles med seks terninger. Efter hvert slag skal man tage mindst én terning fra, der giver point, og kan så slå videre med resten eller banke turens point.</p>
+      <table>
+        <tr><th>Slag</th><th>Point</th></tr>
+        <tr><td>1'er</td><td>100 pr. terning</td></tr>
+        <tr><td>5'er</td><td>50 pr. terning</td></tr>
+        <tr><td>Tre ens</td><td>Tallet × 100. Tre 1'ere = 1000.</td></tr>
+        <tr><td>Fire, fem, seks ens i ét slag</td><td>Tre ens × 2, × 4, × 8</td></tr>
+        <tr><td>Tre par i ét slag</td><td id="rulePairs">500</td></tr>
+        <tr><td>Lige række 1–6 i ét slag</td><td id="ruleStraight">1000</td></tr>
+      </table>
+      <ul>
+        <li><strong>Kæden.</strong> Slår man tre ens, og i slaget lige efter mindst én terning med samme øjne, fordobles værdien pr. ekstra terning: tre 3'ere = 300, én 3'er mere i næste slag = 600, to 3'ere mere = 1200. En ekstra 1'er eller 5'er i kæden tæller som fordobling, ikke som 100 eller 50. Et slag uden match bryder kæden, men de opnåede point beholdes. Kæden slutter, når alle terninger er brugt.</li>
+        <li><strong>Død tur.</strong> Giver et slag ingen point, mister man turens point, og turen går videre.</li>
+        <li><strong>Frit slag.</strong> Er alle seks terninger taget fra, slår man videre med alle seks igen – eller banker.</li>
+        <li><strong>Åbning.</strong> Første gang man banker, skal turen give mindst åbningskravet (<span id="ruleOpening">350</span>). Ellers kan man ikke banke, men må slå videre.</li>
+        <li><strong>Slut.</strong> Passerer en spiller målet (<span id="ruleTarget">10.000</span>), får de øvrige én tur mere. Højeste total vinder. Ved lige stilling vinder den, der nåede målet først.</li>
+      </ul>
+      <p class="muted">Tryk på terningerne for at vælge, hvilke der tages fra. Terninger med grøn ring giver point; lilla ring er en kæde-fordobler. Lyd slås til og fra med højttaler-knappen øverst.</p>
+    </details>
+  </section>
+
+  <p class="foot"><a href="mexico.html">Til Mexico</a></p>
+
+</main>
+
+<!-- ===== Fejring ===== -->
+<div class="party" id="party" hidden>
+  <canvas id="confetti"></canvas>
+  <div class="party-inner">
+    <div class="party-trophy">🏆</div>
+    <div class="party-name" id="partyName"></div>
+    <div class="party-sub">VINDER</div>
+    <div class="party-score" id="partyScore"></div>
+    <div class="party-hint">Tryk for at lukke</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   10.000 – terningspil for et vilkårligt antal spillere på én telefon.
+   Alt ligger i denne fil; spillet gemmes i localStorage så en genindlæsning
+   ikke koster turen.
+   ===================================================================== */
+
+const STORE_KEY = 'titusind-spil-v1';
+const SOUND_KEY = 'titusind-lyd';
+const DEFAULT_ROWS = 4;
+const DEFAULTS = {target: 10000, opening: 350, threePairs: 500, straight: 1000};
+const LOG_PREVIEW = 8;
+const PIPS = {1:[4], 2:[2,6], 3:[2,4,6], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8]};
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n).toLocaleString('da-DK');
+
+function rollDie(){
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return (buf[0] % 6) + 1;
+}
+
+/* ---------- Pointregler ---------- */
+// Point for et udvalg af terninger fra ét slag (uden kæde).
+// Giver {points, groups, valid, triple}. valid = alle valgte terninger giver point.
+function scoreDice(vals, opts){
+  const n = vals.length;
+  const counts = [0, 0, 0, 0, 0, 0, 0];
+  vals.forEach(v => { counts[v] += 1; });
+  if(n === 6 && [1, 2, 3, 4, 5, 6].every(v => counts[v] === 1)){
+    return {points: opts.straight, groups: [{kind: 'straight', vals: vals.slice().sort(), points: opts.straight}], valid: true, triple: null};
+  }
+  if(n === 6 && [1, 2, 3, 4, 5, 6].filter(v => counts[v] === 2).length === 3){
+    return {points: opts.threePairs, groups: [{kind: 'pairs', vals: vals.slice().sort(), points: opts.threePairs}], valid: true, triple: null};
+  }
+  const groups = []; let points = 0, valid = n > 0, triple = null;
+  for(let v = 1; v <= 6; v++){
+    const c = counts[v]; if(!c) continue;
+    if(c >= 3){
+      const p = (v === 1 ? 1000 : v * 100) * Math.pow(2, c - 3);
+      groups.push({kind: 'set', v, count: c, vals: Array(c).fill(v), points: p});
+      points += p;
+      if(!triple || p > triple.points) triple = {v, points: p, count: c};
+    }else if(v === 1){ groups.push({kind: 'single', v, count: c, vals: Array(c).fill(1), points: 100 * c}); points += 100 * c; }
+    else if(v === 5){ groups.push({kind: 'single', v, count: c, vals: Array(c).fill(5), points: 50 * c}); points += 50 * c; }
+    else valid = false;
+  }
+  return {points, groups, valid, triple};
+}
+// Med kæde aktiv på værdi v: hver valgt terning med v fordobler kæden i stedet for at give egne point
+function scoreSelection(vals, opts, chain){
+  const plain = Object.assign(scoreDice(vals, opts), {chainHits: 0, chainGain: 0});
+  if(!chain || !vals.includes(chain.v)) return plain;
+  // Lige række eller tre par med alle seks terninger tæller som sådan, hvis det giver mere end kæden
+  if(plain.valid && plain.groups.length === 1 && (plain.groups[0].kind === 'straight' || plain.groups[0].kind === 'pairs')){
+    const withChain = chainSelection(vals, opts, chain);
+    return withChain.valid && withChain.points > plain.points ? withChain : plain;
+  }
+  return chainSelection(vals, opts, chain);
+}
+function chainSelection(vals, opts, chain){
+  const hits = vals.filter(x => x === chain.v).length;
+  const rest = vals.filter(x => x !== chain.v);
+  const s = rest.length ? scoreDice(rest, opts) : {points: 0, groups: [], valid: true, triple: null};
+  const gain = chain.points * Math.pow(2, hits) - chain.points;
+  return {points: s.points + gain, groups: s.groups.concat([{kind: 'chain', v: chain.v, count: hits, vals: Array(hits).fill(chain.v), points: gain}]),
+          valid: s.valid, triple: s.triple, chainHits: hits, chainGain: gain};
+}
+// Er der noget i slaget, der giver point? Ellers er turen død.
+function hasScoring(vals, opts, chain){
+  if(chain && vals.includes(chain.v)) return true;
+  const counts = [0, 0, 0, 0, 0, 0, 0]; vals.forEach(v => { counts[v] += 1; });
+  if(counts[1] || counts[5] || counts.some(c => c >= 3)) return true;
+  return scoreDice(vals, opts).points > 0;
+}
+// Hvilke terninger i slaget kan give point (til markering og forvalg)
+function scoringMask(vals, opts, chain){
+  const counts = [0, 0, 0, 0, 0, 0, 0]; vals.forEach(v => { counts[v] += 1; });
+  const all = scoreDice(vals, opts);
+  if(vals.length === 6 && all.groups.length === 1 && (all.groups[0].kind === 'straight' || all.groups[0].kind === 'pairs')) return vals.map(() => 'score');
+  return vals.map(v => (chain && v === chain.v) ? 'chain' : (v === 1 || v === 5 || counts[v] >= 3) ? 'score' : '');
+}
+
+/* ---------- Tilstand ---------- */
+let game = null;
+let snapshots = [];
+let animating = false;
+let logExpanded = false;
+
+function freshTurn(){ return {remaining: 6, rolled: [], sel: [], points: 0, chain: null, kept: [], rolls: 0, dead: false, hot: false}; }
+function newGame(names, settings){
+  return {
+    players: names.map(n => ({name: n, total: 0, opened: false})),
+    settings, cur: 0, phase: 'turn', turn: freshTurn(), finalRound: null, log: [], turnNo: 0, winner: null
+  };
+}
+function currentPlayer(){ return game.players[game.cur]; }
+function turnStarted(){ const t = game.turn; return t.rolled.length > 0 || t.points > 0 || t.kept.length > 0 || t.dead; }
+
+function startTurn(){
+  game.turn = freshTurn();
+  game.turnNo += 1;
+  snapshots.length = game.turnNo - 1;
+  snapshots.push(JSON.parse(JSON.stringify(game)));
+  save();
+  render();
+}
+
+function currentSelection(){
+  const t = game.turn;
+  const vals = t.rolled.filter((v, i) => t.sel[i]);
+  const s = scoreSelection(vals, game.settings, t.chain);
+  return Object.assign(s, {vals, ok: vals.length > 0 && s.valid && s.points > 0});
+}
+
+// Forvalg: alle terninger der giver point (kædematch, 1'ere, 5'ere, tre ens, tre par, lige række)
+function autoSelect(){
+  const t = game.turn;
+  const mask = scoringMask(t.rolled, game.settings, t.chain);
+  t.sel = mask.map(m => !!m);
+}
+
+function toggleDie(i){
+  if(animating || game.phase !== 'turn') return;
+  const t = game.turn;
+  if(!t.rolled.length || t.dead) return;
+  t.sel[i] = !t.sel[i];
+  render();
+}
+
+function applyTake(){
+  const t = game.turn, s = currentSelection();
+  t.points += s.points;
+  if(t.chain){
+    if(s.chainHits > 0){ t.chain.points *= Math.pow(2, s.chainHits); t.chain.hits += s.chainHits; }
+    else t.chain = null;
+  }else if(s.triple){
+    t.chain = {v: s.triple.v, points: s.triple.points, hits: 0};
+  }
+  t.kept.push({vals: s.vals.slice().sort((a, b) => a - b), points: s.points, chainHits: s.chainHits});
+  t.remaining -= s.vals.length;
+  if(s.chainHits > 0){ shout(`×${Math.pow(2, s.chainHits)}`, 'chain', 1400); Sound.ding(s.chainHits); }
+  if(t.remaining === 0){
+    t.remaining = 6; t.hot = true; t.chain = null;
+    shout('FRIT SLAG!', 'hot', 1600);
+  }
+  t.rolled = []; t.sel = [];
+}
+
+function doRoll(){
+  if(animating || game.phase !== 'turn') return;
+  const t = game.turn;
+  if(t.dead) return;
+  if(t.rolled.length){
+    if(!currentSelection().ok){ toast('Vælg mindst én terning, der giver point'); return; }
+    applyTake();
+  }
+  const vals = Array.from({length: t.remaining}, rollDie);
+  t.rolled = vals; t.sel = vals.map(() => false); t.rolls += 1;
+  animating = true;
+  Sound.rattle(650);
+  render();
+  animateDice(vals, () => {
+    animating = false;
+    if(!hasScoring(vals, game.settings, t.chain)){
+      t.dead = true;
+      shout('DØD TUR!', 'dead', 1900);
+      Sound.dead(); Sound.say('Død tur', 'da-DK', 0.7, 0.9);
+      save(); render();
+      setTimeout(() => { if(game && game.phase === 'turn' && game.turn.dead) endTurn(0, 'dead'); }, 2000);
+    }else{
+      autoSelect(); save(); render();
+    }
+  });
+}
+
+function doBank(){
+  if(animating || game.phase !== 'turn') return;
+  const t = game.turn;
+  if(t.dead) return;
+  if(t.rolled.length){
+    if(!currentSelection().ok){ toast('Vælg mindst én terning, der giver point'); return; }
+    applyTake();
+  }
+  if(t.points <= 0) return;
+  const p = currentPlayer();
+  if(!p.opened && t.points < game.settings.opening){
+    toast(`Du skal have mindst ${fmt(game.settings.opening)} i én tur for at komme på tavlen`);
+    save(); render(); return;
+  }
+  Sound.cash();
+  endTurn(t.points, 'bank');
+}
+
+function endTurn(points, how){
+  const p = currentPlayer();
+  if(points > 0){ p.total += points; p.opened = true; }
+  const line = how === 'bank' ? `${p.name} bankede ${fmt(points)} – i alt ${fmt(p.total)}` : `${p.name}: død tur${game.turn.points ? ` – mistede ${fmt(game.turn.points)}` : ''}`;
+  game.log.unshift({no: game.turnNo, text: line});
+  if(!game.finalRound && p.total >= game.settings.target){
+    const n = game.players.length, left = [];
+    for(let k = 1; k < n; k++) left.push((game.cur + k) % n);
+    game.finalRound = {trigger: game.cur, left};
+    shout('SIDSTE RUNDE!', 'final', 2600);
+    Sound.fanfare(0.1);
+    Sound.say(`${p.name} har nået ${fmt(game.settings.target)}. Sidste runde!`, 'da-DK', 1, 0.95, true);
+  }
+  if(game.finalRound){
+    if(game.finalRound.left.length === 0){ finishGame(); return; }
+    game.cur = game.finalRound.left.shift();
+  }else{
+    game.cur = (game.cur + 1) % game.players.length;
+  }
+  startTurn();
+}
+
+function finishGame(){
+  const P = game.players;
+  const max = Math.max(...P.map(p => p.total));
+  const tied = P.map((p, i) => i).filter(i => P[i].total === max);
+  const trig = game.finalRound ? game.finalRound.trigger : -1;
+  game.winner = tied.includes(trig) ? trig : tied[0];
+  game.phase = 'over';
+  game.turn = freshTurn();
+  save(); render();
+  partyLater(() => startParty(game.winner), 500);
+}
+
+function undo(){
+  if(!game || animating) return;
+  stopParty();
+  const mid = game.phase === 'over' || turnStarted();
+  const idx = mid ? game.turnNo - 1 : game.turnNo - 2;
+  if(idx < 0 || !snapshots[idx]){ toast('Der er ikke noget at fortryde'); return; }
+  const snap = JSON.parse(JSON.stringify(snapshots[idx]));
+  snapshots.length = idx;
+  game = snap;
+  game.turnNo -= 1;
+  startTurn();
+  toast(mid ? `${currentPlayer().name}s tur startes forfra` : `Tilbage til ${currentPlayer().name}s tur`);
+}
+
+/* ---------- Lagring ---------- */
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify({game, snapshots})); }catch(e){} }
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY); if(!raw) return false;
+    const d = JSON.parse(raw); if(!d || !d.game || !Array.isArray(d.game.players)) return false;
+    game = d.game; snapshots = d.snapshots || []; return true;
+  }catch(e){ return false; }
+}
+function clearSaved(){ try{ localStorage.removeItem(STORE_KEY); }catch(e){} }
+
+/* ---------- Terninger ---------- */
+function dieHtml(v, cls, attrs){
+  const on = v ? PIPS[v] : [];
+  const spans = Array.from({length: 9}, (_, i) => `<span class="${on.includes(i) ? 'on' : ''}"></span>`).join('');
+  return `<${attrs ? 'button type="button"' : 'div'} class="die ${cls || ''}${v ? '' : ' blank'}" ${attrs || ''}>${spans}</${attrs ? 'button' : 'div'}>`;
+}
+function showFace(el, v){
+  el.classList.remove('blank');
+  const on = v ? PIPS[v] : [];
+  [...el.children].forEach((s, i) => s.classList.toggle('on', on.includes(i)));
+}
+function animateDice(vals, done){
+  const els = [...$('dice').querySelectorAll('.die')];
+  els.forEach(el => el.classList.add('rolling'));
+  const t0 = performance.now();
+  const tick = () => {
+    if(performance.now() - t0 < 650){
+      els.forEach(el => showFace(el, 1 + Math.floor(Math.random() * 6)));
+      setTimeout(tick, 70);
+    }else{
+      els.forEach((el, i) => { el.classList.remove('rolling'); showFace(el, vals[i]); });
+      done();
+    }
+  };
+  tick();
+}
+
+/* ---------- Visning ---------- */
+function render(){
+  const inGame = !!game;
+  $('setup').hidden = inGame;
+  $('btnMenu').hidden = !inGame;
+  $('standingsCard').hidden = !inGame;
+  $('toolsCard').hidden = !inGame;
+  $('logCard').hidden = !inGame || game.log.length === 0;
+  if(!inGame){
+    $('turnCard').hidden = true; $('resultCard').hidden = true;
+    $('subline').textContent = 'Seks terninger, én telefon. Først til 10.000.';
+    return;
+  }
+  const P = game.players, S = game.settings;
+  const leader = Math.max(...P.map(p => p.total));
+  $('roundLabel').textContent = game.finalRound ? 'sidste runde' : `mål ${fmt(S.target)}`;
+  $('subline').textContent = game.phase === 'over' ? 'Spillet er slut' : `${P.length} spillere · mål ${fmt(S.target)}${game.finalRound ? ' · sidste runde' : ''}`;
+
+  $('standings').innerHTML = P.map((p, i) => {
+    const cur = game.phase === 'turn' && i === game.cur;
+    const tags = [];
+    if(!p.opened && S.opening > 0) tags.push('ikke åbnet');
+    if(game.finalRound && i === game.finalRound.trigger) tags.push('nåede målet');
+    if(game.phase === 'over' && i === game.winner) tags.push('vinder');
+    const w = Math.min(100, Math.round(100 * p.total / S.target));
+    return `<div class="prow ${cur ? 'current' : ''}">
+      <span class="idx">${i + 1}</span>
+      <span class="pname">${esc(p.name)}${tags.map(t => `<span class="tag">${t}</span>`).join('')}</span>
+      <span class="total">${fmt(p.total)}${p.total === leader && leader > 0 ? '<small>fører</small>' : ''}</span>
+      <div class="bar"><i style="width:${w}%"></i></div>
+    </div>`;
+  }).join('');
+
+  $('turnCard').hidden = game.phase !== 'turn';
+  $('resultCard').hidden = game.phase !== 'over';
+  if(game.phase === 'turn') renderTurn(); else renderResult();
+
+  const mid = game.phase === 'over' || turnStarted();
+  const canUndo = mid ? game.turnNo >= 1 : game.turnNo >= 2;
+  $('btnUndo').disabled = !canUndo;
+  $('undoHint').textContent = !canUndo ? 'Intet at fortryde endnu' : mid ? `Starter ${currentPlayer().name}s tur forfra` : 'Går en tur tilbage';
+
+  const showAll = logExpanded || game.log.length <= LOG_PREVIEW;
+  const items = showAll ? game.log : game.log.slice(0, LOG_PREVIEW);
+  let lh = items.map(l => `<li><span class="rn">T. ${l.no}</span><span>${esc(l.text)}</span></li>`).join('');
+  if(game.log.length > LOG_PREVIEW) lh += `<li class="more"><button class="btn ghost showall" type="button">${logExpanded ? 'Vis kun de seneste' : `Vis alle ${game.log.length} ture`}</button></li>`;
+  $('log').innerHTML = lh;
+
+  $('rulePairs').textContent = fmt(S.threePairs); $('ruleStraight').textContent = fmt(S.straight);
+  $('ruleOpening').textContent = S.opening > 0 ? fmt(S.opening) : 'intet krav'; $('ruleTarget').textContent = fmt(S.target);
+}
+
+function renderTurn(){
+  const t = game.turn, p = currentPlayer(), S = game.settings;
+  $('turnWho').textContent = `${p.name} har turen`;
+  $('turnInfo').textContent = game.finalRound ? 'Sidste runde – én tur' : `${fmt(p.total)} på tavlen${!p.opened && S.opening > 0 ? ` · skal åbne med ${fmt(S.opening)}` : ''}`;
+
+  const sel = t.rolled.length && !t.dead ? currentSelection() : null;
+  $('turnPoints').textContent = fmt(t.points);
+  $('turnPlus').textContent = sel && sel.vals.length && sel.valid && sel.points > 0 ? `+${fmt(sel.points)}` : '';
+  $('turnName').textContent = t.dead ? 'Død tur – ingen point' : t.hot && !t.rolled.length ? 'Alle terninger brugt – frit slag med alle 6' : t.points || t.rolled.length ? 'Point i denne tur' : 'Tryk på Slå for at begynde';
+  $('chainBox').hidden = !t.chain;
+  if(t.chain) $('chainText').textContent = `🔗 Kæde på ${t.chain.v}'ere: ${fmt(t.chain.points)} – hver ny ${t.chain.v}'er i næste slag fordobler`;
+
+  $('kept').innerHTML = t.kept.map(g => `<div class="grp ${g.chainHits ? 'chain' : ''}">${g.vals.map(v => dieHtml(v, 'sm')).join('')}<span class="pts">+${fmt(g.points)}</span></div>`).join('');
+
+  if(t.rolled.length){
+    const mask = scoringMask(t.rolled, S, t.chain);
+    $('dice').innerHTML = t.rolled.map((v, i) => dieHtml(v, `${mask[i] === 'chain' ? 'chainhit' : mask[i] === 'score' ? 'scoring' : (t.dead ? 'deadface' : '')} ${t.sel[i] ? 'sel' : ''}`, `data-i="${i}" aria-pressed="${!!t.sel[i]}" aria-label="Terning ${v}"`)).join('');
+  }else{
+    $('dice').innerHTML = Array.from({length: t.remaining}, () => dieHtml(0, '')).join('');
+  }
+
+  const info = $('selInfo'); info.className = 'selinfo';
+  if(t.dead){ info.textContent = 'Ingen point i slaget – turen er død.'; }
+  else if(!t.rolled.length){ info.textContent = ''; }
+  else if(!sel.vals.length){ info.textContent = 'Vælg de terninger, du vil tage fra.'; }
+  else if(!sel.valid || sel.points === 0){ info.className = 'selinfo bad'; info.textContent = 'En eller flere af de valgte terninger giver ikke point.'; }
+  else { info.innerHTML = `${sel.groups.map(g => groupLabel(g)).join(' · ')} = <span class="pts">+${fmt(sel.points)}</span>`; }
+
+  const ok = !!sel && sel.ok;
+  const nRoll = t.rolled.length ? (t.remaining - (sel ? sel.vals.length : 0) || 6) : t.remaining;
+  $('btnRoll').disabled = animating || t.dead || (t.rolled.length > 0 && !ok);
+  $('btnRoll').textContent = !t.rolled.length ? `Slå ${t.remaining} terninger${t.hot ? ' (frit slag)' : ''}` : `Tag fra og slå igen (${nRoll})`;
+  const bankPts = t.points + (ok ? sel.points : 0);
+  const canBank = !animating && !t.dead && bankPts > 0 && (!t.rolled.length || ok) && (p.opened || bankPts >= S.opening);
+  $('btnBank').hidden = !t.rolled.length && t.points === 0;
+  $('btnBank').disabled = !canBank;
+  $('btnBank').textContent = `Bank ${fmt(bankPts)}`;
+  $('turnNote').textContent = !p.opened && S.opening > 0 && bankPts > 0 && bankPts < S.opening ? `Mangler ${fmt(S.opening - bankPts)} for at kunne banke (åbningskrav ${fmt(S.opening)})` : t.remaining < 6 && !t.rolled.length ? `${t.remaining} terninger tilbage` : '';
+}
+function groupLabel(g){
+  if(g.kind === 'straight') return 'Lige række';
+  if(g.kind === 'pairs') return 'Tre par';
+  if(g.kind === 'chain') return `${g.count} × ${g.v} i kæden`;
+  if(g.kind === 'set') return `${g.count} × ${g.v}`;
+  return `${g.count} × ${g.v}`;
+}
+
+function renderResult(){
+  const P = game.players, w = P[game.winner];
+  $('winnerName').textContent = `${w.name} vinder!`;
+  $('winnerSub').textContent = `${fmt(w.total)} point`;
+  const order = P.map((p, i) => i).sort((a, b) => P[b].total - P[a].total || a - b);
+  $('resultList').innerHTML = order.map((i, k) => `<div class="rrow ${i === game.winner ? 'win' : ''}">
+    <span class="medal">${k === 0 ? '🥇' : k === 1 ? '🥈' : k === 2 ? '🥉' : (k + 1) + '.'}</span>
+    <span class="rname">${esc(P[i].name)}</span><span class="rval">${fmt(P[i].total)}</span></div>`).join('');
+}
+
+/* ---------- Opsætning ---------- */
+let setupNames = [];
+function renderSetup(prefill){
+  setupNames = prefill && prefill.length ? [...prefill] : [];
+  while(setupNames.length < Math.max(DEFAULT_ROWS, 2)) setupNames.push('');
+  renderNameRows();
+}
+function renderNameRows(){
+  $('nameInputs').innerHTML = setupNames.map((v, i) =>
+    `<label><span class="nr">${i + 1}</span><input type="text" maxlength="20" placeholder="Spiller ${i + 1}" value="${esc(v)}" autocomplete="off" enterkeyhint="next">` +
+    `<button type="button" class="rm" data-rm="${i}" title="Fjern felt" aria-label="Fjern spiller ${i + 1}">✕</button></label>`).join('');
+  updateCount();
+}
+function updateCount(){ const n = collectNames().length; $('playerCount').textContent = n ? `${n} ${n === 1 ? 'spiller' : 'spillere'} med` : ''; }
+function syncSetupNames(){ setupNames = [...$('nameInputs').querySelectorAll('input')].map(i => i.value); }
+function collectNames(){ return [...$('nameInputs').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean); }
+$('btnAddPlayer').addEventListener('click', () => { syncSetupNames(); setupNames.push(''); renderNameRows(); const ins = $('nameInputs').querySelectorAll('input'); ins[ins.length - 1].focus(); });
+$('nameInputs').addEventListener('click', e => {
+  const b = e.target.closest('button.rm'); if(!b) return;
+  syncSetupNames();
+  if(setupNames.length <= 2){ toast('Der skal være mindst to felter'); return; }
+  setupNames.splice(+b.dataset.rm, 1); renderNameRows();
+});
+$('nameInputs').addEventListener('input', updateCount);
+$('nameInputs').addEventListener('keydown', e => {
+  if(e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  const ins = [...$('nameInputs').querySelectorAll('input')]; const i = ins.indexOf(e.target);
+  e.preventDefault();
+  if(i >= 0 && i < ins.length - 1){ ins[i + 1].focus(); return; }
+  if(e.target.value.trim()) $('btnAddPlayer').click(); else $('btnStart').click();
+});
+document.querySelectorAll('.chips button').forEach(b => b.addEventListener('click', () => { $(b.dataset.set).value = b.dataset.v; }));
+function readSettings(){
+  const num = (id, def, min) => { const v = parseInt($(id).value, 10); return Number.isFinite(v) && v >= min ? v : def; };
+  return {target: num('setTarget', DEFAULTS.target, 1000), opening: num('setOpening', DEFAULTS.opening, 0), threePairs: num('setPairs', DEFAULTS.threePairs, 0), straight: num('setStraight', DEFAULTS.straight, 0)};
+}
+function writeSettings(s){ $('setTarget').value = s.target; $('setOpening').value = s.opening; $('setPairs').value = s.threePairs; $('setStraight').value = s.straight; }
+
+$('btnStart').addEventListener('click', () => {
+  syncSetupNames();
+  const names = collectNames();
+  if(names.length < 2){ $('setupError').textContent = 'Der skal mindst to spillere til.'; return; }
+  $('setupError').textContent = '';
+  game = newGame(names, readSettings());
+  snapshots = []; logExpanded = false;
+  startTurn();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+});
+$('btnMenu').addEventListener('click', () => {
+  if(game && game.phase !== 'over' && !confirm('Afslutte det igangværende spil og starte forfra?')) return;
+  stopParty();
+  const names = game ? game.players.map(p => p.name) : null;
+  if(game) writeSettings(game.settings);
+  game = null; snapshots = []; clearSaved();
+  renderSetup(names); render();
+});
+$('btnRematch').addEventListener('click', () => {
+  stopParty();
+  const names = game.players.map(p => p.name), settings = game.settings, w = game.winner;
+  game = newGame(names, settings);
+  game.cur = w != null ? w : 0;
+  snapshots = []; logExpanded = false;
+  startTurn();
+  toast('Nyt spil – vinderen starter');
+});
+$('btnRoll').addEventListener('click', doRoll);
+$('btnBank').addEventListener('click', doBank);
+$('btnUndo').addEventListener('click', undo);
+$('dice').addEventListener('click', e => { const b = e.target.closest('button.die'); if(b) toggleDie(+b.dataset.i); });
+$('log').addEventListener('click', e => { if(e.target.closest('button.showall')){ logExpanded = !logExpanded; render(); } });
+document.addEventListener('keydown', e => {
+  if(!game || e.target.tagName === 'INPUT') return;
+  if(e.key === ' ' || e.key === 'Enter'){ if(game.phase === 'turn' && !$('btnRoll').disabled){ doRoll(); e.preventDefault(); } }
+  else if(e.key.toLowerCase() === 'b' && game.phase === 'turn' && !$('btnBank').disabled && !$('btnBank').hidden) doBank();
+  else if(e.key === 'Escape' && !$('party').hidden) stopParty();
+});
+
+/* ---------- Lyd ---------- */
+const Sound = {
+  on: (() => { try{ return localStorage.getItem(SOUND_KEY) !== '0'; }catch(e){ return true; } })(),
+  ctx: null, noise: null, bus: null,
+  ensure(){
+    if(!this.on) return null;
+    try{
+      if(!this.ctx){
+        const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return null;
+        this.ctx = new AC();
+        const len = Math.floor(this.ctx.sampleRate * 0.05);
+        const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for(let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        this.noise = buf;
+        const comp = this.ctx.createDynamicsCompressor();
+        comp.threshold.value = -10; comp.knee.value = 18; comp.ratio.value = 5; comp.attack.value = 0.002; comp.release.value = 0.12;
+        const lim = this.ctx.createWaveShaper();
+        const curve = new Float32Array(1025);
+        for(let i = 0; i < curve.length; i++){ const x = (i / 512) - 1; curve[i] = Math.tanh(1.6 * x) / Math.tanh(1.6); }
+        lim.curve = curve; lim.oversample = 'none';
+        comp.connect(lim).connect(this.ctx.destination);
+        this.bus = comp;
+      }
+      if(this.ctx.state === 'suspended') this.ctx.resume();
+      return this.ctx;
+    }catch(e){ return null; }
+  },
+  // Ét hårdt, kort slag af en terning mod bæger eller bord
+  knock(at, gain, o){
+    const c = this.ctx; o = o || {};
+    const src = c.createBufferSource(); src.buffer = this.noise;
+    const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = o.hp || 1800;
+    const res = c.createBiquadFilter(); res.type = 'peaking'; res.frequency.value = o.res || (2400 + Math.random() * 2600); res.Q.value = 7; res.gain.value = 14;
+    const g = c.createGain(); g.gain.setValueAtTime(gain, at); g.gain.exponentialRampToValueAtTime(0.001, at + (o.dur || 0.022));
+    src.connect(hp).connect(res).connect(g).connect(this.bus); src.start(at); src.stop(at + 0.05);
+    const th = c.createOscillator(); th.type = 'sine'; const f = o.thud || 260;
+    th.frequency.setValueAtTime(f, at); th.frequency.exponentialRampToValueAtTime(f * 0.55, at + 0.045);
+    const tg = c.createGain(); tg.gain.setValueAtTime(gain * (o.thudGain == null ? 0.5 : o.thudGain), at); tg.gain.exponentialRampToValueAtTime(0.001, at + 0.055);
+    th.connect(tg).connect(this.bus); th.start(at); th.stop(at + 0.07);
+  },
+  land(at, gain){
+    const gaps = [0, 0.085, 0.058, 0.04, 0.027, 0.018, 0.012], lv = [1, 0.62, 0.42, 0.3, 0.2, 0.13, 0.09];
+    let t = at; const res = 2800 + Math.random() * 1800;
+    for(let i = 0; i < gaps.length; i++){ t += gaps[i]; this.knock(t, gain * lv[i], {thud: 330, thudGain: 0.7, res, dur: 0.028 - i * 0.002}); }
+  },
+  // Rafling: bægeret rystes og terningerne lander – flere terninger, flere klik
+  rattle(ms){
+    const c = this.ensure(); if(!c) return;
+    const t0 = c.currentTime + 0.02, end = t0 + ms / 1000;
+    let t = t0;
+    while(t < end - 0.1){
+      const hits = 2 + Math.floor(Math.random() * 3);
+      for(let i = 0; i < hits; i++) this.knock(t + Math.random() * 0.07, 0.22 + Math.random() * 0.28, {thud: 190 + Math.random() * 110, thudGain: 0.65, dur: 0.018 + Math.random() * 0.016});
+      t += 0.1 + Math.random() * 0.05;
+    }
+    const n = game && game.turn ? Math.max(1, game.turn.rolled.length || game.turn.remaining) : 6;
+    for(let i = 0; i < Math.min(n, 6); i++) this.land(end + 0.03 + i * 0.045, 0.7 - i * 0.07);
+  },
+  tone(freq, at, dur, type, gain){
+    const c = this.ctx; const o = c.createOscillator(); o.type = type; o.frequency.value = freq;
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(gain, at + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    o.connect(g).connect(this.bus); o.start(at); o.stop(at + dur + 0.05);
+  },
+  // Død tur: faldende wah-wah
+  dead(){
+    const c = this.ensure(); if(!c) return;
+    const t = c.currentTime + 0.05;
+    const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(330, t); o.frequency.linearRampToValueAtTime(160, t + 1.0);
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(1200, t); lp.frequency.linearRampToValueAtTime(280, t + 1.0);
+    const g = c.createGain(); g.gain.setValueAtTime(0.35, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.05);
+    o.connect(lp).connect(g).connect(this.bus); o.start(t); o.stop(t + 1.1);
+  },
+  // Bank: to hurtige toner op og et klik af mønter
+  cash(){
+    const c = this.ensure(); if(!c) return;
+    const t = c.currentTime + 0.03;
+    this.tone(880, t, 0.12, 'square', 0.12); this.tone(1320, t + 0.1, 0.2, 'square', 0.12);
+    for(let i = 0; i < 4; i++) this.knock(t + 0.05 + i * 0.05, 0.25, {hp: 3000, res: 5000 + i * 400, dur: 0.02, thud: 400, thudGain: 0.1});
+  },
+  // Kæde-fordobling: stigende klokker, én pr. fordobling
+  ding(k){
+    const c = this.ensure(); if(!c) return;
+    const t = c.currentTime + 0.03;
+    for(let i = 0; i < k; i++) this.tone(660 * Math.pow(2, i / 2), t + i * 0.13, 0.4, 'triangle', 0.2);
+  },
+  fanfare(delay){
+    const c = this.ensure(); if(!c) return;
+    const t = c.currentTime + (delay || 0.05);
+    [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.38], [1047, 0.6]].forEach(([f, d]) => this.tone(f, t + d, 0.35, 'square', 0.14));
+  },
+  say(text, lang, pitch, rate, queue){
+    if(!this.on) return false;
+    try{
+      if(!('speechSynthesis' in window)) return false;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang; u.pitch = pitch; u.rate = rate; u.volume = 1;
+      const want = lang.slice(0, 2).toLowerCase();
+      const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.toLowerCase().startsWith(want));
+      if(v) u.voice = v;
+      if(!queue) speechSynthesis.cancel();
+      speechSynthesis.speak(u); return true;
+    }catch(e){ return false; }
+  },
+  toggle(){
+    this.on = !this.on;
+    try{ localStorage.setItem(SOUND_KEY, this.on ? '1' : '0'); }catch(e){}
+    if(!this.on){ try{ speechSynthesis.cancel(); }catch(e){} }
+    renderSoundButton(); toast(this.on ? 'Lyd slået til' : 'Lyd slået fra');
+  }
+};
+function renderSoundButton(){ const b = $('btnSound'); b.textContent = Sound.on ? '🔊' : '🔇'; b.setAttribute('aria-pressed', Sound.on); b.title = Sound.on ? 'Slå lyd fra' : 'Slå lyd til'; }
+$('btnSound').addEventListener('click', () => Sound.toggle());
+
+let shoutTimer;
+function shout(text, cls, ms){
+  ms = ms || 1700;
+  const old = document.querySelector('.shout'); if(old) old.remove();
+  const el = document.createElement('div'); el.className = 'shout ' + cls; el.setAttribute('role', 'status');
+  el.innerHTML = `<span style="animation-duration:${ms}ms">${esc(text)}</span>`;
+  document.body.appendChild(el);
+  clearTimeout(shoutTimer); shoutTimer = setTimeout(() => el.remove(), ms + 100);
+}
+
+/* ---------- Fejring ---------- */
+let partyTimers = [];
+function partyLater(fn, ms){ partyTimers.push(setTimeout(fn, ms)); }
+function stopParty(){
+  partyTimers.forEach(clearTimeout); partyTimers = [];
+  try{ speechSynthesis.cancel(); }catch(e){}
+  confetti.stop();
+  $('party').hidden = true;
+}
+function startParty(idx){
+  stopParty();
+  const p = game.players[idx];
+  $('partyName').textContent = p.name; $('partyScore').textContent = `${fmt(p.total)} point`;
+  $('party').hidden = false;
+  Sound.fanfare(0.05); confetti.start();
+  if(Sound.on && navigator.vibrate){ try{ navigator.vibrate([200, 100, 200, 100, 600]); }catch(e){} }
+  partyLater(() => Sound.say(`Tillykke ${p.name}, du vandt med ${fmt(p.total)} point!`, 'da-DK', 1.05, 0.95), 700);
+  partyLater(() => confetti.stop(), 12000);
+}
+$('party').addEventListener('click', stopParty);
+
+const confetti = {
+  cv: null, ctx: null, parts: [], raf: 0, running: false, t0: 0,
+  start(){
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    this.cv = $('confetti'); this.ctx = this.cv.getContext('2d'); this.size(); this.parts = [];
+    const colors = ['#ffd54a', '#12784f', '#ffffff', '#6d28d9', '#c2410c'];
+    for(let i = 0; i < 160; i++) this.parts.push({x: Math.random() * this.cv.width, y: -Math.random() * this.cv.height, w: 6 + Math.random() * 6, h: 8 + Math.random() * 10, c: colors[i % colors.length], vy: 1.5 + Math.random() * 2.5, vx: -1 + Math.random() * 2, a: Math.random() * Math.PI, va: -0.1 + Math.random() * 0.2});
+    this.running = true; this.t0 = performance.now();
+    const step = () => {
+      if(!this.running) return;
+      const {ctx, cv} = this; ctx.clearRect(0, 0, cv.width, cv.height);
+      const fade = Math.max(0, 1 - Math.max(0, performance.now() - this.t0 - 8000) / 3000);
+      ctx.globalAlpha = fade;
+      this.parts.forEach(p => { p.y += p.vy; p.x += p.vx + Math.sin(p.y / 40) * 0.6; p.a += p.va; if(p.y > cv.height + 20){ p.y = -20; p.x = Math.random() * cv.width; }
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore(); });
+      if(fade <= 0){ this.stop(); return; }
+      this.raf = requestAnimationFrame(step);
+    };
+    this.raf = requestAnimationFrame(step);
+  },
+  size(){ if(!this.cv) return; this.cv.width = innerWidth; this.cv.height = innerHeight; },
+  stop(){ this.running = false; cancelAnimationFrame(this.raf); if(this.ctx) this.ctx.clearRect(0, 0, this.cv.width, this.cv.height); }
+};
+addEventListener('resize', () => confetti.size());
+
+/* ---------- Hjælpere ---------- */
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+let toastTimer;
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2400); }
+
+/* ---------- Start ---------- */
+renderSoundButton();
+renderSetup(null);
+if(load()){
+  if(game.phase === 'turn' && game.turn && game.turn.dead) endTurn(0, 'dead');   // en død tur afbrudt af genindlæsning: turen er tabt, næste spiller er på
+  else render();
+}else{
+  render();
+}
+</script>
+</body>
+</html>

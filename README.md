@@ -93,6 +93,28 @@ trukket ud, som en sydamerikansk
 fodboldkommentators "GOOOOOL": en syntetisk stemme holder ordet i otte sekunder med voksende styrke og
 vibrato, stadionekko og publikum under, mens talesyntesen siger det med latinamerikansk stemme), **Ohh no!** ved 31, **Not good** ved 32, og **Farvel <navn>** når en spiller ryger ud. Højttaler-knappen øverst slår lyd og råb til og fra, og valget huskes.
 
+## 🎲 10.000 – terningspil
+
+`public/10000.html` er terningspillet 10.000 for **et vilkårligt antal spillere på én telefon**, bygget på samme
+måde som Mexico: ingen opsætning, virker offline, det igangværende spil gemmes i browseren, og der er link
+mellem de to spil i sidefoden. Ligger på `golf.vejleaa.dk/10000.html`.
+
+| Regel | Sådan er den bygget ind |
+|---|---|
+| Seks terninger. 1 = 100, 5 = 50 | Terninger der giver point lyser grønt og er valgt på forhånd; tryk for at fravælge. |
+| Tre ens = øjne × 100, tre 1'ere = 1000 | Fire, fem og seks ens i ét slag giver ×2, ×4 og ×8. |
+| Tre par i ét slag og lige række 1–6 | Standard 500 og 1000, begge kan ændres under opsætningen. |
+| Kæde: tre ens og derefter samme øjne i slaget lige efter fordobler | Hver ny terning med kædens øjne fordobler kædens værdi: 3 × 3 = 300, én 3'er i næste slag 600, to 3'ere 1200, én 3'er i slaget efter 2400. Kæden vises i turkortet, matchende terninger lyser lilla, og der råbes ×2/×4. Et slag uden match bryder kæden, men værdien beholdes. Kæden stopper når alle terninger er brugt. |
+| Alle seks terninger brugt = frit slag | Man slår igen med alle seks og beholder pointene ("FRIT SLAG!"). |
+| Død tur = ingen point i slaget | Turens point mistes, og turen går videre af sig selv ("DØD TUR!"). |
+| Åbningskrav (standard 350) | Første gang man banker skal turen give mindst kravet, ellers er *Bank* låst. Kan sættes til intet krav. |
+| Mål (standard 10.000) og slutspil | Når en spiller passerer målet, får de øvrige én tur mere. Højeste total vinder, ved lige stilling den der nåede målet først. |
+
+*Bank* lægger turens point på tavlen. *Fortryd* starter den aktuelle tur forfra eller går en tur tilbage, og
+*Nyt spil med samme spillere* lader vinderen starte. Der er raflelyd, kasse-lyd ved bank, udbrud på skærmen og
+via talesyntesen, og fejring af vinderen med konfetti og "Tillykke <navn>". Mellemrum slår, B banker.
+Terningerne trækkes med `crypto.getRandomValues`.
+
 ## Kørsel lokalt
 
 Åbn `public/index.html` direkte i en browser, eller server mappen:
@@ -157,6 +179,7 @@ Har du ikke lyst til at lægge config'en i repoet, kan den i stedet indsættes d
 |---|---|
 | `public/index.html` | Hele appen: layout, regler, pointberegning, turneringer og synk |
 | `public/mexico.html` | Terningspillet Mexico – selvstændig side uden synk |
+| `public/10000.html` | Terningspillet 10.000 – selvstændig side uden synk |
 | `public/firebase-config.js` | Firebase web-config (pladsholdere indtil du udfylder dem) |
 | `firebase.json` | Firestore-regler + valgfri Firebase Hosting |
 | `firestore.rules` | Adgang til samlingen `spil` |
