@@ -108,7 +108,8 @@ mellem de to spil i sidefoden. Ligger på `golf.vejleaa.dk/10000.html`.
 | Alle seks terninger brugt = frit slag | Man slår igen med alle seks og beholder pointene ("FRIT SLAG!"). Man kan ikke banke, når alle terninger er brugt, heller ikke hvis udvalget ville bruge dem alle – *Bank* er låst, og noten siger hvorfor. |
 | Død tur = ingen point i slaget | Turens point mistes, og turen går videre af sig selv ("DØD TUR!"). |
 | Åbningskrav (standard 350) | Første gang man banker skal turen give mindst kravet, ellers er *Bank* låst. Kan sættes til intet krav. |
-| Mål (standard 10.000) og slutspil | Når en spiller passerer målet, får de øvrige én tur mere. Højeste total vinder, ved lige stilling den der nåede målet først. |
+| Minimum pr. tur (standard intet) | Når man er på tavlen, skal turen give mindst minimumskravet for at kunne banke. Sættes under opsætningen. |
+| Mål (standard 10.000) og slutspil | Når en spiller passerer målet, får de øvrige én tur mere. I den tur skal hver af dem overgå det højeste pointtal på tavlen for at kunne banke; ellers må de slå videre. Højeste total vinder, ved lige stilling den der nåede målet først. |
 
 *Bank* lægger turens point på tavlen. Stillingen sorteres efter point ved hver bankning, så nummer 1 altid står
 øverst, og turkortet viser hvem der er næste. *Rækkefølge* åbner et panel, hvor spillerne kan flyttes op og ned i

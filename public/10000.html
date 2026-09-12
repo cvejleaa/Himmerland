@@ -244,6 +244,12 @@ details summary{cursor:pointer;font-weight:600}
         <div class="chips"><button type="button" data-set="setOpening" data-v="0">intet</button><button type="button" data-set="setOpening" data-v="350">350</button><button type="button" data-set="setOpening" data-v="500">500</button><button type="button" data-set="setOpening" data-v="1000">1000</button></div>
       </div>
       <div class="field">
+        <div class="lab">Minimum pr. tur</div>
+        <input type="number" id="setMin" min="0" step="50" value="0" inputmode="numeric">
+        <div class="chips"><button type="button" data-set="setMin" data-v="0">intet</button><button type="button" data-set="setMin" data-v="300">300</button><button type="button" data-set="setMin" data-v="350">350</button><button type="button" data-set="setMin" data-v="500">500</button></div>
+        <p style="margin:6px 0 0;font-size:.78rem;color:var(--muted);line-height:1.35">Når man er på tavlen: turen skal give mindst dette for at kunne banke.</p>
+      </div>
+      <div class="field">
         <div class="lab">Tre par</div>
         <input type="number" id="setPairs" min="0" step="50" value="500" inputmode="numeric">
         <div class="chips"><button type="button" data-set="setPairs" data-v="500">500</button><button type="button" data-set="setPairs" data-v="1500">1500</button></div>
@@ -340,6 +346,8 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Frit slag.</strong> Er alle seks terninger taget fra, slår man videre med alle seks igen – eller banker.</li>
         <li><strong>Alle terninger brugt.</strong> Har man brugt alle seks terninger, kan man ikke banke – man skal slå igen med alle seks (frit slag).</li>
         <li><strong>Åbning.</strong> Første gang man banker, skal turen give mindst åbningskravet (<span id="ruleOpening">350</span>). Ellers kan man ikke banke, men må slå videre.</li>
+        <li><strong>Minimum pr. tur.</strong> Når man er på tavlen, skal turen give mindst minimumskravet (<span id="ruleMin">intet krav</span>) for at kunne banke.</li>
+        <li><strong>Sidste runde.</strong> Når en spiller har nået målet, skal hver af de øvrige overgå det højeste pointtal på tavlen i deres sidste tur for at kunne banke. Ellers må de slå videre.</li>
         <li><strong>Slut.</strong> Passerer en spiller målet (<span id="ruleTarget">10.000</span>), får de øvrige én tur mere. Højeste total vinder. Ved lige stilling vinder den, der nåede målet først.</li>
       </ul>
       <p class="muted">Tryk på terningerne for at vælge, hvilke der tages fra. Terninger med grøn ring giver point; lilla ring er en kæde-fordobler. Lyd slås til og fra med højttaler-knappen øverst.</p>
@@ -375,7 +383,7 @@ details summary{cursor:pointer;font-weight:600}
 const STORE_KEY = 'titusind-spil-v1';
 const SOUND_KEY = 'titusind-lyd';
 const DEFAULT_ROWS = 4;
-const DEFAULTS = {target: 10000, opening: 350, threePairs: 500, straight: 1000};
+const DEFAULTS = {target: 10000, opening: 350, minTurn: 0, threePairs: 500, straight: 1000};
 const LOG_PREVIEW = 8;
 const PIPS = {1:[4], 2:[2,6], 3:[2,4,6], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8]};
 const $ = id => document.getElementById(id);
@@ -542,6 +550,20 @@ function doRoll(){
   });
 }
 
+// Hvad skal der til, før spilleren må banke turens point? {ok, note}
+function bankRequirement(p, bankPts){
+  const S = game.settings, minTurn = S.minTurn || 0;
+  if(game.finalRound){
+    const others = game.players.filter(q => q !== p);
+    const top = Math.max(...others.map(q => q.total));
+    const lead = others.find(q => q.total === top);
+    if(p.total + bankPts <= top) return {ok: false, note: `Skal over ${fmt(top)} (${lead.name}) for at kunne banke – mangler ${fmt(top - p.total - bankPts + 50)}`};
+  }
+  if(!p.opened && S.opening > 0 && bankPts < S.opening) return {ok: false, note: `Mangler ${fmt(S.opening - bankPts)} for at kunne banke (åbningskrav ${fmt(S.opening)})`};
+  if(p.opened && minTurn > 0 && bankPts < minTurn) return {ok: false, note: `Mangler ${fmt(minTurn - bankPts)} for at kunne banke (mindst ${fmt(minTurn)} pr. tur)`};
+  return {ok: true, note: ''};
+}
+
 function doBank(){
   if(animating || game.phase !== 'turn') return;
   const t = game.turn;
@@ -555,10 +577,8 @@ function doBank(){
   }
   if(t.points <= 0) return;
   const p = currentPlayer();
-  if(!p.opened && t.points < game.settings.opening){
-    toast(`Du skal have mindst ${fmt(game.settings.opening)} i én tur for at komme på tavlen`);
-    save(); render(); return;
-  }
+  const req = bankRequirement(p, t.points);
+  if(!req.ok){ toast(req.note); save(); render(); return; }
   Sound.cash();
   endTurn(t.points, 'bank');
 }
@@ -723,14 +743,15 @@ function render(){
   $('log').innerHTML = lh;
 
   $('rulePairs').textContent = fmt(S.threePairs); $('ruleStraight').textContent = fmt(S.straight);
-  $('ruleOpening').textContent = S.opening > 0 ? fmt(S.opening) : 'intet krav'; $('ruleTarget').textContent = fmt(S.target);
+  $('ruleOpening').textContent = S.opening > 0 ? fmt(S.opening) : 'intet krav'; $('ruleMin').textContent = (S.minTurn || 0) > 0 ? fmt(S.minTurn) : 'intet krav'; $('ruleTarget').textContent = fmt(S.target);
 }
 
 function renderTurn(){
   const t = game.turn, p = currentPlayer(), S = game.settings;
   const nextI = game.finalRound ? (game.finalRound.left[0] ?? -1) : (game.cur + 1) % game.players.length;
   $('turnWho').textContent = `${p.name} har turen${nextI >= 0 ? ` · derefter ${game.players[nextI].name}` : ' · sidste tur'}`;
-  $('turnInfo').textContent = game.finalRound ? 'Sidste runde – én tur' : `${fmt(p.total)} på tavlen${!p.opened && S.opening > 0 ? ` · skal åbne med ${fmt(S.opening)}` : ''}`;
+  const topOther = game.finalRound ? Math.max(...game.players.filter(q => q !== p).map(q => q.total)) : 0;
+  $('turnInfo').textContent = game.finalRound ? `Sidste runde – ${fmt(p.total)} på tavlen, skal over ${fmt(topOther)}` : `${fmt(p.total)} på tavlen${!p.opened && S.opening > 0 ? ` · skal åbne med ${fmt(S.opening)}` : p.opened && (S.minTurn || 0) > 0 ? ` · mindst ${fmt(S.minTurn)} pr. tur` : ''}`;
 
   const sel = t.rolled.length && !t.dead ? currentSelection() : null;
   $('turnPoints').textContent = fmt(t.points);
@@ -762,11 +783,12 @@ function renderTurn(){
   const bankPts = t.points + (ok ? sel.points : 0);
   const mustRoll = t.hot && !t.rolled.length;                    // alle terninger brugt: der skal slås igen
   const usesAll = t.rolled.length > 0 && ok && sel.vals.length === t.remaining;
-  const canBank = !animating && !t.dead && bankPts > 0 && (!t.rolled.length || ok) && (p.opened || bankPts >= S.opening) && !mustRoll && !usesAll;
+  const req = bankRequirement(p, bankPts);
+  const canBank = !animating && !t.dead && bankPts > 0 && (!t.rolled.length || ok) && req.ok && !mustRoll && !usesAll;
   $('btnBank').hidden = !t.rolled.length && t.points === 0;
   $('btnBank').disabled = !canBank;
   $('btnBank').textContent = `Bank ${fmt(bankPts)}`;
-  $('turnNote').textContent = mustRoll ? 'Alle terninger er brugt – du skal slå igen med alle seks' : usesAll ? 'Udvalget bruger alle terninger – der skal slås igen, så der kan ikke bankes nu' : !p.opened && S.opening > 0 && bankPts > 0 && bankPts < S.opening ? `Mangler ${fmt(S.opening - bankPts)} for at kunne banke (åbningskrav ${fmt(S.opening)})` : t.remaining < 6 && !t.rolled.length ? `${t.remaining} terninger tilbage` : '';
+  $('turnNote').textContent = mustRoll ? 'Alle terninger er brugt – du skal slå igen med alle seks' : usesAll ? 'Udvalget bruger alle terninger – der skal slås igen, så der kan ikke bankes nu' : !req.ok && (bankPts > 0 || game.finalRound) ? req.note : t.remaining < 6 && !t.rolled.length ? `${t.remaining} terninger tilbage` : '';
 }
 function groupLabel(g){
   if(g.kind === 'straight') return 'Lige række';
@@ -830,9 +852,9 @@ $('nameInputs').addEventListener('keydown', e => {
 document.querySelectorAll('.chips button').forEach(b => b.addEventListener('click', () => { $(b.dataset.set).value = b.dataset.v; }));
 function readSettings(){
   const num = (id, def, min) => { const v = parseInt($(id).value, 10); return Number.isFinite(v) && v >= min ? v : def; };
-  return {target: num('setTarget', DEFAULTS.target, 1000), opening: num('setOpening', DEFAULTS.opening, 0), threePairs: num('setPairs', DEFAULTS.threePairs, 0), straight: num('setStraight', DEFAULTS.straight, 0)};
+  return {target: num('setTarget', DEFAULTS.target, 1000), opening: num('setOpening', DEFAULTS.opening, 0), minTurn: num('setMin', DEFAULTS.minTurn, 0), threePairs: num('setPairs', DEFAULTS.threePairs, 0), straight: num('setStraight', DEFAULTS.straight, 0)};
 }
-function writeSettings(s){ $('setTarget').value = s.target; $('setOpening').value = s.opening; $('setPairs').value = s.threePairs; $('setStraight').value = s.straight; }
+function writeSettings(s){ $('setTarget').value = s.target; $('setOpening').value = s.opening; $('setMin').value = s.minTurn || 0; $('setPairs').value = s.threePairs; $('setStraight').value = s.straight; }
 
 $('btnStart').addEventListener('click', () => {
   syncSetupNames();
