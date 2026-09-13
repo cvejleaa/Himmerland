@@ -8,6 +8,12 @@
 <meta name="theme-color" content="#0d5c3f" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#08160f" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎲</text></svg>">
+<link rel="manifest" href="mexico.webmanifest">
+<link rel="apple-touch-icon" href="ikoner/mexico-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mexico">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
 :root{
   --green:#0d5c3f; --green-2:#12784f; --green-3:#e8f4ee; --green-deep:#0a4630;
@@ -1719,6 +1725,20 @@ let toastTimer;
 function toast(msg){
   const t = $('toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---------- Offline ---------- */
+// Service workeren gemmer spillet på telefonen, så det kan åbnes uden net.
+if('serviceWorker' in navigator){
+  addEventListener('load', () => {
+    const first = !navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      if(!first) return;
+      const w = reg.installing || reg.waiting; if(!w) return;
+      w.addEventListener('statechange', () => { if(w.state === 'activated') toast('Spillet er gemt på telefonen og kan spilles uden net'); });
+    }).catch(() => {});
+  });
+  addEventListener('offline', () => toast('Ingen forbindelse – spillet kører videre uden net'));
 }
 
 /* ---------- Start ---------- */
