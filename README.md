@@ -119,6 +119,20 @@ vinderen starte. Der er raflelyd, kasse-lyd ved bank, udbrud på skærmen og
 via talesyntesen, og fejring af vinderen med konfetti og "Tillykke <navn>". Mellemrum slår, B banker.
 Terningerne trækkes med `crypto.getRandomValues`.
 
+## 📴 Terningspillene uden net
+
+Mexico og 10.000 kan spilles uden forbindelse. `public/sw.js` er en service worker, der ved første besøg gemmer
+de to spilsider, deres manifester og ikoner på telefonen. Derefter hentes siden fra nettet, når der er net (så
+en ny udgave slår igennem med det samme), og fra telefonen, når der ikke er. Golf-scorekortet og dets synk
+rører den ikke. Et igangværende spil ligger i forvejen i browserens localStorage.
+
+Spillene kan lægges på hjemmeskærmen som apps: `mexico.webmanifest` og `10000.webmanifest` giver navn, ikon
+(`public/ikoner/`) og fuldskærm uden browserlinjer. På Android: menuen → *Føj til startskærm* (eller
+*Installer app*). På iPhone: Del-knappen → *Føj til hjemmeskærm*. Første gang spillet er gemt, siger en lille
+besked det, og ryger nettet, siger spillet at det kører videre.
+
+Skal cachen tømmes efter en ændring i `sw.js`, tælles `VERSION` op i filen; gamle caches slettes automatisk.
+
 ## Kørsel lokalt
 
 Åbn `public/index.html` direkte i en browser, eller server mappen:
@@ -184,6 +198,7 @@ Har du ikke lyst til at lægge config'en i repoet, kan den i stedet indsættes d
 | `public/index.html` | Hele appen: layout, regler, pointberegning, turneringer og synk |
 | `public/mexico.html` | Terningspillet Mexico – selvstændig side uden synk |
 | `public/10000.html` | Terningspillet 10.000 – selvstændig side uden synk |
+| `public/sw.js`, `public/*.webmanifest`, `public/ikoner/` | Offline-cache og hjemmeskærms-apps for de to terningspil |
 | `public/firebase-config.js` | Firebase web-config (pladsholdere indtil du udfylder dem) |
 | `firebase.json` | Firestore-regler + valgfri Firebase Hosting |
 | `firestore.rules` | Adgang til samlingen `spil` |
