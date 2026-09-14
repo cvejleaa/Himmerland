@@ -2,10 +2,11 @@
    Gemmer de to spilsider (og deres manifester og ikoner) på telefonen, så de kan
    åbnes uden net. Alt andet på sitet – golf-scorekortet og dets synk – rører den ikke.
    Strategi: net først (så en ny udgave slår igennem med det samme), ellers cachen. */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = 'terninger-' + VERSION;
 const ASSETS = [
   'mexico.html', '10000.html',
+  'online.js', 'firebase-config.js',            // så spilsiderne også indlæser rent uden net (online-tilstand kræver stadig net)
   'mexico.webmanifest', '10000.webmanifest',
   'ikoner/mexico-192.png', 'ikoner/mexico-512.png', 'ikoner/mexico-180.png',
   'ikoner/10000-192.png', 'ikoner/10000-512.png', 'ikoner/10000-180.png',
