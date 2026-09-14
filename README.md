@@ -151,11 +151,15 @@ iPhone virker beskeder kun, når siden er lagt på hjemmeskærmen (iOS 16.4+).
 **Opsætning i Firebase (én gang)**
 1. *Authentication → Sign-in method*: slå **Google** og **Email/Password** til.
 2. *Authentication → Settings → Authorized domains*: `golf.vejleaa.dk` og `cvejleaa.github.io` (skulle være der fra golf-synken).
-3. Regler: `firebase deploy --only firestore:rules` (`firestore.rules` dækker `spil`, `brugere` og `terningspil`).
+3. Regler: fra en mappe med repoet (fx Cloud Shell: `git clone -b claude/himmerland-golf-scorecard-7g3jkj https://github.com/cvejleaa/Himmerland.git && cd Himmerland`)
+   kør `firebase deploy --only firestore:rules`. `firebase.json` peger på databasen `golf`, og `firestore.rules` dækker `spil`,
+   `brugere` og `terningspil`.
 4. Push: *Project settings → Cloud Messaging → Web configuration → Web Push certificates → Generate key pair*, og
    sæt nøglen som `vapidKey` i `public/firebase-config.js`. Cloud Functions kræver Blaze-planen (betaling slået
    til; forbruget her ligger langt under det gratis niveau): `cd functions && npm install`, derefter
-   `firebase deploy --only functions`. Uden functions virker alt andet – der kommer bare ingen beskeder.
+   `firebase deploy --only functions`. Funktionen ligger i europe-west4, som hører til databasens placering eur3;
+   klager deployet over placeringen, rettes `region` i `functions/index.js` til den region, fejlen nævner. Uden functions
+   virker alt andet – der kommer bare ingen beskeder.
 
 Datamodel: `brugere/{uid}` (navn, e-mail, push-tokens) og `terningspil/{id}` (type, indstillinger, spillere, status
 `venter`/`igang`/`slut`, `tur` = uid'et der har turen, `state` = hele spiltilstanden, `rev`, placeringer). Reglerne

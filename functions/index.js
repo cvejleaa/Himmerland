@@ -10,7 +10,7 @@ initializeApp();
 const DATABASE = 'golf';
 const SITE = 'https://golf.vejleaa.dk/';
 
-exports.dinTur = onDocumentUpdated({document: 'terningspil/{id}', database: DATABASE, region: 'europe-west1'}, async event => {
+exports.dinTur = onDocumentUpdated({document: 'terningspil/{id}', database: DATABASE, region: 'europe-west4'}, async event => {
   const before = event.data.before.data() || {};
   const after = event.data.after.data() || {};
   const id = event.params.id;

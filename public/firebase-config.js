@@ -7,7 +7,7 @@
  */
 window.FIREBASE_CONFIG = {
   // Web push-nøgle (VAPID) til "det er din tur"-beskeder: Console → Cloud Messaging → Web configuration → Web Push certificates
-  vapidKey:          "",
+  vapidKey:          "BAygmyNVOQXBL5eFGMJoQLTxEXMg8Hq0x-u2-nE-FfbJxDGFEnRcjMVLBqo5liMizJE6lKayNIDwRIfSoTY4LkQ",
 
   apiKey:            "AIzaSyBI6scLPgQyyTLA7vEWzTA-bqKLXk5_B4s",
   authDomain:        "himmerland.firebaseapp.com",
