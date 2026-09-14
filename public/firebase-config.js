@@ -6,6 +6,9 @@
  * Hentes i Firebase Console → Projektindstillinger → Dine apps → Web-app.
  */
 window.FIREBASE_CONFIG = {
+  // Web push-nøgle (VAPID) til "det er din tur"-beskeder: Console → Cloud Messaging → Web configuration → Web Push certificates
+  vapidKey:          "",
+
   apiKey:            "AIzaSyBI6scLPgQyyTLA7vEWzTA-bqKLXk5_B4s",
   authDomain:        "himmerland.firebaseapp.com",
   projectId:         "himmerland",

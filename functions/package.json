@@ -1,0 +1,11 @@
+{
+  "name": "himmerland-functions",
+  "description": "Push-beskeder til terningspillene: 'det er din tur'",
+  "private": true,
+  "engines": {"node": "20"},
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.1.0",
+    "firebase-functions": "^5.0.1"
+  }
+}

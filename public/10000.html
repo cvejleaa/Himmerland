@@ -210,6 +210,10 @@ details summary{cursor:pointer;font-weight:600}
 .toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--toast-bg);color:var(--toast-fg);padding:10px 16px;border-radius:10px;font-size:.85rem;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .foot{color:var(--muted);font-size:.8rem;text-align:center;margin-top:6px}
+.onlinebar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:12px;font-size:.85rem}
+.onlinebar.mine{border-color:var(--green);background:var(--green-3);font-weight:600}
+.onlinebar .btn{padding:4px 10px;font-size:.8rem}
+body.online #setup,body.online #toolsCard,body.online #btnRematch{display:none!important}
 </style>
 </head>
 <body>
@@ -228,6 +232,7 @@ details summary{cursor:pointer;font-weight:600}
 </header>
 
 <main class="wrap">
+  <div class="onlinebar" id="onlineBar" hidden><span id="onlineText">🌐 Henter spillet…</span><span class="btnrow"><button class="btn gold" id="btnSkip" type="button" hidden>Spring turen over</button><a class="btn ghost" href="spil.html">Lobby</a></span></div>
 
   <!-- ===== Opsætning ===== -->
   <section class="card" id="setup">
@@ -377,6 +382,8 @@ details summary{cursor:pointer;font-weight:600}
 </div>
 
 <div class="toast" id="toast"></div>
+<script src="firebase-config.js"></script>
+<script src="online.js"></script>
 
 <script>
 'use strict';
@@ -392,6 +399,83 @@ const DEFAULT_ROWS = 4;
 const DEFAULTS = {target: 10000, opening: 350, minTurn: 0, threePairs: 500, straight: 1000};
 const LOG_PREVIEW = 8;
 const PIPS = {1:[4], 2:[2,6], 3:[2,4,6], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8]};
+
+/* ---------- Online-tilstand (?spil=ID) ----------
+   Spillet ligger i skyen, hver spiller spiller på sin egen telefon, og kun den, der har turen,
+   kan handle. De andre følger med live. Motoren er den samme; kun lagring og adgang er anderledes. */
+const ONLINE = {id: new URLSearchParams(location.search).get('spil'), active: false, me: null, doc: null, rev: 0, unsub: null, pending: null, partied: false, starting: false};
+function isOnline(){ return ONLINE.active; }
+function actorUidOf(g){ return g && g.phase === 'turn' && g.players[g.cur] ? g.players[g.cur].uid : null; }
+function actorUid(){ return actorUidOf(game); }
+function myTurn(){ if(!isOnline()) return true; const a = actorUid(); return !!a && a === ONLINE.me; }
+async function onlineStart(){
+  if(!window.Online){ toast('Online-spil kræver forbindelse til nettet'); return false; }
+  try{ await Online.init(); }catch(e){ toast('Online-delen kunne ikke starte: ' + (e.message || e)); return false; }
+  if(!Online.user){ location.replace('spil.html?next=' + encodeURIComponent(location.pathname.split('/').pop() + location.search)); return true; }
+  ONLINE.me = Online.user.uid; ONLINE.active = true;
+  document.body.classList.add('online');
+  $('onlineBar').hidden = false;
+  $('btnMenu').textContent = 'Lobby';
+  ONLINE.unsub = Online.watchGame(ONLINE.id, onlineUpdate);
+  return true;
+}
+function onlineBuildState(d){
+  const s = d.settings || {};
+  const settings = {target: +s.target || DEFAULTS.target, opening: s.opening != null ? +s.opening : DEFAULTS.opening, minTurn: +s.minTurn || 0, threePairs: s.threePairs != null ? +s.threePairs : DEFAULTS.threePairs, straight: s.straight != null ? +s.straight : DEFAULTS.straight};
+  const g = newGame(d.spillere.map(p => p.navn), settings);
+  g.players.forEach((p, i) => { p.uid = d.spillere[i].uid; });
+  g.turnNo = 1;
+  return g;
+}
+function onlineUpdate(d){
+  if(!d || d.status === 'slettet'){ $('onlineText').textContent = '🌐 Spillet findes ikke længere.'; return; }
+  ONLINE.doc = d;
+  if(d.status === 'venter'){
+    if(d.ejer === ONLINE.me && d.spillere.length >= 2 && !ONLINE.starting){
+      ONLINE.starting = true;
+      const state = onlineBuildState(d);
+      Online.startGame(ONLINE.id, state, actorUidOf(state)).catch(e => toast('Kunne ikke starte spillet: ' + (e.message || e)));
+    }else location.replace('spil.html?spil=' + ONLINE.id);
+    return;
+  }
+  if(animating){ ONLINE.pending = d; return; }
+  if(game && (d.rev || 0) <= ONLINE.rev){ renderOnlineBar(); return; }
+  ONLINE.rev = d.rev || 0;
+  game = d.state; snapshots = [];
+  if(game.phase === 'turn' && game.turn.dead && myTurn()){ endTurn(0, 'dead'); return; }
+  render();
+  if(game.phase === 'over' && !ONLINE.partied){ ONLINE.partied = true; partyLater(() => startParty(game.winner), 400); }
+}
+function onlineSave(){
+  ONLINE.rev += 1;
+  const meta = {tur: actorUid(), status: game.phase === 'over' ? 'slut' : 'igang'};
+  if(game.phase === 'over'){ ONLINE.partied = true; meta.vinder = game.players[game.winner].uid; meta.placeringer = onlinePlacements(); }
+  Online.pushState(ONLINE.id, ONLINE.rev, JSON.parse(JSON.stringify(game)), meta).then(renderOnlineBar).catch(e => toast('Kunne ikke gemme i skyen: ' + (e.message || e)));
+}
+// Placering pr. spiller: vinderen 1, derefter efter total (delt placering ved lige total)
+function onlinePlacements(){
+  const P = game.players, order = P.map((p, i) => i).sort((a, b) => P[b].total - P[a].total || a - b);
+  const out = {}; let rank = 1;
+  order.forEach((i, k) => { if(k > 0 && P[i].total < P[order[k - 1]].total) rank = k + 1; out[P[i].uid] = i === game.winner ? 1 : Math.max(rank, 2); });
+  return out;
+}
+function renderOnlineBar(){
+  if(!isOnline()) return;
+  const d = ONLINE.doc, names = d ? d.spillere.map(p => p.navn).join(', ') : '';
+  let text;
+  if(!game) text = 'Henter spillet…';
+  else if(game.phase === 'over') text = `Spillet er slut · ${names}`;
+  else if(myTurn()) text = `Det er din tur · ${names}`;
+  else { const a = actorUid(); const who = d && d.spillere.find(p => p.uid === a); text = `Venter på ${who ? who.navn : '…'}${d && d.opdateret ? ' · ' + Online.fmtAgo(d.opdateret) : ''} · ${names}`; }
+  $('onlineText').textContent = '🌐 ' + text;
+  $('onlineBar').classList.toggle('mine', !!game && game.phase !== 'over' && myTurn());
+  $('btnSkip').hidden = !(d && game && game.phase === 'turn' && Online.canSkip(d));
+}
+function onlineSkipTurn(){
+  if(!isOnline() || !ONLINE.doc || !Online.canSkip(ONLINE.doc) || game.phase !== 'turn') return;
+  if(!confirm(`Spring ${currentPlayer().name}s tur over? Turen giver ingen point.`)) return;
+  endTurn(0, 'skip');
+}
 const $ = id => document.getElementById(id);
 const fmt = n => Number(n).toLocaleString('da-DK');
 
@@ -503,7 +587,7 @@ function autoSelect(){
 }
 
 function toggleDie(i){
-  if(animating || game.phase !== 'turn') return;
+  if(animating || game.phase !== 'turn' || !myTurn()) return;
   const t = game.turn;
   if(!t.rolled.length || t.dead) return;
   t.sel[i] = !t.sel[i];
@@ -530,7 +614,7 @@ function applyTake(){
 }
 
 function doRoll(){
-  if(animating || game.phase !== 'turn') return;
+  if(animating || game.phase !== 'turn' || !myTurn()) return;
   const t = game.turn;
   if(t.dead) return;
   if(t.rolled.length){
@@ -544,6 +628,7 @@ function doRoll(){
   render();
   animateDice(vals, () => {
     animating = false;
+    if(ONLINE.pending){ const d = ONLINE.pending; ONLINE.pending = null; onlineUpdate(d); }
     if(!hasScoring(vals, game.settings, t.chain)){
       t.dead = true;
       shout('DØD TUR!', 'dead', 1900);
@@ -571,7 +656,7 @@ function bankRequirement(p, bankPts){
 }
 
 function doBank(){
-  if(animating || game.phase !== 'turn') return;
+  if(animating || game.phase !== 'turn' || !myTurn()) return;
   const t = game.turn;
   if(t.dead) return;
   if(t.hot && !t.rolled.length){ toast('Alle terninger er brugt – du skal slå igen'); return; }
@@ -592,7 +677,7 @@ function doBank(){
 function endTurn(points, how){
   const p = currentPlayer();
   if(points > 0){ p.total += points; p.opened = true; }
-  const line = how === 'bank' ? `${p.name} bankede ${fmt(points)} – i alt ${fmt(p.total)}` : `${p.name}: død tur${game.turn.points ? ` – mistede ${fmt(game.turn.points)}` : ''}`;
+  const line = how === 'bank' ? `${p.name} bankede ${fmt(points)} – i alt ${fmt(p.total)}` : how === 'skip' ? `${p.name}: turen sprunget over (intet svar i 3 dage)` : `${p.name}: død tur${game.turn.points ? ` – mistede ${fmt(game.turn.points)}` : ''}`;
   game.log.unshift({no: game.turnNo, text: line});
   if(!game.finalRound && p.total >= game.settings.target){
     const n = game.players.length, left = [];
@@ -624,7 +709,7 @@ function finishGame(){
 }
 
 function undo(){
-  if(!game || animating) return;
+  if(!game || animating || isOnline()) return;
   stopParty();
   const mid = game.phase === 'over' || turnStarted();
   const idx = mid ? game.turnNo - 1 : game.turnNo - 2;
@@ -645,7 +730,7 @@ function permuteGame(g, order){
   if(g.finalRound){ g.finalRound.trigger = map[g.finalRound.trigger]; g.finalRound.left = g.finalRound.left.map(i => map[i]); }
 }
 function movePlayer(i, dir){
-  if(!game || animating) return;
+  if(!game || animating || isOnline()) return;
   if(game.finalRound){ toast('Rækkefølgen kan ikke ændres i sidste runde'); return; }
   const j = i + dir; if(j < 0 || j >= game.players.length) return;
   const order = game.players.map((p, k) => k); order[i] = j; order[j] = i;
@@ -654,7 +739,10 @@ function movePlayer(i, dir){
 }
 
 /* ---------- Lagring ---------- */
-function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify({game, snapshots})); }catch(e){} }
+function save(){
+  if(isOnline()){ onlineSave(); return; }
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify({game, snapshots})); }catch(e){}
+}
 function load(){
   try{
     const raw = localStorage.getItem(STORE_KEY); if(!raw) return false;
@@ -750,6 +838,7 @@ function render(){
 
   $('rulePairs').textContent = fmt(S.threePairs); $('ruleStraight').textContent = fmt(S.straight);
   $('ruleOpening').textContent = S.opening > 0 ? fmt(S.opening) : 'intet krav'; $('ruleMin').textContent = (S.minTurn || 0) > 0 ? fmt(S.minTurn) : 'intet krav'; $('ruleTarget').textContent = fmt(S.target);
+  renderOnlineBar();
 }
 
 function renderTurn(){
@@ -792,7 +881,8 @@ function renderTurn(){
   const req = bankRequirement(p, bankPts);
   const canBank = !animating && !t.dead && bankPts > 0 && (!t.rolled.length || ok) && req.ok && !mustRoll && !usesAll;
   $('btnBank').hidden = !t.rolled.length && t.points === 0;
-  $('btnBank').disabled = !canBank;
+  $('btnBank').disabled = !canBank || !myTurn();
+  if(!myTurn()) $('btnRoll').disabled = true;
   $('btnBank').textContent = `Bank ${fmt(bankPts)}`;
   $('turnNote').textContent = mustRoll ? 'Alle terninger er brugt – du skal slå igen med alle seks' : usesAll ? 'Udvalget bruger alle terninger – der skal slås igen, så der kan ikke bankes nu' : !req.ok && (bankPts > 0 || game.finalRound) ? req.note : t.remaining < 6 && !t.rolled.length ? `${t.remaining} terninger tilbage` : '';
 }
@@ -873,6 +963,7 @@ $('btnStart').addEventListener('click', () => {
   window.scrollTo({top: 0, behavior: 'smooth'});
 });
 $('btnMenu').addEventListener('click', () => {
+  if(isOnline()){ location.href = 'spil.html'; return; }
   if(game && game.phase !== 'over' && !confirm('Afslutte det igangværende spil og starte forfra?')) return;
   stopParty();
   const names = game ? game.players.map(p => p.name) : null;
@@ -892,6 +983,7 @@ $('btnRematch').addEventListener('click', () => {
 $('btnRoll').addEventListener('click', doRoll);
 $('btnBank').addEventListener('click', doBank);
 $('btnUndo').addEventListener('click', undo);
+$('btnSkip').addEventListener('click', onlineSkipTurn);
 $('btnOrder').addEventListener('click', () => { orderOpen = !orderOpen; render(); });
 $('orderPanel').addEventListener('click', e => {
   const m = e.target.closest('button.mv'); if(!m) return;
@@ -1098,12 +1190,16 @@ if('serviceWorker' in navigator){
 /* ---------- Start ---------- */
 renderSoundButton();
 renderSetup(null);
-if(load()){
-  if(game.phase === 'turn' && game.turn && game.turn.dead) endTurn(0, 'dead');   // en død tur afbrudt af genindlæsning: turen er tabt, næste spiller er på
-  else render();
-}else{
-  render();
+function localStart(){
+  if(load()){
+    if(game.phase === 'turn' && game.turn && game.turn.dead) endTurn(0, 'dead');   // en død tur afbrudt af genindlæsning: turen er tabt, næste spiller er på
+    else render();
+  }else{
+    render();
+  }
 }
+if(ONLINE.id){ render(); onlineStart().then(ok => { if(!ok){ ONLINE.id = null; localStart(); } }); }
+else localStart();
 </script>
 </body>
 </html>
