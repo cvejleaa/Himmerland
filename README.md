@@ -157,7 +157,9 @@ iPhone virker beskeder kun, når siden er lagt på hjemmeskærmen (iOS 16.4+).
 4. Push: *Project settings → Cloud Messaging → Web configuration → Web Push certificates → Generate key pair*, og
    sæt nøglen som `vapidKey` i `public/firebase-config.js`. Cloud Functions kræver Blaze-planen (betaling slået
    til; forbruget her ligger langt under det gratis niveau): `cd functions && npm install`, derefter
-   `firebase deploy --only functions`. Uden functions virker alt andet – der kommer bare ingen beskeder.
+   `firebase deploy --only functions`. Funktionen ligger i europe-west4, som hører til databasens placering eur3;
+   klager deployet over placeringen, rettes `region` i `functions/index.js` til den region, fejlen nævner. Uden functions
+   virker alt andet – der kommer bare ingen beskeder.
 
 Datamodel: `brugere/{uid}` (navn, e-mail, push-tokens) og `terningspil/{id}` (type, indstillinger, spillere, status
 `venter`/`igang`/`slut`, `tur` = uid'et der har turen, `state` = hele spiltilstanden, `rev`, placeringer). Reglerne
