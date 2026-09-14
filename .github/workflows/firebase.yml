@@ -22,7 +22,7 @@ jobs:
   udgiv:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Er nøglen på plads?
         id: key
@@ -37,7 +37,7 @@ jobs:
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         if: steps.key.outputs.ok == 'true'
         with:
           node-version: 22
@@ -48,11 +48,32 @@ jobs:
           npm install -g firebase-tools
           cd functions && npm install --no-audit --no-fund
 
-      - name: Udgiv regler og functions
+      - name: Udgiv Firestore-regler
         if: steps.key.outputs.ok == 'true'
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
-        run: firebase deploy --only firestore:rules,functions --project himmerland --non-interactive --force
+        run: |
+          firebase deploy --only firestore:rules --project himmerland --non-interactive --force
+          echo "✅ Firestore-reglerne er udgivet til databasen golf." >> "$GITHUB_STEP_SUMMARY"
+
+      # Functions kræver desuden rollen "Service Account User" på tjenestekontoen (iam.serviceAccounts.actAs
+      # på himmerland@appspot.gserviceaccount.com). Mangler den, fejler kun dette trin, og kørslen fortsætter.
+      - name: Udgiv Cloud Functions (forsøg)
+        if: steps.key.outputs.ok == 'true'
+        id: functions
+        continue-on-error: true
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: firebase deploy --only functions --project himmerland --non-interactive --force
+
+      - name: Opsummering for functions
+        if: steps.key.outputs.ok == 'true'
+        run: |
+          if [ "${{ steps.functions.outcome }}" = "success" ]; then
+            echo "✅ Cloud Functions er udgivet." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "⚠️ Cloud Functions blev ikke udgivet. Giv tjenestekontoen rollen *Service Account User* (Google Cloud Console → IAM → tjenestekontoen fra nøglen → Edit → Add role), så går det igennem næste gang. Den udgave, der allerede kører, er ikke berørt." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Ryd op
         if: always()
