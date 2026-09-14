@@ -293,6 +293,7 @@ tr.me td{background:var(--green-3);font-weight:700}
         <button class="btn ghost" id="btnPush" type="button" style="font-size:.8rem">🔔 Slå beskeder til</button>
       </div>
       <p class="muted" id="pushNote" style="margin:6px 0 0;font-size:.8rem"></p>
+      <p class="err" id="lobbyErr" style="margin:6px 0 0"></p>
     </section>
 
     <section class="card" id="waitCard" hidden>
@@ -616,8 +617,10 @@ function renderAll(){ renderGames(); renderWait(); renderStats(); renderHistory(
 /* ---------- Start ---------- */
 let unsubGames = null, unsubUsers = null, unsubSettings = null;
 async function main(){
+  const slow = setTimeout(() => { if(!$('loading').hidden) $('loading').innerHTML = '<p class="muted" style="margin:0">Venter stadig på Firebase… Tager det lang tid, er det som regel en annonceblokker eller en udvidelse, der spærrer for firestore.googleapis.com – prøv et privat vindue.</p>'; }, 15000);
   try{ await Online.init(); }
   catch(e){ $('loading').innerHTML = `<p class="err" style="margin:0">Online-delen kunne ikke starte: ${esc(e.message || e)}</p>`; return; }
+  clearTimeout(slow);
   Online.onAuth(async (user, profile) => {
     $('loading').hidden = true;
     $('login').hidden = !!user; $('lobby').hidden = !user; $('btnLogout').hidden = !user;
@@ -627,6 +630,7 @@ async function main(){
     if(!user) return;
     if(NEXT && /^[a-z0-9]+\.html\?spil=[A-Za-z0-9_-]+$/.test(NEXT)){ location.replace(NEXT); return; }
     $('meName').textContent = profile.navn;
+    $('lobbyErr').textContent = Online.profileError ? 'Din profil kunne ikke gemmes i skyen: ' + Online.errorText(Online.profileError) + ' Du kan se lobbyen, men ikke oprette eller deltage i spil, før det er løst.' : '';
     unsubGames = Online.watchMyGames(list => { games = list; renderAll(); });
     unsubUsers = Online.watchUsers(list => { users = list; renderFriends(); renderSettings(); });
     unsubSettings = Online.watchSettings(s => { settings = s; renderSettings(); });

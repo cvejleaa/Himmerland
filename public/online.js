@@ -96,10 +96,14 @@
         await new Promise(resolve => {
           let first = true;
           this.backend.auth.onChange(async u => {
-            this.user = u;
-            if(u){ this.profile = await this.ensureProfile(u); }
+            this.user = u; this.profileError = null;
+            if(u){
+              // Kan profilen ikke gemmes (regler, netværk, blokering), skal lobbyen stadig vises – med fejlen
+              try{ this.profile = await this.ensureProfile(u); }
+              catch(e){ console.warn('profil', e); this.profileError = e; this.profile = {uid: u.uid, navn: this.shortName(u.navn || u.email || 'Spiller'), email: u.email || '', tokens: []}; }
+            }
             else this.profile = null;
-            this._authCbs.forEach(cb => cb(this.user, this.profile));
+            this._authCbs.forEach(cb => { try{ cb(this.user, this.profile); }catch(e){ console.error(e); } });
             if(first){ first = false; resolve(); }
           });
         });
@@ -109,17 +113,19 @@
     },
     onAuth(cb){ this._authCbs.push(cb); if(this._ready && this.user !== undefined) cb(this.user, this.profile); },
 
+    // Navne må højst være 20 tegn (reglerne afviser længere) – Google-navne kan være lange
+    shortName(s){ s = String(s || '').trim(); if(s.includes('@')) s = s.split('@')[0]; return s.slice(0, 20).trim() || 'Spiller'; },
     async ensureProfile(u){
       const path = `${COL.users}/${u.uid}`;
       const cur = await this.backend.db.get(path);
-      const navn = (cur && cur.navn) || u.navn || (u.email ? u.email.split('@')[0] : 'Spiller');
+      const navn = this.shortName((cur && cur.navn) || u.navn || u.email || 'Spiller');
       const data = {navn, email: u.email || '', sidstSet: Date.now()};
       if(!cur) data.oprettet = Date.now();
       await this.backend.db.set(path, data, {merge: true});
       return Object.assign({uid: u.uid, tokens: []}, cur || {}, data);
     },
     async setName(navn){
-      navn = String(navn || '').trim().slice(0, 20); if(!navn) return;
+      navn = this.shortName(navn); if(!navn) return;
       await this.backend.db.update(`${COL.users}/${this.user.uid}`, {navn});
       this.profile.navn = navn;
     },
@@ -256,6 +262,12 @@
     },
 
     /* ---- hjælpere ---- */
+    errorText(e){
+      const c = (e && e.code) || '';
+      if(c.includes('permission-denied')) return 'Skyen afviste skrivningen (permission-denied). Er Firestore-reglerne udgivet til databasen "golf"?';
+      if(c.includes('unavailable') || c.includes('network')) return 'Ingen forbindelse til Firestore. Tjek net og annonceblokker.';
+      return (e && (e.message || e.code)) || String(e);
+    },
     fmtWhen(ms){ if(!ms) return ''; const d = new Date(ms); return d.toLocaleDateString('da-DK', {day: 'numeric', month: 'short'}) + ' ' + d.toLocaleTimeString('da-DK', {hour: '2-digit', minute: '2-digit'}); },
     fmtAgo(ms){
       const s = Math.max(0, Date.now() - ms) / 1000;
