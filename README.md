@@ -161,6 +161,9 @@ Det kræver én hemmelighed i repoet, sat én gang: Firebase Console → Project
 *Generate new private key* (en JSON-fil hentes), og derefter GitHub → repoet → Settings → Secrets and variables →
 Actions → *New repository secret* med navnet `FIREBASE_SERVICE_ACCOUNT` og hele filens indhold som værdi.
 Mangler hemmeligheden, springer arbejdsgangen udrulningen over og skriver det i kørslens opsummering.
+Reglerne udgives altid; Cloud Functions kræver desuden, at tjenestekontoen har rollen *Service Account User*
+(Google Cloud Console → IAM → tjenestekontoen fra nøglen → Edit → Add role). Mangler den, fejler kun det trin,
+kørslens opsummering siger det, og den udgave af funktionen, der allerede kører, er ikke berørt.
 Den kan også startes manuelt under Actions → *Udgiv Firestore-regler og functions* → Run workflow.
 
 **Opsætning i Firebase (én gang)**
