@@ -72,7 +72,9 @@
         async token(cfg){
           if(!(await this.supported()) || !cfg.vapidKey) return null;
           messaging = messaging || msgMod.getMessaging(app);
-          const reg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+          // Eget scope, så push-workeren ikke skubber offline-workeren (sw.js, scope /) ud – samme scope som Firebase selv bruger
+          const reg = await navigator.serviceWorker.register('firebase-messaging-sw.js', {scope: '/firebase-cloud-messaging-push-scope'});
+          await navigator.serviceWorker.ready.catch(() => {});
           return msgMod.getToken(messaging, {vapidKey: cfg.vapidKey, serviceWorkerRegistration: reg});
         },
         onMessage(cb){ if(messaging && msgMod) msgMod.onMessage(messaging, cb); },

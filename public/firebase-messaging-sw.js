@@ -1,5 +1,6 @@
 /* Service worker til push-beskeder (Firebase Cloud Messaging). Viser beskeden, når siden
    ikke er åben, og åbner spillet, når der trykkes på den. Offline-cachen ligger i sw.js. */
+self.window = self;   // firebase-config.js skriver til window, som ikke findes i en service worker
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 importScripts('firebase-config.js');
