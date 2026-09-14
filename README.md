@@ -139,6 +139,13 @@ man har spillet – i dag, i morgen eller i næste uge.
 5. Når spillet er slut, ligger det under *Historik* med placeringer, og *Statistik* tæller spil, sejre og point
    (1. plads 1 point, 5. plads 5 – færrest point fører, som i Mexicos rangliste), samlet og pr. spil.
 
+**Administrator og standardværdier.** Den første, der trykker *Bliv administrator* i lobbyen, får rollen
+(dokumentet `indstillinger/admin` kan kun oprettes, når det ikke findes). Administratorer ser kortet
+*Administration*, hvor standardværdierne for nye spil sættes (Mexico: liv og straf; 10.000: mål, åbning,
+minimum, tre par, lige række) og gemmes i `indstillinger/standard`. Formularen *Nyt spil* er udfyldt med dem hos
+alle, og de kan stadig ændres i det enkelte spil. Administratorer kan give rollen til andre fra vennelisten; der
+skal altid være mindst én.
+
 I Mexico kører næste runde af sig selv online (rundens resultat står i rundeforløbet), og fortryd, omkamp og den
 lokale historik/slagstatistik er slået fra – de hører til spil på én telefon. De almindelige spilsider uden
 `?spil=` virker som før, også uden net.

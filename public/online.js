@@ -4,7 +4,7 @@
    (window.__onlineBackend). Firebase indlæses først når Online.init() kaldes. */
 (function(){
   const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
-  const COL = {users: 'brugere', games: 'terningspil'};
+  const COL = {users: 'brugere', games: 'terningspil', settings: 'indstillinger'};
   const SKIP_AFTER_MS = 3 * 24 * 3600 * 1000;   // efter 3 dage kan de andre springe turen over
 
   /* ---------- Firebase-backend ---------- */
@@ -96,10 +96,14 @@
         await new Promise(resolve => {
           let first = true;
           this.backend.auth.onChange(async u => {
-            this.user = u;
-            if(u){ this.profile = await this.ensureProfile(u); }
+            this.user = u; this.profileError = null;
+            if(u){
+              // Kan profilen ikke gemmes (regler, netværk, blokering), skal lobbyen stadig vises – med fejlen
+              try{ this.profile = await this.ensureProfile(u); }
+              catch(e){ console.warn('profil', e); this.profileError = e; this.profile = {uid: u.uid, navn: this.shortName(u.navn || u.email || 'Spiller'), email: u.email || '', tokens: []}; }
+            }
             else this.profile = null;
-            this._authCbs.forEach(cb => cb(this.user, this.profile));
+            this._authCbs.forEach(cb => { try{ cb(this.user, this.profile); }catch(e){ console.error(e); } });
             if(first){ first = false; resolve(); }
           });
         });
@@ -109,17 +113,19 @@
     },
     onAuth(cb){ this._authCbs.push(cb); if(this._ready && this.user !== undefined) cb(this.user, this.profile); },
 
+    // Navne må højst være 20 tegn (reglerne afviser længere) – Google-navne kan være lange
+    shortName(s){ s = String(s || '').trim(); if(s.includes('@')) s = s.split('@')[0]; return s.slice(0, 20).trim() || 'Spiller'; },
     async ensureProfile(u){
       const path = `${COL.users}/${u.uid}`;
       const cur = await this.backend.db.get(path);
-      const navn = (cur && cur.navn) || u.navn || (u.email ? u.email.split('@')[0] : 'Spiller');
+      const navn = this.shortName((cur && cur.navn) || u.navn || u.email || 'Spiller');
       const data = {navn, email: u.email || '', sidstSet: Date.now()};
       if(!cur) data.oprettet = Date.now();
       await this.backend.db.set(path, data, {merge: true});
       return Object.assign({uid: u.uid, tokens: []}, cur || {}, data);
     },
     async setName(navn){
-      navn = String(navn || '').trim().slice(0, 20); if(!navn) return;
+      navn = this.shortName(navn); if(!navn) return;
       await this.backend.db.update(`${COL.users}/${this.user.uid}`, {navn});
       this.profile.navn = navn;
     },
@@ -217,6 +223,30 @@
       return [...by.values()].map(s => Object.assign(s, {snit: s.spil ? s.point / s.spil : 0})).sort((a, b) => a.snit - b.snit || b.sejre - a.sejre || b.spil - a.spil);
     },
 
+    /* ---- standardværdier og administratorer ---- */
+    DEFAULTS: {mexico: {lives: 6, penalty: 2}, '10000': {target: 10000, opening: 350, minTurn: 0, threePairs: 500, straight: 1000}},
+    admins: null, defaults: null,
+    // Følger begge dokumenter: cb({admins: [uid…]|null (intet dokument endnu), defaults: {mexico, '10000'}})
+    watchSettings(cb){
+      const emit = () => cb({admins: this.admins, defaults: this.defaults || this.DEFAULTS});
+      const u1 = this.backend.db.watch(`${COL.settings}/admin`, d => { this.admins = d ? (d.uids || []) : null; emit(); });
+      const u2 = this.backend.db.watch(`${COL.settings}/standard`, d => { this.defaults = d ? {mexico: Object.assign({}, this.DEFAULTS.mexico, d.mexico || {}), '10000': Object.assign({}, this.DEFAULTS['10000'], d['10000'] || {})} : null; emit(); });
+      return () => { u1(); u2(); };
+    },
+    isAdmin(){ return !!(this.user && this.admins && this.admins.includes(this.user.uid)); },
+    // Den første, der trykker, bliver administrator (reglerne tillader kun oprettelse, når dokumentet ikke findes)
+    async claimAdmin(){
+      return this.backend.db.txn(`${COL.settings}/admin`, d => d ? undefined : {uids: [this.user.uid], oprettet: Date.now()});
+    },
+    async setAdmins(uids){
+      uids = [...new Set(uids)].filter(Boolean);
+      if(!uids.length) throw new Error('Der skal være mindst én administrator');
+      await this.backend.db.update(`${COL.settings}/admin`, {uids, opdateret: Date.now()});
+    },
+    async saveDefaults(defaults){
+      await this.backend.db.set(`${COL.settings}/standard`, {mexico: defaults.mexico, '10000': defaults['10000'], opdateret: Date.now(), af: this.user.uid});
+    },
+
     /* ---- push ---- */
     async enablePush(){
       if(!('Notification' in window)) return {ok: false, why: 'Browseren understøtter ikke beskeder'};
@@ -232,6 +262,12 @@
     },
 
     /* ---- hjælpere ---- */
+    errorText(e){
+      const c = (e && e.code) || '';
+      if(c.includes('permission-denied')) return 'Skyen afviste skrivningen (permission-denied). Er Firestore-reglerne udgivet til databasen "golf"?';
+      if(c.includes('unavailable') || c.includes('network')) return 'Ingen forbindelse til Firestore. Tjek net og annonceblokker.';
+      return (e && (e.message || e.code)) || String(e);
+    },
     fmtWhen(ms){ if(!ms) return ''; const d = new Date(ms); return d.toLocaleDateString('da-DK', {day: 'numeric', month: 'short'}) + ' ' + d.toLocaleTimeString('da-DK', {hour: '2-digit', minute: '2-digit'}); },
     fmtAgo(ms){
       const s = Math.max(0, Date.now() - ms) / 1000;

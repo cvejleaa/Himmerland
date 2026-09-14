@@ -293,6 +293,7 @@ tr.me td{background:var(--green-3);font-weight:700}
         <button class="btn ghost" id="btnPush" type="button" style="font-size:.8rem">🔔 Slå beskeder til</button>
       </div>
       <p class="muted" id="pushNote" style="margin:6px 0 0;font-size:.8rem"></p>
+      <p class="err" id="lobbyErr" style="margin:6px 0 0"></p>
     </section>
 
     <section class="card" id="waitCard" hidden>
@@ -322,6 +323,7 @@ tr.me td{background:var(--green-3);font-weight:700}
         <label class="f" style="flex:1 1 40%">Tre par<input type="number" id="tkPairs" value="500" step="50" min="0"></label>
         <label class="f" style="flex:1 1 40%">Lige række<input type="number" id="tkStraight" value="1000" step="50" min="0"></label>
       </div>
+      <p class="muted" id="defaultsNote" style="margin:6px 0 0;font-size:.8rem"></p>
       <p class="help" style="margin:10px 0 6px">Vælg medspillere blandt dem, der har logget ind før. Andre kan komme med via koden, spillet får.</p>
       <div class="friends" id="friends"></div>
       <div class="row" style="margin-top:10px">
@@ -337,6 +339,33 @@ tr.me td{background:var(--green-3);font-weight:700}
         <button class="btn primary" type="submit">Deltag</button>
       </form>
       <p class="err" id="joinErr"></p>
+    </section>
+
+    <section class="card" id="adminClaim" hidden>
+      <h2>Administrator</h2>
+      <p class="help">Der er ingen administrator endnu. Administratoren sætter standardværdierne for nye spil og kan give rollen videre.</p>
+      <button class="btn primary" id="btnClaimAdmin" type="button">Bliv administrator</button>
+    </section>
+
+    <section class="card" id="adminCard" hidden>
+      <h2>Administration <span class="hint">standardværdier for nye spil</span></h2>
+      <p class="help">Værdierne her er udfyldt på forhånd, når nogen opretter et nyt spil. De kan stadig ændres i det enkelte spil.</p>
+      <div class="row">
+        <label class="f" style="flex:1 1 40%">Mexico: liv<input type="number" id="adLives" min="1" max="20"></label>
+        <label class="f" style="flex:1 1 40%">Mexico: straf for Mexico<input type="number" id="adPenalty" min="1" max="2"></label>
+        <label class="f" style="flex:1 1 40%">10.000: mål<input type="number" id="adTarget" step="500" min="1000"></label>
+        <label class="f" style="flex:1 1 40%">10.000: åbningskrav<input type="number" id="adOpening" step="50" min="0"></label>
+        <label class="f" style="flex:1 1 40%">10.000: minimum pr. tur<input type="number" id="adMin" step="50" min="0"></label>
+        <label class="f" style="flex:1 1 40%">10.000: tre par<input type="number" id="adPairs" step="50" min="0"></label>
+        <label class="f" style="flex:1 1 40%">10.000: lige række<input type="number" id="adStraight" step="50" min="0"></label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="btnSaveDefaults" type="button">Gem standardværdier</button>
+        <span class="muted" id="adminNote"></span>
+      </div>
+      <h2 style="margin-top:16px">Administratorer</h2>
+      <div class="friends" id="adminList"></div>
+      <p class="help" style="margin:8px 0 0">Sæt kryds ved dem, der skal kunne rette standardværdierne. Der skal altid være mindst én.</p>
     </section>
 
     <section class="card">
@@ -372,6 +401,7 @@ const NEXT = params.get('next');
 const FOCUS = params.get('spil');
 
 let games = [], users = [], statType = '', newType = 'mexico', createdId = null;
+let settings = {admins: null, defaults: Online.DEFAULTS}, formTouched = false;
 
 /* ---------- Login ---------- */
 let mode = 'in';
@@ -420,6 +450,48 @@ $('btnPush').addEventListener('click', async () => {
   $('pushNote').textContent = 'Spørger om lov…';
   try{ const r = await Online.enablePush(); $('pushNote').textContent = r.ok ? 'Du får besked, når det er din tur.' : r.why; }
   catch(e){ $('pushNote').textContent = 'Kunne ikke slå beskeder til: ' + (e.message || e); }
+});
+
+const NEW_FIELDS = {mxLives: ['mexico', 'lives'], mxPenalty: ['mexico', 'penalty'], tkTarget: ['10000', 'target'], tkOpening: ['10000', 'opening'], tkMin: ['10000', 'minTurn'], tkPairs: ['10000', 'threePairs'], tkStraight: ['10000', 'straight']};
+function fillNewGameForm(){
+  if(formTouched) return;
+  Object.entries(NEW_FIELDS).forEach(([id, [t, k]]) => { $(id).value = settings.defaults[t][k]; });
+}
+Object.keys(NEW_FIELDS).forEach(id => $(id).addEventListener('input', () => { formTouched = true; }));
+function renderSettings(){
+  fillNewGameForm();
+  const custom = Online.defaults !== null;
+  $('defaultsNote').textContent = custom ? 'Standardværdierne er sat af administratoren.' : '';
+  $('adminClaim').hidden = settings.admins !== null;
+  const admin = Online.isAdmin();
+  $('adminCard').hidden = !admin;
+  if(!admin) return;
+  const ae = document.activeElement;
+  const editing = ae && ae.tagName === 'INPUT' && ae.type === 'number' && $('adminCard').contains(ae);   // rør ikke felterne mens der skrives
+  if(!editing){
+    const d = settings.defaults;
+    $('adLives').value = d.mexico.lives; $('adPenalty').value = d.mexico.penalty;
+    $('adTarget').value = d['10000'].target; $('adOpening').value = d['10000'].opening; $('adMin').value = d['10000'].minTurn; $('adPairs').value = d['10000'].threePairs; $('adStraight').value = d['10000'].straight;
+  }
+  const admins = settings.admins || [];
+  $('adminList').innerHTML = users.map(u => `<label><input type="checkbox" value="${esc(u.uid)}" ${admins.includes(u.uid) ? 'checked' : ''} ${u.uid === myUid() && admins.length <= 1 ? 'disabled' : ''}> ${esc(u.navn)}${u.uid === myUid() ? ' (dig)' : ''}</label>`).join('');
+}
+$('btnClaimAdmin').addEventListener('click', async () => {
+  try{ const ok = await Online.claimAdmin(); toast(ok ? 'Du er nu administrator' : 'Der er allerede en administrator'); }
+  catch(e){ toast('Kunne ikke: ' + (e.message || e)); }
+});
+$('btnSaveDefaults').addEventListener('click', async () => {
+  const num = (id, def, min) => { const v = parseInt($(id).value, 10); return Number.isFinite(v) && v >= min ? v : def; };
+  const d = {mexico: {lives: num('adLives', 6, 1), penalty: num('adPenalty', 2, 1) > 1 ? 2 : 1},
+             '10000': {target: num('adTarget', 10000, 1000), opening: num('adOpening', 350, 0), minTurn: num('adMin', 0, 0), threePairs: num('adPairs', 500, 0), straight: num('adStraight', 1000, 0)}};
+  $('adminNote').textContent = 'Gemmer…';
+  try{ await Online.saveDefaults(d); formTouched = false; $('adminNote').textContent = 'Gemt – gælder for nye spil fra nu af.'; }
+  catch(e){ $('adminNote').textContent = 'Kunne ikke gemme: ' + (e.message || e); }
+});
+$('adminList').addEventListener('change', async e => {
+  const uids = [...$('adminList').querySelectorAll('input:checked')].map(i => i.value);
+  try{ await Online.setAdmins(uids); toast('Administratorer opdateret'); }
+  catch(err){ toast(err.message || String(err)); renderSettings(); }
 });
 
 $('typeTabs').addEventListener('click', e => {
@@ -540,23 +612,28 @@ function renderHistory(){
     return `<div class="h"><div><b>${Online.typeName(g.type)}</b> · ${pl.map(p => `${g.placeringer[p.uid] || '–'}. ${esc(p.navn)}`).join(' · ')}</div><div class="w">${Online.fmtWhen(g.sluttet)} · <a href="${Online.gameUrl(g)}">se spillet</a></div></div>`;
   }).join('');
 }
-function renderAll(){ renderGames(); renderWait(); renderStats(); renderHistory(); }
+function renderAll(){ renderGames(); renderWait(); renderStats(); renderHistory(); renderSettings(); }
 
 /* ---------- Start ---------- */
-let unsubGames = null, unsubUsers = null;
+let unsubGames = null, unsubUsers = null, unsubSettings = null;
 async function main(){
+  const slow = setTimeout(() => { if(!$('loading').hidden) $('loading').innerHTML = '<p class="muted" style="margin:0">Venter stadig på Firebase… Tager det lang tid, er det som regel en annonceblokker eller en udvidelse, der spærrer for firestore.googleapis.com – prøv et privat vindue.</p>'; }, 15000);
   try{ await Online.init(); }
   catch(e){ $('loading').innerHTML = `<p class="err" style="margin:0">Online-delen kunne ikke starte: ${esc(e.message || e)}</p>`; return; }
+  clearTimeout(slow);
   Online.onAuth(async (user, profile) => {
     $('loading').hidden = true;
     $('login').hidden = !!user; $('lobby').hidden = !user; $('btnLogout').hidden = !user;
     if(unsubGames){ unsubGames(); unsubGames = null; }
     if(unsubUsers){ unsubUsers(); unsubUsers = null; }
+    if(unsubSettings){ unsubSettings(); unsubSettings = null; }
     if(!user) return;
     if(NEXT && /^[a-z0-9]+\.html\?spil=[A-Za-z0-9_-]+$/.test(NEXT)){ location.replace(NEXT); return; }
     $('meName').textContent = profile.navn;
+    $('lobbyErr').textContent = Online.profileError ? 'Din profil kunne ikke gemmes i skyen: ' + Online.errorText(Online.profileError) + ' Du kan se lobbyen, men ikke oprette eller deltage i spil, før det er løst.' : '';
     unsubGames = Online.watchMyGames(list => { games = list; renderAll(); });
-    unsubUsers = Online.watchUsers(list => { users = list; renderFriends(); });
+    unsubUsers = Online.watchUsers(list => { users = list; renderFriends(); renderSettings(); });
+    unsubSettings = Online.watchSettings(s => { settings = s; renderSettings(); });
     const kode = params.get('kode');
     if(kode){ $('joinCode').value = kode; $('joinForm').requestSubmit(); history.replaceState(null, '', 'spil.html'); }
     try{ Online.backend.push.onMessage(m => { const n = m && m.notification; if(n) toast(`${n.title}: ${n.body}`); }); }catch(e){}
