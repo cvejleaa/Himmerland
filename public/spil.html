@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Terningspil online – Mexico og 10.000</title>
+<meta name="description" content="Spil Mexico og 10.000 online med vennerne: ét login, spil i eget tempo, historik og statistik.">
+<meta name="theme-color" content="#0d5c3f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#08160f" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎲</text></svg>">
+<style>
+:root{
+  --green:#0d5c3f; --green-2:#12784f; --green-3:#e8f4ee; --green-deep:#0a4630;
+  --on-accent:#fff;
+  --ink:#16241d; --muted:#5d6f66;
+  --line:#d8e2db; --card:#fff; --bg:#f2f6f3;
+  --gold:#b8860b; --gold-bg:#fff7dc; --gold-line:#e5c765;
+  --pair:#6d28d9; --pair-bg:#efe7fd;
+  --danger:#b91c1c; --danger-bg:#fee2e2; --danger-fg:#991b1b;
+  --warn:#c2410c;
+  --die-bg:#fffdf5; --die-pip:#1a1a1a; --die-line:#d9d2b8;
+  --toast-bg:#16241d; --toast-fg:#fff;
+  --radius:14px; --shadow:0 1px 2px rgba(16,40,30,.06),0 6px 20px rgba(16,40,30,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --green:#3f9d72; --green-2:#5cbc8e; --green-3:#172b23; --green-deep:#08160f;
+    --on-accent:#07150f;
+    --ink:#e6efe9; --muted:#93a89e;
+    --line:#2b3a33; --card:#16211c; --bg:#0e1613;
+    --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
+    --pair:#c4b0ff; --pair-bg:#251b3d;
+    --danger:#f08a8a; --danger-bg:#3b1a1a; --danger-fg:#f7b4b4;
+    --warn:#e0733a;
+    --die-bg:#f3efe0; --die-pip:#141414; --die-line:#b8b09a;
+    --toast-bg:#e6efe9; --toast-fg:#0e1613;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 20px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --green:#3f9d72; --green-2:#5cbc8e; --green-3:#172b23; --green-deep:#08160f;
+  --on-accent:#07150f;
+  --ink:#e6efe9; --muted:#93a89e;
+  --line:#2b3a33; --card:#16211c; --bg:#0e1613;
+  --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
+  --pair:#c4b0ff; --pair-bg:#251b3d;
+  --danger:#f08a8a; --danger-bg:#3b1a1a; --danger-fg:#f7b4b4;
+  --warn:#e0733a;
+  --die-bg:#f3efe0; --die-pip:#141414; --die-line:#b8b09a;
+  --toast-bg:#e6efe9; --toast-fg:#0e1613;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 20px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{color-scheme:light dark}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px 60px}
+a{color:var(--green-2)}
+button{font:inherit}
+[hidden]{display:none!important}
+
+/* ---------- Header ---------- */
+header.top{background:linear-gradient(160deg,var(--green-deep) 0%,#061009 100%);color:#fff;padding:18px 0 16px;margin-bottom:14px}
+header.top .wrap{padding-bottom:0;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+h1{margin:0;font-size:1.45rem;letter-spacing:.2px}
+h1 .em{opacity:.85;font-weight:400}
+.sub{margin:4px 0 0;opacity:.8;font-size:.85rem}
+header.top .btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff;flex:0 0 auto}
+header.top .btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45);color:#fff}
+
+/* ---------- Kort og knapper ---------- */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
+.card > h2{margin:0 0 4px;font-size:1.05rem}
+.card > h2 .hint{font-weight:400;font-size:.78rem;color:var(--muted);margin-left:6px}
+.card > p.help{margin:0 0 12px;color:var(--muted);font-size:.82rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:.9rem;font-weight:600;cursor:pointer;min-height:42px}
+.btn:hover{border-color:var(--green-2);color:var(--green-2)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.primary{background:var(--green);border-color:var(--green);color:var(--on-accent)}
+.btn.primary:hover{background:var(--green-2);color:var(--on-accent)}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn.gold:hover{filter:brightness(1.08);color:#fff}
+.btn.big{font-size:1.05rem;padding:14px 18px;min-height:56px;flex:1 1 auto}
+.btn.ghost{background:transparent}
+.btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btnrow.stretch .btn{flex:1 1 150px}
+.muted{color:var(--muted);font-size:.85rem}
+
+/* ---------- Opsætning ---------- */
+.setup-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.setup-grid label{display:flex;align-items:center;gap:8px;font-size:.85rem;min-width:0}
+.setup-grid label .nr{width:22px;height:22px;border-radius:50%;background:var(--green-3);color:var(--green);display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex:0 0 auto}
+.setup-grid input[type=text]{flex:1;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1rem;min-width:0}
+.setup-grid .rm{flex:0 0 auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;line-height:1}
+.setup-grid .rm:hover{border-color:var(--danger);color:var(--danger)}
+.setup-grid .mv{flex:0 0 auto;width:28px;height:34px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-size:.8rem;line-height:1;padding:0}
+.setup-grid .mv:disabled{opacity:.3;cursor:default}
+.order{display:grid;gap:6px;margin-top:10px}
+.order .orow{display:grid;grid-template-columns:26px 1fr auto auto;gap:8px;align-items:center;padding:6px 10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.order .orow.current{border-color:var(--green);background:var(--green-3)}
+.order .orow .idx{width:26px;height:26px;border-radius:50%;background:var(--green-3);color:var(--green);display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700}
+.order .orow .oname{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.order .mv{width:36px;height:34px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:.85rem;line-height:1;padding:0}
+.order .mv:disabled{opacity:.3;cursor:default}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.settings .field{border:1px solid var(--line);border-radius:12px;padding:10px 11px}
+.settings .field .lab{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.settings input[type=number]{width:100%;margin-top:6px;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1rem;font-weight:600}
+.chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.chips button{padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:.78rem;font-weight:600;cursor:pointer}
+.chips button:hover{border-color:var(--green-2);color:var(--green-2)}
+
+/* ---------- Stilling ---------- */
+.standings{display:grid;grid-template-columns:1fr;gap:6px}
+.prow{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.prow.current{border-color:var(--green);background:var(--green-3)}
+.prow .idx{width:26px;height:26px;border-radius:50%;background:var(--green-3);color:var(--green);display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700}
+.prow.current .idx{background:var(--green);color:var(--on-accent)}
+.prow .pname{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .pname .tag{font-weight:500;font-size:.72rem;color:var(--muted);margin-left:6px}
+.prow .total{font-variant-numeric:tabular-nums;font-weight:800;font-size:1.05rem}
+.prow .total small{font-weight:500;color:var(--green-2);font-size:.75rem;margin-left:4px}
+.bar{height:5px;border-radius:3px;background:var(--line);grid-column:2 / 4;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green-2)}
+
+/* ---------- Tur ---------- */
+.turn-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.turn-head .who{font-size:1.35rem;font-weight:700;margin:0}
+.turn-head .tp{font-size:.85rem;color:var(--muted)}
+.turnpoints{text-align:center;margin:8px 0 2px}
+.turnpoints .big{font-size:2.4rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.turnpoints .big .plus{color:var(--green-2);font-size:1.3rem;font-weight:700;margin-left:6px}
+.turnpoints .name{color:var(--muted);font-size:.85rem;min-height:1.3rem}
+.chain{margin:6px auto 0;display:inline-block;padding:4px 10px;border-radius:999px;background:var(--pair-bg);color:var(--pair);font-weight:700;font-size:.85rem}
+.kept{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0 4px;min-height:10px}
+.kept .grp{display:flex;align-items:center;gap:3px;padding:4px 6px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.kept .grp .pts{font-size:.75rem;font-weight:700;margin-left:4px;color:var(--green-2)}
+.kept .grp.chain{border-color:var(--pair)}
+.dice{display:flex;gap:8px;justify-content:center;align-items:center;padding:12px 0 6px;flex-wrap:wrap}
+.die{width:min(56px,calc((100vw - 104px) / 6));height:min(56px,calc((100vw - 104px) / 6));border-radius:12px;background:var(--die-bg);border:1px solid var(--die-line);box-shadow:inset 0 -3px 0 rgba(0,0,0,.08),0 3px 8px rgba(0,0,0,.15);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:7px;gap:3px;transition:transform .12s,box-shadow .12s;cursor:default;position:relative}
+.die.sm{width:30px !important;height:30px !important;border-radius:7px;padding:4px;gap:2px;box-shadow:none}
+.die span{border-radius:50%;background:var(--die-pip);opacity:0;transform:scale(.6)}
+.die span.on{opacity:1;transform:scale(1)}
+.die.blank span{opacity:0}
+.die.rolling{animation:shake .12s infinite}
+button.die{cursor:pointer;-webkit-tap-highlight-color:transparent}
+button.die.scoring{box-shadow:inset 0 -3px 0 rgba(0,0,0,.08),0 0 0 2px var(--green-2)}
+button.die.sel{transform:translateY(-8px) scale(1.06);box-shadow:0 0 0 3px var(--green),0 10px 18px rgba(0,0,0,.25)}
+button.die.chainhit{box-shadow:inset 0 -3px 0 rgba(0,0,0,.08),0 0 0 2px var(--pair)}
+button.die.sel.chainhit{box-shadow:0 0 0 3px var(--pair),0 10px 18px rgba(0,0,0,.25)}
+button.die.deadface{opacity:.55}
+@keyframes shake{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(3px,-2px) rotate(4deg)}50%{transform:translate(-3px,2px) rotate(-4deg)}75%{transform:translate(2px,3px) rotate(2deg)}100%{transform:translate(0,0) rotate(0)}}
+.selinfo{text-align:center;min-height:1.4rem;font-size:.9rem;margin-bottom:8px}
+.selinfo.bad{color:var(--danger)}
+.selinfo .pts{font-weight:800;color:var(--green-2)}
+
+/* ---------- Resultat ---------- */
+.winner{text-align:center;padding:18px 10px;border-radius:12px;background:var(--gold-bg);border:1px solid var(--gold-line);margin-bottom:12px}
+.winner .trophy{font-size:2.6rem;line-height:1}
+.winner .wname{font-size:1.4rem;font-weight:800;margin-top:6px}
+.res-list{display:grid;gap:6px}
+.rrow{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:12px}
+.rrow.win{background:var(--green-3);border-color:var(--green)}
+.rrow .medal{font-size:1.1rem;text-align:center}
+.rrow .rname{font-weight:600}
+.rrow .rval{font-weight:700;font-variant-numeric:tabular-nums}
+
+/* ---------- Log og regler ---------- */
+.log{list-style:none;margin:0;padding:0;font-size:.85rem}
+.log li{padding:6px 0;border-top:1px solid var(--line);display:flex;gap:8px}
+.log li:first-child{border-top:0}
+.log li .rn{color:var(--muted);flex:0 0 3.2rem;font-variant-numeric:tabular-nums}
+.log li.more{border-top:0;padding-top:2px}
+details summary{cursor:pointer;font-weight:600}
+.rules{font-size:.9rem}
+.rules table{border-collapse:collapse;width:100%;margin:8px 0}
+.rules th,.rules td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.rules th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.rules ul{padding-left:18px}
+
+/* ---------- Udbrud ---------- */
+.shout{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:60}
+.shout span{display:inline-block;font-size:clamp(2.2rem,12vw,4.4rem);font-weight:900;letter-spacing:.02em;color:#fff;padding:.18em .5em;border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.35);animation:shout 1.7s cubic-bezier(.2,.9,.3,1.2) forwards;max-width:92vw;text-align:center;overflow-wrap:anywhere}
+.shout.dead span{background:var(--danger)}
+.shout.chain span{background:var(--pair)}
+.shout.final span{background:var(--gold);font-size:clamp(1.8rem,9vw,3.4rem)}
+.shout.hot span{background:var(--green);font-size:clamp(1.6rem,8vw,3rem)}
+@keyframes shout{0%{opacity:0;transform:scale(.4) rotate(-8deg)}15%{opacity:1;transform:scale(1.08) rotate(2deg)}25%{transform:scale(1) rotate(-1deg)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
+
+/* ---------- Fejring ---------- */
+.party{position:fixed;inset:0;z-index:70;background:rgba(6,16,10,.92);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden}
+.party canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.party-inner{position:relative;text-align:center;padding:20px 16px;width:92vw;max-width:520px}
+.party-trophy{font-size:clamp(4rem,22vw,8rem);line-height:1;animation:drop .6s cubic-bezier(.2,.9,.3,1.3) both}
+.party-name{font-size:clamp(2.2rem,12vw,5rem);font-weight:900;line-height:1.05;color:#ffd54a;text-shadow:0 0 30px rgba(255,213,74,.7),0 4px 0 #8a6a00;overflow-wrap:anywhere;animation:smack .55s cubic-bezier(.2,.9,.3,1.3) both;animation-delay:.15s}
+.party-sub{margin-top:8px;font-size:clamp(.9rem,4vw,1.3rem);font-weight:700;letter-spacing:.2em;opacity:.9}
+.party-score{margin-top:10px;font-size:1.1rem;opacity:.9}
+.party-hint{margin-top:22px;font-size:.8rem;opacity:.6}
+@keyframes drop{0%{opacity:0;transform:translateY(-80px) scale(.6)}100%{opacity:1;transform:none}}
+@keyframes smack{0%{opacity:0;transform:scale(2.2) rotate(-6deg)}100%{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.shout span,.party-trophy,.party-name{animation:none}.die.rolling{animation:none}}
+
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--toast-bg);color:var(--toast-fg);padding:10px 16px;border-radius:10px;font-size:.85rem;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.foot{color:var(--muted);font-size:.8rem;text-align:center;margin-top:6px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stack{display:grid;gap:8px}
+input[type=text],input[type=email],input[type=password],input[type=number]{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1rem}
+label.f{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{flex:1;padding:8px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:600;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--green);color:var(--on-accent);border-color:var(--green)}
+.google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:1rem;cursor:pointer}
+.google svg{width:20px;height:20px}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.8rem;margin:12px 0}
+.or::before,.or::after{content:"";flex:1;border-top:1px solid var(--line)}
+.glist{display:grid;gap:8px}
+.g{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.g.mine{border-color:var(--green);background:var(--green-3)}
+.g.hl{outline:2px solid var(--gold,#c9a227)}
+.g .ico{font-size:1.4rem}
+.g .t{font-weight:700}
+.g .s{font-size:.8rem;color:var(--muted)}
+.g .s b{color:var(--green);font-weight:700}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:700;background:var(--green-3);color:var(--green);margin-left:6px}
+.badge.turn{background:var(--green);color:var(--on-accent)}
+.badge.wait{background:var(--line);color:var(--muted)}
+.friends{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.friends label{display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:.9rem;cursor:pointer}
+.friends label:has(input:checked){border-color:var(--green);background:var(--green-3)}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.5rem;letter-spacing:.2em;font-weight:800;color:var(--green)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.me td{background:var(--green-3);font-weight:700}
+.hist{display:grid;gap:6px}
+.h{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:.9rem}
+.h .w{font-size:.8rem;color:var(--muted)}
+.err{color:var(--danger);font-size:.85rem;min-height:1.2em}
+.user{display:flex;gap:8px;align-items:center;font-size:.85rem}
+.user .nm{font-weight:700}
+.foot{color:var(--muted);font-size:.8rem;text-align:center;margin-top:6px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--card);padding:10px 16px;border-radius:12px;font-size:.9rem;opacity:0;pointer-events:none;transition:.2s;z-index:50;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1>🎲 Terningspil <span class="em">– online</span></h1>
+      <p class="sub" id="subline">Mexico og 10.000 med vennerne, i jeres eget tempo.</p>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="btnLogout" type="button" hidden>Log ud</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" id="loading"><p class="muted" style="margin:0">Henter…</p></section>
+
+  <!-- ===== Login ===== -->
+  <section class="card" id="login" hidden>
+    <h2>Log ind <span class="hint">ét login til begge spil</span></h2>
+    <p class="help">Med et login kan du spille mod vennerne på hver jeres telefon, når det passer jer, og se historik og statistik på tværs af spil.</p>
+    <button class="google" id="btnGoogle" type="button"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.8-6.8C35.7 2.5 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.5-4.7 7.2l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.6z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.8-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>Fortsæt med Google</button>
+    <div class="or">eller med e-mail</div>
+    <div class="tabs" role="tablist">
+      <button type="button" id="tabIn" role="tab" aria-selected="true">Log ind</button>
+      <button type="button" id="tabUp" role="tab" aria-selected="false">Opret konto</button>
+    </div>
+    <form id="emailForm" class="stack" autocomplete="on">
+      <label class="f" id="nameRow" hidden>Navn (vises for medspillerne)<input type="text" id="inName" maxlength="20" autocomplete="nickname"></label>
+      <label class="f">E-mail<input type="email" id="inEmail" autocomplete="email" required></label>
+      <label class="f">Kodeord<input type="password" id="inPass" autocomplete="current-password" minlength="6" required></label>
+      <div class="row">
+        <button class="btn primary big" id="btnEmail" type="submit" style="flex:1">Log ind</button>
+        <button class="btn ghost" id="btnReset" type="button">Glemt kodeord?</button>
+      </div>
+      <p class="err" id="loginErr"></p>
+    </form>
+  </section>
+
+  <!-- ===== Lobby ===== -->
+  <div id="lobby" hidden>
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <div class="user">Du er <span class="nm" id="meName"></span> <button class="btn ghost" id="btnName" type="button" style="padding:4px 10px;font-size:.8rem">Skift navn</button></div>
+        <button class="btn ghost" id="btnPush" type="button" style="font-size:.8rem">🔔 Slå beskeder til</button>
+      </div>
+      <p class="muted" id="pushNote" style="margin:6px 0 0;font-size:.8rem"></p>
+    </section>
+
+    <section class="card" id="waitCard" hidden>
+      <h2>Venteværelse <span class="hint" id="waitType"></span></h2>
+      <div id="waitBody"></div>
+    </section>
+
+    <section class="card">
+      <h2>Dine spil <span class="hint" id="gamesHint"></span></h2>
+      <div class="glist" id="games"><p class="muted" style="margin:0">Ingen spil endnu – opret et, eller deltag med en kode.</p></div>
+    </section>
+
+    <section class="card">
+      <h2>Nyt spil</h2>
+      <div class="tabs" role="tablist" id="typeTabs">
+        <button type="button" data-type="mexico" role="tab" aria-selected="true">🎲 Mexico</button>
+        <button type="button" data-type="10000" role="tab" aria-selected="false">🎲 10.000</button>
+      </div>
+      <div id="setMexico" class="row">
+        <label class="f" style="flex:1">Liv<input type="number" id="mxLives" value="6" min="1" max="20"></label>
+        <label class="f" style="flex:1">Straf for Mexico<input type="number" id="mxPenalty" value="2" min="1" max="2"></label>
+      </div>
+      <div id="set10000" class="row" hidden>
+        <label class="f" style="flex:1 1 40%">Mål<input type="number" id="tkTarget" value="10000" step="500" min="1000"></label>
+        <label class="f" style="flex:1 1 40%">Åbningskrav<input type="number" id="tkOpening" value="350" step="50" min="0"></label>
+        <label class="f" style="flex:1 1 40%">Minimum pr. tur<input type="number" id="tkMin" value="0" step="50" min="0"></label>
+        <label class="f" style="flex:1 1 40%">Tre par<input type="number" id="tkPairs" value="500" step="50" min="0"></label>
+        <label class="f" style="flex:1 1 40%">Lige række<input type="number" id="tkStraight" value="1000" step="50" min="0"></label>
+      </div>
+      <p class="help" style="margin:10px 0 6px">Vælg medspillere blandt dem, der har logget ind før. Andre kan komme med via koden, spillet får.</p>
+      <div class="friends" id="friends"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary big" id="btnCreate" type="button">Opret spil</button>
+        <span class="muted" id="createNote"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Deltag med kode</h2>
+      <form class="row" id="joinForm">
+        <input type="text" id="joinCode" placeholder="fx K7PM2X" maxlength="8" style="flex:1;text-transform:uppercase" autocomplete="off">
+        <button class="btn primary" type="submit">Deltag</button>
+      </form>
+      <p class="err" id="joinErr"></p>
+    </section>
+
+    <section class="card">
+      <h2>Statistik <span class="hint">færrest point fører – 1. plads giver 1 point, 5. plads 5</span></h2>
+      <div class="tabs" role="tablist" id="statTabs">
+        <button type="button" data-stat="" role="tab" aria-selected="true">Samlet</button>
+        <button type="button" data-stat="mexico" role="tab" aria-selected="false">Mexico</button>
+        <button type="button" data-stat="10000" role="tab" aria-selected="false">10.000</button>
+      </div>
+      <div id="stats"><p class="muted" style="margin:0">Ingen færdige spil endnu.</p></div>
+    </section>
+
+    <section class="card">
+      <h2>Historik <span class="hint">færdige spil</span></h2>
+      <div class="hist" id="history"><p class="muted" style="margin:0">Ingen færdige spil endnu.</p></div>
+    </section>
+  </div>
+
+  <p class="foot"><a href="mexico.html">Mexico</a> · <a href="10000.html">10.000</a> · <a href="index.html">Golf</a></p>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="firebase-config.js"></script>
+<script src="online.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Number(n).toLocaleString('da-DK');
+let toastTimer;
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3000); }
+const params = new URLSearchParams(location.search);
+const NEXT = params.get('next');
+const FOCUS = params.get('spil');
+
+let games = [], users = [], statType = '', newType = 'mexico', createdId = null;
+
+/* ---------- Login ---------- */
+let mode = 'in';
+function setMode(m){
+  mode = m;
+  $('tabIn').setAttribute('aria-selected', m === 'in'); $('tabUp').setAttribute('aria-selected', m === 'up');
+  $('nameRow').hidden = m !== 'up';
+  $('btnEmail').textContent = m === 'in' ? 'Log ind' : 'Opret konto';
+  $('inPass').autocomplete = m === 'in' ? 'current-password' : 'new-password';
+  $('loginErr').textContent = '';
+}
+$('tabIn').addEventListener('click', () => setMode('in'));
+$('tabUp').addEventListener('click', () => setMode('up'));
+function authMsg(e){
+  const c = (e && e.code) || '';
+  if(c.includes('invalid-credential') || c.includes('wrong-password') || c.includes('user-not-found')) return 'Forkert e-mail eller kodeord.';
+  if(c.includes('email-already-in-use')) return 'Der findes allerede en konto med den e-mail – log ind i stedet.';
+  if(c.includes('weak-password')) return 'Kodeordet skal være mindst 6 tegn.';
+  if(c.includes('invalid-email')) return 'Det ligner ikke en e-mail-adresse.';
+  if(c.includes('unauthorized-domain')) return 'Dette domæne er ikke tilladt i Firebase (Authentication → Settings → Authorized domains).';
+  if(c.includes('operation-not-allowed')) return 'Login-metoden er ikke slået til i Firebase (Authentication → Sign-in method).';
+  if(c.includes('network')) return 'Ingen forbindelse til nettet.';
+  return (e && e.message) || String(e);
+}
+$('btnGoogle').addEventListener('click', async () => { $('loginErr').textContent = ''; try{ await Online.signInGoogle(); }catch(e){ $('loginErr').textContent = authMsg(e); } });
+$('emailForm').addEventListener('submit', async e => {
+  e.preventDefault(); $('loginErr').textContent = '';
+  const email = $('inEmail').value.trim(), pass = $('inPass').value;
+  try{
+    if(mode === 'in') await Online.signInEmail(email, pass);
+    else { const navn = $('inName').value.trim(); if(!navn){ $('loginErr').textContent = 'Skriv et navn.'; return; } await Online.signUpEmail(email, pass, navn); }
+  }catch(err){ $('loginErr').textContent = authMsg(err); }
+});
+$('btnReset').addEventListener('click', async () => {
+  const email = $('inEmail').value.trim(); if(!email){ $('loginErr').textContent = 'Skriv din e-mail først.'; return; }
+  try{ await Online.resetPassword(email); toast('Der er sendt en mail til ' + email); }catch(e){ $('loginErr').textContent = authMsg(e); }
+});
+$('btnLogout').addEventListener('click', () => Online.signOut());
+
+/* ---------- Lobby ---------- */
+$('btnName').addEventListener('click', async () => {
+  const n = prompt('Dit navn (vises for medspillerne)', Online.profile.navn); if(n == null) return;
+  await Online.setName(n); $('meName').textContent = Online.profile.navn; toast('Navnet er ændret');
+});
+$('btnPush').addEventListener('click', async () => {
+  $('pushNote').textContent = 'Spørger om lov…';
+  try{ const r = await Online.enablePush(); $('pushNote').textContent = r.ok ? 'Du får besked, når det er din tur.' : r.why; }
+  catch(e){ $('pushNote').textContent = 'Kunne ikke slå beskeder til: ' + (e.message || e); }
+});
+
+$('typeTabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-type]'); if(!b) return;
+  newType = b.dataset.type;
+  $('typeTabs').querySelectorAll('button').forEach(x => x.setAttribute('aria-selected', x === b));
+  $('setMexico').hidden = newType !== 'mexico'; $('set10000').hidden = newType !== '10000';
+});
+function readNewSettings(){
+  const num = (id, def, min) => { const v = parseInt($(id).value, 10); return Number.isFinite(v) && v >= min ? v : def; };
+  if(newType === 'mexico') return {lives: num('mxLives', 6, 1), penalty: num('mxPenalty', 2, 1) > 1 ? 2 : 1};
+  return {target: num('tkTarget', 10000, 1000), opening: num('tkOpening', 350, 0), minTurn: num('tkMin', 0, 0), threePairs: num('tkPairs', 500, 0), straight: num('tkStraight', 1000, 0)};
+}
+$('btnCreate').addEventListener('click', async () => {
+  const chosen = [...$('friends').querySelectorAll('input:checked')].map(i => ({uid: i.value, navn: i.dataset.navn}));
+  $('btnCreate').disabled = true; $('createNote').textContent = 'Opretter…';
+  try{
+    const g = await Online.createGame(newType, readNewSettings(), chosen);
+    createdId = g.id;
+    $('createNote').textContent = '';
+    history.replaceState(null, '', 'spil.html?spil=' + g.id);
+    renderAll();
+    toast(`Spillet er oprettet – koden er ${g.kode}`);
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }catch(e){ $('createNote').textContent = 'Kunne ikke oprette: ' + (e.message || e); }
+  $('btnCreate').disabled = false;
+});
+$('joinForm').addEventListener('submit', async e => {
+  e.preventDefault(); $('joinErr').textContent = '';
+  const code = $('joinCode').value.trim().toUpperCase(); if(!code) return;
+  try{
+    const g = await Online.findByCode(code);
+    if(!g){ $('joinErr').textContent = 'Der er ikke noget spil med den kode.'; return; }
+    if(g.status !== 'venter' && !g.spillerUids.includes(Online.user.uid)){ $('joinErr').textContent = 'Spillet er allerede i gang.'; return; }
+    if(!g.spillerUids.includes(Online.user.uid)) await Online.joinGame(g.id);
+    $('joinCode').value = '';
+    createdId = g.id; history.replaceState(null, '', 'spil.html?spil=' + g.id);
+    renderAll();
+    toast('Du er med i spillet');
+  }catch(err){ $('joinErr').textContent = 'Kunne ikke deltage: ' + (err.message || err); }
+});
+$('statTabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-stat]'); if(!b) return;
+  statType = b.dataset.stat;
+  $('statTabs').querySelectorAll('button').forEach(x => x.setAttribute('aria-selected', x === b));
+  renderStats();
+});
+
+function myUid(){ return Online.user.uid; }
+function isMyTurn(g){ return g.status === 'igang' && g.tur === myUid(); }
+function statusOf(g){
+  if(g.status === 'venter') return {k: 'wait', t: g.ejer === myUid() ? 'Venter på spillere' : 'Venter på at ejeren starter'};
+  if(g.status === 'slut') return {k: 'done', t: 'Slut'};
+  if(isMyTurn(g)) return {k: 'turn', t: 'Din tur'};
+  const who = g.spillere.find(p => p.uid === g.tur);
+  return {k: 'wait', t: `Venter på ${who ? who.navn : '…'}`};
+}
+function renderGames(){
+  const live = games.filter(g => g.status !== 'slettet');
+  const order = {turn: 0, wait: 1, done: 2};
+  const rows = live.map(g => ({g, s: statusOf(g)})).sort((a, b) => order[a.s.k] - order[b.s.k] || (b.g.opdateret || 0) - (a.g.opdateret || 0));
+  const active = rows.filter(r => r.s.k !== 'done');
+  const mine = active.filter(r => r.s.k === 'turn').length;
+  $('gamesHint').textContent = active.length ? `${active.length} i gang${mine ? ` · ${mine} venter på dig` : ''}` : '';
+  $('subline').textContent = mine ? `Det er din tur i ${mine} spil.` : 'Mexico og 10.000 med vennerne, i jeres eget tempo.';
+  if(!active.length){ $('games').innerHTML = '<p class="muted" style="margin:0">Ingen spil i gang – opret et, eller deltag med en kode.</p>'; return; }
+  $('games').innerHTML = active.map(({g, s}) => `<div class="g ${s.k === 'turn' ? 'mine' : ''} ${g.id === (createdId || FOCUS) ? 'hl' : ''}" data-id="${g.id}">
+    <span class="ico">${g.type === 'mexico' ? '🇲🇽' : '🔟'}</span>
+    <div><div class="t">${Online.typeName(g.type)}<span class="badge ${s.k}">${esc(s.t)}</span></div>
+      <div class="s">${esc(g.spillere.map(p => p.navn).join(', '))}${g.opdateret ? ` · <b>${Online.fmtAgo(g.opdateret)}</b>` : ''}${g.status === 'venter' ? ` · kode <b>${esc(g.kode)}</b>` : ''}</div></div>
+    ${g.status === 'venter' ? `<button class="btn ghost" type="button" data-open="${g.id}">Åbn</button>` : `<a class="btn ${s.k === 'turn' ? 'primary' : 'ghost'}" href="${Online.gameUrl(g)}">${s.k === 'turn' ? 'Spil' : 'Se'}</a>`}
+  </div>`).join('');
+}
+$('games').addEventListener('click', e => {
+  const b = e.target.closest('button[data-open]'); if(!b) return;
+  createdId = b.dataset.open; history.replaceState(null, '', 'spil.html?spil=' + createdId); renderWait(); window.scrollTo({top: 0, behavior: 'smooth'});
+});
+
+function renderWait(){
+  const id = createdId || FOCUS;
+  const g = games.find(x => x.id === id && x.status === 'venter');
+  $('waitCard').hidden = !g;
+  if(!g) return;
+  const owner = g.ejer === myUid();
+  const link = location.origin + location.pathname.replace(/[^/]*$/, '') + 'spil.html?kode=' + g.kode;
+  $('waitType').textContent = Online.typeName(g.type);
+  $('waitBody').innerHTML = `
+    <p class="help" style="margin:0 0 8px">Send koden eller linket til dem, der skal med. ${owner ? 'Tryk <b>Start spillet</b>, når alle er med.' : 'Ejeren starter spillet, når alle er med.'}</p>
+    <div class="row" style="justify-content:space-between"><span class="code">${esc(g.kode)}</span><button class="btn ghost" type="button" id="btnCopy">Kopiér link</button></div>
+    <div class="stack" style="margin:10px 0">${g.spillere.map((p, i) => `<div class="row" style="justify-content:space-between"><span>${i + 1}. ${esc(p.navn)}${p.uid === g.ejer ? ' <span class="badge">ejer</span>' : ''}${p.uid === myUid() ? ' <span class="badge">dig</span>' : ''}</span>${owner && p.uid !== g.ejer ? `<button class="btn ghost" type="button" data-remove="${p.uid}" style="padding:2px 8px;font-size:.8rem">Fjern</button>` : ''}</div>`).join('')}</div>
+    <div class="row">
+      ${owner ? `<button class="btn primary big" type="button" id="btnStartGame" ${g.spillere.length < 2 ? 'disabled' : ''}>Start spillet${g.spillere.length < 2 ? ' (mindst 2)' : ''}</button><button class="btn ghost" type="button" id="btnDelete">Slet spillet</button>` : `<button class="btn ghost" type="button" id="btnLeave">Forlad spillet</button>`}
+    </div>`;
+  $('btnCopy').addEventListener('click', async () => { try{ await navigator.clipboard.writeText(link); toast('Linket er kopieret'); }catch(e){ prompt('Kopiér linket', link); } });
+  if(owner){
+    $('btnStartGame').addEventListener('click', () => { location.href = Online.gameUrl(g); });
+    $('btnDelete').addEventListener('click', async () => { if(confirm('Slette spillet?')){ await Online.deleteGame(g.id); createdId = null; history.replaceState(null, '', 'spil.html'); } });
+    $('waitBody').querySelectorAll('button[data-remove]').forEach(b => b.addEventListener('click', () => Online.removePlayer(g.id, b.dataset.remove)));
+  }else{
+    $('btnLeave').addEventListener('click', async () => { await Online.leaveGame(g.id); createdId = null; history.replaceState(null, '', 'spil.html'); });
+  }
+}
+function renderFriends(){
+  const others = users.filter(u => u.uid !== myUid());
+  const checked = new Set([...$('friends').querySelectorAll('input:checked')].map(i => i.value));
+  $('friends').innerHTML = others.length ? others.map(u => `<label><input type="checkbox" value="${esc(u.uid)}" data-navn="${esc(u.navn)}" ${checked.has(u.uid) ? 'checked' : ''}> ${esc(u.navn)}</label>`).join('') : '<p class="muted" style="margin:0">Ingen andre har logget ind endnu – send dem koden, når spillet er oprettet.</p>';
+}
+function renderStats(){
+  const rows = Online.stats(games, statType || null);
+  if(!rows.length){ $('stats').innerHTML = '<p class="muted" style="margin:0">Ingen færdige spil endnu.</p>'; return; }
+  $('stats').innerHTML = `<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Spiller</th><th class="n">Spil</th><th class="n">Sejre</th><th class="n">Point</th><th class="n">Snit</th></tr></thead><tbody>${rows.map((r, i) => `<tr class="${r.uid === myUid() ? 'me' : ''}"><td>${i + 1}</td><td>${esc(r.navn)}</td><td class="n">${r.spil}</td><td class="n">${r.sejre}</td><td class="n">${r.point}</td><td class="n">${r.snit.toFixed(2).replace('.', ',')}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function renderHistory(){
+  const done = games.filter(g => g.status === 'slut' && g.placeringer).sort((a, b) => (b.sluttet || 0) - (a.sluttet || 0)).slice(0, 30);
+  if(!done.length){ $('history').innerHTML = '<p class="muted" style="margin:0">Ingen færdige spil endnu.</p>'; return; }
+  $('history').innerHTML = done.map(g => {
+    const pl = [...g.spillere].sort((a, b) => (g.placeringer[a.uid] || 99) - (g.placeringer[b.uid] || 99));
+    return `<div class="h"><div><b>${Online.typeName(g.type)}</b> · ${pl.map(p => `${g.placeringer[p.uid] || '–'}. ${esc(p.navn)}`).join(' · ')}</div><div class="w">${Online.fmtWhen(g.sluttet)} · <a href="${Online.gameUrl(g)}">se spillet</a></div></div>`;
+  }).join('');
+}
+function renderAll(){ renderGames(); renderWait(); renderStats(); renderHistory(); }
+
+/* ---------- Start ---------- */
+let unsubGames = null, unsubUsers = null;
+async function main(){
+  try{ await Online.init(); }
+  catch(e){ $('loading').innerHTML = `<p class="err" style="margin:0">Online-delen kunne ikke starte: ${esc(e.message || e)}</p>`; return; }
+  Online.onAuth(async (user, profile) => {
+    $('loading').hidden = true;
+    $('login').hidden = !!user; $('lobby').hidden = !user; $('btnLogout').hidden = !user;
+    if(unsubGames){ unsubGames(); unsubGames = null; }
+    if(unsubUsers){ unsubUsers(); unsubUsers = null; }
+    if(!user) return;
+    if(NEXT && /^[a-z0-9]+\.html\?spil=[A-Za-z0-9_-]+$/.test(NEXT)){ location.replace(NEXT); return; }
+    $('meName').textContent = profile.navn;
+    unsubGames = Online.watchMyGames(list => { games = list; renderAll(); });
+    unsubUsers = Online.watchUsers(list => { users = list; renderFriends(); });
+    const kode = params.get('kode');
+    if(kode){ $('joinCode').value = kode; $('joinForm').requestSubmit(); history.replaceState(null, '', 'spil.html'); }
+    try{ Online.backend.push.onMessage(m => { const n = m && m.notification; if(n) toast(`${n.title}: ${n.body}`); }); }catch(e){}
+  });
+}
+main();
+</script>
+</body>
+</html>

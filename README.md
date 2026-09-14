@@ -119,6 +119,49 @@ vinderen starte. Der er raflelyd, kasse-lyd ved bank, udbrud på skærmen og
 via talesyntesen, og fejring af vinderen med konfetti og "Tillykke <navn>". Mellemrum slår, B banker.
 Terningerne trækkes med `crypto.getRandomValues`.
 
+## 🌐 Terningspillene online – Mexico og 10.000 i eget tempo
+
+`public/spil.html` er lobbyen for online spil: **ét login** (Google eller e-mail/kodeord) giver adgang til begge
+spil, og historik og statistik følger med på tværs. Spillene ligger i Firestore (samme projekt og database som
+golf-scorekortet, samlingen `terningspil`), hver spiller spiller på sin egen telefon, og turen går videre, når
+man har spillet – i dag, i morgen eller i næste uge.
+
+**Sådan spiller man**
+1. Log ind på `golf.vejleaa.dk/spil.html`. Navnet kan ændres i lobbyen.
+2. *Nyt spil*: vælg Mexico eller 10.000 og indstillingerne (liv/straf, eller mål, åbning, minimum, tre par, lige
+   række). Sæt kryds ved medspillere fra vennelisten (alle, der har logget ind før), eller send koden/linket fra
+   venteværelset til dem, der skal med. Ejeren trykker *Start spillet*, når alle er inde.
+3. *Dine spil* viser hvad der venter på dig ("Din tur" øverst), hvem der er på i de andre, og hvor længe der er
+   ventet. *Spil* åbner spillet i den kendte spilside med `?spil=ID`; kun den, der har turen, kan slå, de andre
+   følger med live. Bjælken øverst viser hvis tur det er, og *Lobby* går tilbage.
+4. Har en spiller ikke taget sin tur i **3 dage**, kan de andre trykke *Spring turen over*: i Mexico tæller
+   slaget som 31, i 10.000 giver turen ingen point.
+5. Når spillet er slut, ligger det under *Historik* med placeringer, og *Statistik* tæller spil, sejre og point
+   (1. plads 1 point, 5. plads 5 – færrest point fører, som i Mexicos rangliste), samlet og pr. spil.
+
+I Mexico kører næste runde af sig selv online (rundens resultat står i rundeforløbet), og fortryd, omkamp og den
+lokale historik/slagstatistik er slået fra – de hører til spil på én telefon. De almindelige spilsider uden
+`?spil=` virker som før, også uden net.
+
+**Push-beskeder** ("det er din tur", "spillet er i gang", "spillet er slut") sendes af Cloud Functionen i
+`functions/index.js`, som reagerer på ændringer i `terningspil` og sender til de tokens, spillerne har gemt med
+*Slå beskeder til* i lobbyen. `public/firebase-messaging-sw.js` viser beskeden og åbner spillet ved tryk. På
+iPhone virker beskeder kun, når siden er lagt på hjemmeskærmen (iOS 16.4+).
+
+**Opsætning i Firebase (én gang)**
+1. *Authentication → Sign-in method*: slå **Google** og **Email/Password** til.
+2. *Authentication → Settings → Authorized domains*: `golf.vejleaa.dk` og `cvejleaa.github.io` (skulle være der fra golf-synken).
+3. Regler: `firebase deploy --only firestore:rules` (`firestore.rules` dækker `spil`, `brugere` og `terningspil`).
+4. Push: *Project settings → Cloud Messaging → Web configuration → Web Push certificates → Generate key pair*, og
+   sæt nøglen som `vapidKey` i `public/firebase-config.js`. Cloud Functions kræver Blaze-planen (betaling slået
+   til; forbruget her ligger langt under det gratis niveau): `cd functions && npm install`, derefter
+   `firebase deploy --only functions`. Uden functions virker alt andet – der kommer bare ingen beskeder.
+
+Datamodel: `brugere/{uid}` (navn, e-mail, push-tokens) og `terningspil/{id}` (type, indstillinger, spillere, status
+`venter`/`igang`/`slut`, `tur` = uid'et der har turen, `state` = hele spiltilstanden, `rev`, placeringer). Reglerne
+lader kun spilleren med turen skrive under spillet, deltagerne skrive efter 3 dages stilhed, ejeren starte og
+slette, og alle indloggede finde ventende spil på koden.
+
 ## 📴 Terningspillene uden net
 
 Mexico og 10.000 kan spilles uden forbindelse. `public/sw.js` er en service worker, der ved første besøg gemmer
@@ -199,9 +242,12 @@ Har du ikke lyst til at lægge config'en i repoet, kan den i stedet indsættes d
 | `public/mexico.html` | Terningspillet Mexico – selvstændig side uden synk |
 | `public/10000.html` | Terningspillet 10.000 – selvstændig side uden synk |
 | `public/sw.js`, `public/*.webmanifest`, `public/ikoner/` | Offline-cache og hjemmeskærms-apps for de to terningspil |
+| `public/spil.html`, `public/online.js` | Lobby og online-lag for terningspillene: login, spil i skyen, historik, statistik, push |
+| `functions/` | Cloud Function der sender "det er din tur"-beskeder |
+| `public/firebase-messaging-sw.js` | Service worker der viser push-beskeder |
 | `public/firebase-config.js` | Firebase web-config (pladsholdere indtil du udfylder dem) |
 | `firebase.json` | Firestore-regler + valgfri Firebase Hosting |
-| `firestore.rules` | Adgang til samlingen `spil` |
+| `firestore.rules` | Adgang til `spil` (golf), `brugere` og `terningspil` |
 | `.firebaserc` | Standardprojekt til Firebase CLI |
 | `public/CNAME` | Domænet siden svarer på |
 | `.github/workflows/deploy.yml` | Udgiver siden ved hvert push |

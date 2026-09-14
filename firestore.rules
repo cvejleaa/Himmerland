@@ -1,13 +1,64 @@
 rules_version = '2';
 
-// Scorekortene ligger i samlingen "spil", ét dokument pr. spilkode.
-// Standard: kun anonymt/logget ind adgang — slå "Anonymous" til under
-// Firebase Console → Authentication → Sign-in method.
+// Golf-scorekortene ligger i "spil" (ét dokument pr. spilkode), terningspillene i
+// "terningspil" og spillerprofilerne i "brugere". Alt kræver et login (anonymt for golf,
+// Google eller e-mail for terningspillene – slås til under Authentication → Sign-in method).
 service cloud.firestore {
   match /databases/{database}/documents {
+
     match /spil/{kode} {
       allow read, write: if request.auth != null;
     }
+
+    // Spillerprofil: alle indloggede kan se navne (venneliste), kun ejeren kan skrive
+    match /brugere/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.navn is string && request.resource.data.navn.size() <= 20;
+    }
+
+    match /terningspil/{id} {
+      function signedIn(){ return request.auth != null; }
+      function me(){ return request.auth.uid; }
+      function isPlayer(){ return signedIn() && me() in resource.data.spillerUids; }
+      function unchanged(f){ return request.resource.data[f] == resource.data[f]; }
+      function coreUnchanged(){ return unchanged('type') && unchanged('ejer') && unchanged('kode') && unchanged('oprettet'); }
+      function threeDaysPassed(){ return resource.data.opdateret < request.time.toMillis() - 3 * 24 * 3600 * 1000; }
+
+      // Spil kan læses af deltagerne, og af alle indloggede mens det venter (så man kan finde det på koden)
+      allow read: if signedIn() && (resource.data.status == 'venter' || me() in resource.data.spillerUids);
+
+      allow create: if signedIn()
+        && request.resource.data.ejer == me()
+        && request.resource.data.status == 'venter'
+        && request.resource.data.type in ['mexico', '10000']
+        && me() in request.resource.data.spillerUids
+        && request.resource.data.spillerUids.size() <= 12;
+
+      // Mens spillet venter: ejeren må alt (start, fjerne spillere, slette); andre må kun
+      // lægge sig selv til eller trække sig
+      allow update: if signedIn() && resource.data.status == 'venter' && coreUnchanged() && (
+        resource.data.ejer == me()
+        || (
+          unchanged('status') && unchanged('settings') && unchanged('state')
+          && (
+            request.resource.data.spillerUids == resource.data.spillerUids.concat([me()])
+            || request.resource.data.spillerUids == resource.data.spillerUids.removeAll([me()])
+          )
+        )
+      );
+
+      // Under spillet: kun spilleren med turen skriver – eller en medspiller, når turen har
+      // ligget stille i 3 dage (spring over). Ejeren må slette.
+      allow update: if signedIn() && resource.data.status == 'igang' && coreUnchanged() && unchanged('spillerUids') && (
+        resource.data.tur == me()
+        || (isPlayer() && threeDaysPassed())
+        || (resource.data.ejer == me() && request.resource.data.status == 'slettet')
+      );
+
+      allow delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

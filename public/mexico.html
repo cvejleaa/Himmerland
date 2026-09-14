@@ -298,6 +298,10 @@ details summary{cursor:pointer;font-weight:600}
 }
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .foot{color:var(--muted);font-size:.8rem;text-align:center;margin-top:6px}
+.onlinebar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:12px;font-size:.85rem}
+.onlinebar.mine{border-color:var(--green);background:var(--green-3);font-weight:600}
+.onlinebar .btn{padding:4px 10px;font-size:.8rem;min-height:0}
+body.online #setup,body.online #toolsCard,body.online #btnRematch,body.online #historyDetails,body.online #rollDetails{display:none!important}
 </style>
 </head>
 <body>
@@ -316,6 +320,7 @@ details summary{cursor:pointer;font-weight:600}
 </header>
 
 <main class="wrap">
+  <div class="onlinebar" id="onlineBar" hidden><span id="onlineText">🌐 Henter spillet…</span><span class="btnrow"><button class="btn primary" id="btnSkip" type="button" hidden>Spring turen over</button><a class="btn ghost" href="spil.html">Lobby</a></span></div>
 
   <!-- ===== Opsætning ===== -->
   <section class="card" id="setup">
@@ -474,6 +479,8 @@ details summary{cursor:pointer;font-weight:600}
 </div>
 
 <div class="toast" id="toast"></div>
+<script src="firebase-config.js"></script>
+<script src="online.js"></script>
 
 <script>
 'use strict';
@@ -493,6 +500,101 @@ const MIN_CAP = 2;            // de øvrige må altid slå mindst 2 gange, uanse
 const LIVES_OPTIONS = [3, 4, 5, 6, 8, 10];
 const PENALTY_OPTIONS = [1, 2];
 const PIPS = {1:[4], 2:[2,6], 3:[2,4,6], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8]};
+
+/* ---------- Online-tilstand (?spil=ID) ----------
+   Spillet ligger i skyen, hver spiller spiller på sin egen telefon, og kun den, der har turen,
+   kan slå. De andre følger med live. Runderne kører videre af sig selv; resultatet står i rundeforløbet. */
+const ONLINE = {id: new URLSearchParams(location.search).get('spil'), active: false, me: null, doc: null, rev: 0, unsub: null, pending: null, partied: false, starting: false, skipping: false};
+function isOnline(){ return ONLINE.active; }
+function actorUidOf(g){ return g && g.phase === 'turn' && g.order && g.players[g.order[g.pos]] ? g.players[g.order[g.pos]].uid : null; }
+function actorUid(){ return actorUidOf(game); }
+function myTurn(){ if(!isOnline() || ONLINE.skipping) return true; const a = actorUid(); return !!a && a === ONLINE.me; }
+async function onlineStart(){
+  if(!window.Online){ toast('Online-spil kræver forbindelse til nettet'); return false; }
+  try{ await Online.init(); }catch(e){ toast('Online-delen kunne ikke starte: ' + (e.message || e)); return false; }
+  if(!Online.user){ location.replace('spil.html?next=' + encodeURIComponent(location.pathname.split('/').pop() + location.search)); return true; }
+  ONLINE.me = Online.user.uid; ONLINE.active = true;
+  document.body.classList.add('online');
+  $('onlineBar').hidden = false;
+  $('btnMenu').textContent = 'Lobby';
+  ONLINE.unsub = Online.watchGame(ONLINE.id, onlineUpdate);
+  return true;
+}
+function onlineBuildState(d){
+  const s = d.settings || {};
+  const g = newGame(d.spillere.map(p => p.navn), Math.max(1, +s.lives || 6), +s.penalty === 1 ? 1 : 2);
+  g.players.forEach((p, i) => { p.uid = d.spillere[i].uid; });
+  g.round = 1; g.order = g.players.map((p, i) => i); g.pos = 0; g.cap = null; g.starterRolls = null;
+  g.rollsUsed = 0; g.current = null; g.results = {}; g.outcome = null; g.phase = 'turn';
+  return g;
+}
+function showCurrentDice(){
+  if(!game || !game.current) return;
+  showFace($('die1'), game.current.a); showFace($('die2'), game.current.b);
+  $('dice').classList.toggle('mexico', !!game.current.mexico); $('dice').classList.toggle('pair', !!game.current.pair && !game.current.mexico);
+}
+function onlineUpdate(d){
+  if(!d || d.status === 'slettet'){ $('onlineText').textContent = '🌐 Spillet findes ikke længere.'; return; }
+  ONLINE.doc = d;
+  if(d.status === 'venter'){
+    if(d.ejer === ONLINE.me && d.spillere.length >= 2 && !ONLINE.starting){
+      ONLINE.starting = true;
+      const state = onlineBuildState(d);
+      Online.startGame(ONLINE.id, state, actorUidOf(state)).catch(e => toast('Kunne ikke starte spillet: ' + (e.message || e)));
+    }else location.replace('spil.html?spil=' + ONLINE.id);
+    return;
+  }
+  if(animating){ ONLINE.pending = d; return; }
+  if(game && (d.rev || 0) <= ONLINE.rev){ renderOnlineBar(); return; }
+  ONLINE.rev = d.rev || 0;
+  game = d.state; snapshots = [];
+  render();
+  showCurrentDice();
+  if(game.phase === 'over' && !ONLINE.partied){ ONLINE.partied = true; const a = alive(); if(a.length === 1) partyLater(() => startParty(a[0]), 400); }
+}
+function onlineSave(){
+  ONLINE.rev += 1;
+  const meta = {tur: actorUid(), status: game.phase === 'over' ? 'slut' : 'igang'};
+  if(game.phase === 'over'){
+    ONLINE.partied = true;
+    const a = alive();
+    meta.vinder = a.length === 1 ? game.players[a[0]].uid : null;
+    meta.placeringer = onlinePlacements();
+  }
+  Online.pushState(ONLINE.id, ONLINE.rev, JSON.parse(JSON.stringify(game)), meta).then(renderOnlineBar).catch(e => toast('Kunne ikke gemme i skyen: ' + (e.message || e)));
+}
+// Placering pr. spiller som i historikken: vinderen 1, derefter dem der røg ud senest
+function onlinePlacements(){
+  const a = alive();
+  const h = {winner: a.length === 1 ? game.players[a[0]].name : null, players: game.players.map(p => ({name: p.name, lives: p.lives, outRound: p.outRound ?? null}))};
+  const ranks = gameRanks(h), out = {};
+  game.players.forEach(p => { out[p.uid] = ranks.get(p.name) || game.players.length; });
+  return out;
+}
+function renderOnlineBar(){
+  if(!isOnline()) return;
+  const d = ONLINE.doc, names = d ? d.spillere.map(p => p.navn).join(', ') : '';
+  let text;
+  if(!game) text = 'Henter spillet…';
+  else if(game.phase === 'over') text = `Spillet er slut · ${names}`;
+  else if(myTurn()) text = `Det er din tur · runde ${game.round} · ${names}`;
+  else { const a = actorUid(); const who = d && d.spillere.find(p => p.uid === a); text = `Venter på ${who ? who.navn : '…'}${d && d.opdateret ? ' · ' + Online.fmtAgo(d.opdateret) : ''} · runde ${game.round} · ${names}`; }
+  $('onlineText').textContent = '🌐 ' + text;
+  $('onlineBar').classList.toggle('mine', !!game && game.phase !== 'over' && myTurn());
+  $('btnSkip').hidden = !(d && game && game.phase === 'turn' && Online.canSkip(d));
+}
+function onlineSkipTurn(){
+  if(!isOnline() || !ONLINE.doc || !Online.canSkip(ONLINE.doc) || game.phase !== 'turn' || animating) return;
+  const p = currentPlayer();
+  if(!confirm(`Spring ${p.name}s tur over? Slaget tæller som 31 – det laveste.`)) return;
+  ONLINE.skipping = true;
+  try{
+    game.current = makeRoll(3, 1); game.rollsUsed = rollLimit();
+    game.log.unshift({round: game.round, text: `${p.name}s tur blev sprunget over (intet svar i 3 dage) og talte som 31.`});
+    stand();
+  }finally{ ONLINE.skipping = false; }
+  toast(`${p.name}s tur er sprunget over`);
+}
 
 const $ = id => document.getElementById(id);
 
@@ -572,7 +674,7 @@ function isStarter(){ return game.pos === 0; }
 function rollLimit(){ return isStarter() ? MAX_ROLLS : game.cap; }
 
 function doRoll(skru){
-  if(animating || game.phase !== 'turn') return;
+  if(animating || game.phase !== 'turn' || !myTurn()) return;
   if(game.rollsUsed >= rollLimit()) return;
   const r = makeRoll(rollDie(), rollDie());
   game.rollsUsed += 1;
@@ -597,6 +699,7 @@ function doRoll(skru){
   animateDice(r, () => {
     $('dice').classList.remove('skru');
     animating = false;
+    if(ONLINE.pending){ const d = ONLINE.pending; ONLINE.pending = null; onlineUpdate(d); }
     celebrate(r);
     save();
     render();
@@ -608,7 +711,7 @@ function doRoll(skru){
 }
 
 function stand(){
-  if(animating || game.phase !== 'turn' || !game.current) return;
+  if(animating || game.phase !== 'turn' || !game.current || !myTurn()) return;
   const idx = game.order[game.pos];
   game.results[idx] = game.current;
   if(isStarter()){ game.starterRolls = game.rollsUsed; game.cap = Math.max(MIN_CAP, game.rollsUsed); }
@@ -667,6 +770,7 @@ function finishRound(){
     const w = a[0];
     if(w != null) partyLater(() => startParty(w), eliminated.length ? 2600 : 400);
   }
+  if(isOnline() && game.phase === 'result'){ startRound(); return; }   // online kører næste runde af sig selv
   save();
   render();
 }
@@ -677,7 +781,7 @@ function nextRound(){
 }
 
 function undo(){
-  if(!game || animating) return;
+  if(!game || animating || isOnline()) return;
   // Er der ikke slået endnu i denne runde, går vi tilbage til starten af forrige runde
   const midRound = game.phase !== 'turn' || game.pos > 0 || game.rollsUsed > 0;
   const idx = midRound ? game.round - 1 : game.round - 2;
@@ -694,6 +798,7 @@ function undo(){
 
 /* ---------- Lagring ---------- */
 function save(){
+  if(isOnline()){ onlineSave(); return; }
   try{ localStorage.setItem(STORE_KEY, JSON.stringify({game, snapshots})); }catch(e){}
 }
 function load(){
@@ -802,6 +907,7 @@ function render(){
     lh += `<li class="more"><button class="btn ghost showall" type="button">${logExpanded ? 'Vis kun de seneste' : `Vis alle ${game.log.length} runder`}</button></li>`;
   }
   $('log').innerHTML = lh;
+  renderOnlineBar();
 }
 $('log').addEventListener('click', e => {
   if(e.target.closest('button.showall')){ logExpanded = !logExpanded; render(); }
@@ -852,11 +958,11 @@ function updateTurnButtons(){
   if(!game || game.phase !== 'turn') return;
   const limit = rollLimit();
   const r = game.current;
-  const canRoll = !animating && game.rollsUsed < limit && !(r && r.mexico);
+  const canRoll = !animating && game.rollsUsed < limit && !(r && r.mexico) && myTurn();
   $('btnRoll').disabled = !canRoll;
   $('btnSkru').disabled = !canRoll;
   $('btnRoll').textContent = game.rollsUsed === 0 ? 'Slå' : `Slå igen (${game.rollsUsed + 1} af ${limit})`;
-  const showStand = !!r && !animating && game.rollsUsed < limit && !r.mexico;
+  const showStand = !!r && !animating && game.rollsUsed < limit && !r.mexico && myTurn();
   $('btnStand').hidden = !showStand;
   $('btnStand').textContent = r ? `Stå på ${r.pair ? rollLabel(r) : rollShort(r)}` : 'Stå';
 }
@@ -988,6 +1094,7 @@ $('btnStart').addEventListener('click', () => {
 });
 
 $('btnMenu').addEventListener('click', () => {
+  if(isOnline()){ location.href = 'spil.html'; return; }
   if(game && game.phase !== 'over' && !confirm('Afslutte det igangværende spil og starte forfra?')) return;
   const names = game ? game.players.map(p => p.name) : null;
   if(game){ setupLives = game.settings.lives; setupPenalty = game.settings.penalty; }
@@ -1017,6 +1124,7 @@ $('btnSkru').addEventListener('click', () => doRoll(true));
 $('btnStand').addEventListener('click', stand);
 $('btnNext').addEventListener('click', nextRound);
 $('btnUndo').addEventListener('click', undo);
+$('btnSkip').addEventListener('click', onlineSkipTurn);
 
 document.addEventListener('keydown', e => {
   if(!game || e.target.tagName === 'INPUT') return;
@@ -1569,7 +1677,7 @@ function loadHistory(){
 function saveHistory(){ try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); }catch(e){} }
 // Gemmer det færdige spil én gang; fortrydes den sidste runde, fjernes det igen
 function recordGame(){
-  if(game.historyId) return;
+  if(game.historyId || isOnline()) return;
   const a = alive();
   const entry = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -1670,6 +1778,7 @@ function loadRollStats(){
 function saveRollStats(){ try{ localStorage.setItem(ROLLS_KEY, JSON.stringify(rollStats)); }catch(e){} }
 // Hvert slag tælles, også dem der fortrydes – de blev jo slået
 function recordRoll(r, name, skru){
+  if(isOnline()) return;
   const key = r.mexico ? '21' : `${r.hi}${r.lo}`;
   rollStats.total += 1;
   rollStats.counts[key] = (rollStats.counts[key] || 0) + 1;
@@ -1745,16 +1854,20 @@ if('serviceWorker' in navigator){
 renderSoundButton();
 renderSetup(null);
 try{ $('historyDetails').open = !localStorage.getItem(STORE_KEY); }catch(e){ $('historyDetails').open = true; }
-if(load()){
-  if(game.phase === 'turn' && game.current && !game.results[game.order[game.pos]]){
-    // Vis det slag der lå på bordet da siden blev lukket
-    showFace($('die1'), game.current.a); showFace($('die2'), game.current.b);
+function localStart(){
+  if(load()){
+    if(game.phase === 'turn' && game.current && !game.results[game.order[game.pos]]){
+      // Vis det slag der lå på bordet da siden blev lukket
+      showFace($('die1'), game.current.a); showFace($('die2'), game.current.b);
+    }
+    render();
+    if(game.current){ showFace($('die1'), game.current.a); showFace($('die2'), game.current.b); if(game.current.mexico) $('dice').classList.add('mexico'); else if(game.current.pair) $('dice').classList.add('pair'); }
+  }else{
+    render();
   }
-  render();
-  if(game.current){ showFace($('die1'), game.current.a); showFace($('die2'), game.current.b); if(game.current.mexico) $('dice').classList.add('mexico'); else if(game.current.pair) $('dice').classList.add('pair'); }
-}else{
-  render();
 }
+if(ONLINE.id){ render(); onlineStart().then(ok => { if(!ok){ ONLINE.id = null; localStart(); } }); }
+else localStart();
 </script>
 </body>
 </html>
