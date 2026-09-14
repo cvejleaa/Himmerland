@@ -33,6 +33,7 @@
     ]
   },
   "firestore": {
+    "database": "golf",
     "rules": "firestore.rules"
   },
   "functions": [

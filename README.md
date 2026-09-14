@@ -151,7 +151,9 @@ iPhone virker beskeder kun, når siden er lagt på hjemmeskærmen (iOS 16.4+).
 **Opsætning i Firebase (én gang)**
 1. *Authentication → Sign-in method*: slå **Google** og **Email/Password** til.
 2. *Authentication → Settings → Authorized domains*: `golf.vejleaa.dk` og `cvejleaa.github.io` (skulle være der fra golf-synken).
-3. Regler: `firebase deploy --only firestore:rules` (`firestore.rules` dækker `spil`, `brugere` og `terningspil`).
+3. Regler: fra en mappe med repoet (fx Cloud Shell: `git clone -b claude/himmerland-golf-scorecard-7g3jkj https://github.com/cvejleaa/Himmerland.git && cd Himmerland`)
+   kør `firebase deploy --only firestore:rules`. `firebase.json` peger på databasen `golf`, og `firestore.rules` dækker `spil`,
+   `brugere` og `terningspil`.
 4. Push: *Project settings → Cloud Messaging → Web configuration → Web Push certificates → Generate key pair*, og
    sæt nøglen som `vapidKey` i `public/firebase-config.js`. Cloud Functions kræver Blaze-planen (betaling slået
    til; forbruget her ligger langt under det gratis niveau): `cd functions && npm install`, derefter
