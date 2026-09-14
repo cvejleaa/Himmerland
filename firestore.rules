@@ -17,6 +17,18 @@ service cloud.firestore {
         && request.resource.data.navn is string && request.resource.data.navn.size() <= 20;
     }
 
+    // Indstillinger: standardværdier for nye spil og listen af administratorer.
+    // Den første indloggede kan oprette admin-dokumentet med sig selv; derefter må kun
+    // administratorer ændre begge dokumenter. Alle indloggede kan læse dem.
+    match /indstillinger/{doc} {
+      function isAdmin(){ return request.auth != null && exists(/databases/$(database)/documents/indstillinger/admin)
+        && request.auth.uid in get(/databases/$(database)/documents/indstillinger/admin).data.uids; }
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && doc == 'admin' && request.resource.data.uids == [request.auth.uid];
+      allow update: if doc == 'admin' && isAdmin() && request.resource.data.uids is list && request.resource.data.uids.size() >= 1;
+      allow create, update: if doc == 'standard' && isAdmin();
+    }
+
     match /terningspil/{id} {
       function signedIn(){ return request.auth != null; }
       function me(){ return request.auth.uid; }

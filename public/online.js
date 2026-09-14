@@ -4,7 +4,7 @@
    (window.__onlineBackend). Firebase indlæses først når Online.init() kaldes. */
 (function(){
   const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
-  const COL = {users: 'brugere', games: 'terningspil'};
+  const COL = {users: 'brugere', games: 'terningspil', settings: 'indstillinger'};
   const SKIP_AFTER_MS = 3 * 24 * 3600 * 1000;   // efter 3 dage kan de andre springe turen over
 
   /* ---------- Firebase-backend ---------- */
@@ -215,6 +215,30 @@
         });
       });
       return [...by.values()].map(s => Object.assign(s, {snit: s.spil ? s.point / s.spil : 0})).sort((a, b) => a.snit - b.snit || b.sejre - a.sejre || b.spil - a.spil);
+    },
+
+    /* ---- standardværdier og administratorer ---- */
+    DEFAULTS: {mexico: {lives: 6, penalty: 2}, '10000': {target: 10000, opening: 350, minTurn: 0, threePairs: 500, straight: 1000}},
+    admins: null, defaults: null,
+    // Følger begge dokumenter: cb({admins: [uid…]|null (intet dokument endnu), defaults: {mexico, '10000'}})
+    watchSettings(cb){
+      const emit = () => cb({admins: this.admins, defaults: this.defaults || this.DEFAULTS});
+      const u1 = this.backend.db.watch(`${COL.settings}/admin`, d => { this.admins = d ? (d.uids || []) : null; emit(); });
+      const u2 = this.backend.db.watch(`${COL.settings}/standard`, d => { this.defaults = d ? {mexico: Object.assign({}, this.DEFAULTS.mexico, d.mexico || {}), '10000': Object.assign({}, this.DEFAULTS['10000'], d['10000'] || {})} : null; emit(); });
+      return () => { u1(); u2(); };
+    },
+    isAdmin(){ return !!(this.user && this.admins && this.admins.includes(this.user.uid)); },
+    // Den første, der trykker, bliver administrator (reglerne tillader kun oprettelse, når dokumentet ikke findes)
+    async claimAdmin(){
+      return this.backend.db.txn(`${COL.settings}/admin`, d => d ? undefined : {uids: [this.user.uid], oprettet: Date.now()});
+    },
+    async setAdmins(uids){
+      uids = [...new Set(uids)].filter(Boolean);
+      if(!uids.length) throw new Error('Der skal være mindst én administrator');
+      await this.backend.db.update(`${COL.settings}/admin`, {uids, opdateret: Date.now()});
+    },
+    async saveDefaults(defaults){
+      await this.backend.db.set(`${COL.settings}/standard`, {mexico: defaults.mexico, '10000': defaults['10000'], opdateret: Date.now(), af: this.user.uid});
     },
 
     /* ---- push ---- */
