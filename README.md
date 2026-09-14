@@ -155,12 +155,21 @@ lokale historik/slagstatistik er slået fra – de hører til spil på én telef
 *Slå beskeder til* i lobbyen. `public/firebase-messaging-sw.js` viser beskeden og åbner spillet ved tryk. På
 iPhone virker beskeder kun, når siden er lagt på hjemmeskærmen (iOS 16.4+).
 
+**Automatisk udrulning af regler og functions.** `.github/workflows/firebase.yml` udgiver `firestore.rules` og
+`functions/` til Firebase, hver gang de ændres på den gren, siden udgives fra – så ingen skal køre kommandoer.
+Det kræver én hemmelighed i repoet, sat én gang: Firebase Console → Project settings → Service accounts →
+*Generate new private key* (en JSON-fil hentes), og derefter GitHub → repoet → Settings → Secrets and variables →
+Actions → *New repository secret* med navnet `FIREBASE_SERVICE_ACCOUNT` og hele filens indhold som værdi.
+Mangler hemmeligheden, springer arbejdsgangen udrulningen over og skriver det i kørslens opsummering.
+Den kan også startes manuelt under Actions → *Udgiv Firestore-regler og functions* → Run workflow.
+
 **Opsætning i Firebase (én gang)**
 1. *Authentication → Sign-in method*: slå **Google** og **Email/Password** til.
 2. *Authentication → Settings → Authorized domains*: `golf.vejleaa.dk` og `cvejleaa.github.io` (skulle være der fra golf-synken).
-3. Regler: fra en mappe med repoet (fx Cloud Shell: `git clone -b claude/himmerland-golf-scorecard-7g3jkj https://github.com/cvejleaa/Himmerland.git && cd Himmerland`)
+3. Regler: udgives automatisk af arbejdsgangen ovenfor. Manuelt: fra en mappe med repoet (fx Cloud Shell:
+   `git clone -b claude/himmerland-golf-scorecard-7g3jkj https://github.com/cvejleaa/Himmerland.git && cd Himmerland`)
    kør `firebase deploy --only firestore:rules`. `firebase.json` peger på databasen `golf`, og `firestore.rules` dækker `spil`,
-   `brugere` og `terningspil`.
+   `brugere`, `terningspil` og `indstillinger`.
 4. Push: *Project settings → Cloud Messaging → Web configuration → Web Push certificates → Generate key pair*, og
    sæt nøglen som `vapidKey` i `public/firebase-config.js`. Cloud Functions kræver Blaze-planen (betaling slået
    til; forbruget her ligger langt under det gratis niveau): `cd functions && npm install`, derefter
