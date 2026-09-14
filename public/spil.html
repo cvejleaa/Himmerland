@@ -290,7 +290,7 @@ tr.me td{background:var(--green-3);font-weight:700}
     <section class="card">
       <div class="row" style="justify-content:space-between">
         <div class="user">Du er <span class="nm" id="meName"></span> <button class="btn ghost" id="btnName" type="button" style="padding:4px 10px;font-size:.8rem">Skift navn</button></div>
-        <button class="btn ghost" id="btnPush" type="button" style="font-size:.8rem">🔔 Slå beskeder til</button>
+        <span class="row" style="gap:6px"><button class="btn ghost" id="btnPush" type="button" style="font-size:.8rem">🔔 Slå beskeder til</button><button class="btn ghost" id="btnPushOff" type="button" style="font-size:.8rem" hidden>Slå fra</button></span>
       </div>
       <p class="muted" id="pushNote" style="margin:6px 0 0;font-size:.8rem"></p>
       <p class="err" id="lobbyErr" style="margin:6px 0 0"></p>
@@ -446,10 +446,23 @@ $('btnName').addEventListener('click', async () => {
   const n = prompt('Dit navn (vises for medspillerne)', Online.profile.navn); if(n == null) return;
   await Online.setName(n); $('meName').textContent = Online.profile.navn; toast('Navnet er ændret');
 });
+function renderPush(){
+  const on = Online.pushEnabled();
+  $('btnPush').textContent = on ? '🔔 Beskeder er slået til' : '🔔 Slå beskeder til';
+  $('btnPush').disabled = on;
+  $('btnPushOff').hidden = !on;
+  if(on && !$('pushNote').textContent) $('pushNote').textContent = 'Du får besked på denne telefon, når det er din tur.';
+}
 $('btnPush').addEventListener('click', async () => {
   $('pushNote').textContent = 'Spørger om lov…';
-  try{ const r = await Online.enablePush(); $('pushNote').textContent = r.ok ? 'Du får besked, når det er din tur.' : r.why; }
+  try{ const r = await Online.enablePush(); $('pushNote').textContent = r.ok ? 'Du får besked på denne telefon, når det er din tur.' : r.why; }
   catch(e){ $('pushNote').textContent = 'Kunne ikke slå beskeder til: ' + (e.message || e); }
+  renderPush();
+});
+$('btnPushOff').addEventListener('click', async () => {
+  try{ await Online.disablePush(); $('pushNote').textContent = 'Beskeder er slået fra på denne telefon.'; }
+  catch(e){ $('pushNote').textContent = 'Kunne ikke slå beskeder fra: ' + (e.message || e); }
+  renderPush();
 });
 
 const NEW_FIELDS = {mxLives: ['mexico', 'lives'], mxPenalty: ['mexico', 'penalty'], tkTarget: ['10000', 'target'], tkOpening: ['10000', 'opening'], tkMin: ['10000', 'minTurn'], tkPairs: ['10000', 'threePairs'], tkStraight: ['10000', 'straight']};
@@ -630,6 +643,8 @@ async function main(){
     if(!user) return;
     if(NEXT && /^[a-z0-9]+\.html\?spil=[A-Za-z0-9_-]+$/.test(NEXT)){ location.replace(NEXT); return; }
     $('meName').textContent = profile.navn;
+    renderPush();
+    if(Online.pushEnabled()) Online.enablePush().then(r => { if(!r.ok){ Online.forgetPush(); $('pushNote').textContent = ''; renderPush(); } }).catch(() => {});   // hold tokenet frisk i det stille
     $('lobbyErr').textContent = Online.profileError ? 'Din profil kunne ikke gemmes i skyen: ' + Online.errorText(Online.profileError) + ' Du kan se lobbyen, men ikke oprette eller deltage i spil, før det er løst.' : '';
     unsubGames = Online.watchMyGames(list => { games = list; renderAll(); });
     unsubUsers = Online.watchUsers(list => { users = list; renderFriends(); renderSettings(); });

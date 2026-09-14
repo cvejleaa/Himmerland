@@ -250,6 +250,17 @@
     },
 
     /* ---- push ---- */
+    PUSH_KEY: 'terninger-push-token',
+    // Er beskeder slået til på denne telefon? (tilladelse givet og et token gemt her)
+    pushEnabled(){
+      try{ return !!localStorage.getItem(this.PUSH_KEY); }catch(e){ return false; }
+    },
+    forgetPush(){ try{ localStorage.removeItem(this.PUSH_KEY); }catch(e){} },
+    async disablePush(){
+      let token = null; try{ token = localStorage.getItem(this.PUSH_KEY); localStorage.removeItem(this.PUSH_KEY); }catch(e){}
+      if(!token || !this.user) return;
+      await this.backend.db.txn(`${COL.users}/${this.user.uid}`, u => u ? Object.assign({}, u, {tokens: (u.tokens || []).filter(t => t !== token)}) : undefined);
+    },
     async enablePush(){
       if(!('Notification' in window)) return {ok: false, why: 'Browseren understøtter ikke beskeder'};
       const perm = await Notification.requestPermission();
@@ -260,6 +271,7 @@
         const tokens = (u && u.tokens) || [];
         return Object.assign({}, u || {}, {tokens: tokens.includes(token) ? tokens : tokens.concat([token]).slice(-10)});
       });
+      try{ localStorage.setItem(this.PUSH_KEY, token); }catch(e){}
       return {ok: true};
     },
 
