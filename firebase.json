@@ -40,7 +40,7 @@
     {
       "source": "functions",
       "codebase": "terninger",
-      "runtime": "nodejs20"
+      "runtime": "nodejs22"
     }
   ]
 }
