@@ -28,8 +28,11 @@
           const p = new authMod.GoogleAuthProvider();
           try{ await authMod.signInWithPopup(auth, p); }
           catch(e){
-            if(['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/operation-not-supported-in-this-environment'].includes(e.code)) await authMod.signInWithRedirect(auth, p);
-            else throw e;
+            // Omdirigering via Firebases domæne mister sin tilstand i indlejrede browsere (Messenger, Facebook, Instagram),
+            // så der kastes en forklarende fejl i stedet – lobbyen beder om at åbne siden i den rigtige browser
+            if(e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request'){ const x = new Error('Login-vinduet blev lukket'); x.code = 'auth/popup-closed-by-user'; throw x; }
+            if(['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/web-storage-unsupported'].includes(e.code)){ const x = new Error('Popup blokeret'); x.code = 'auth/popup-blocked'; throw x; }
+            throw e;
           }
         },
         emailIn(e, p){ return authMod.signInWithEmailAndPassword(auth, e, p); },
@@ -276,6 +279,11 @@
     },
 
     /* ---- hjælpere ---- */
+    // Indlejret browser (Messenger, Facebook, Instagram, LinkedIn m.fl.): popups og lager er begrænset, så login fejler
+    inAppBrowser(){
+      const ua = navigator.userAgent || '';
+      return /FBAN|FBAV|FB_IAB|Messenger|Instagram|Line\/|LinkedInApp|Snapchat|TikTok|MicroMessenger|Twitter/i.test(ua);
+    },
     errorText(e){
       const c = (e && e.code) || '';
       if(c.includes('permission-denied')) return 'Skyen afviste skrivningen (permission-denied). Er Firestore-reglerne udgivet til databasen "golf"?';

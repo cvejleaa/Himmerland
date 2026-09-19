@@ -264,6 +264,12 @@ tr.me td{background:var(--green-3);font-weight:700}
   <section class="card" id="loading"><p class="muted" style="margin:0">Henter…</p></section>
 
   <!-- ===== Login ===== -->
+  <section class="card" id="inapp" hidden>
+    <h2>Åbn i din browser</h2>
+    <p class="help">Siden er åbnet inde i en app (fx Messenger), hvor login ikke kan gennemføres. Åbn den i Chrome eller Safari i stedet: tryk på de tre prikker eller del-knappen og vælg <b>Åbn i browser</b>, eller kopiér linket.</p>
+    <div class="row"><button class="btn primary" id="btnCopyUrl" type="button">Kopiér link</button><span class="muted" id="inappUrl" style="word-break:break-all;font-size:.8rem"></span></div>
+  </section>
+
   <section class="card" id="login" hidden>
     <h2>Log ind <span class="hint">ét login til begge spil</span></h2>
     <p class="help">Med et login kan du spille mod vennerne på hver jeres telefon, når det passer jer, og se historik og statistik på tværs af spil.</p>
@@ -424,6 +430,8 @@ function authMsg(e){
   if(c.includes('unauthorized-domain')) return 'Dette domæne er ikke tilladt i Firebase (Authentication → Settings → Authorized domains).';
   if(c.includes('operation-not-allowed')) return 'Login-metoden er ikke slået til i Firebase (Authentication → Sign-in method).';
   if(c.includes('network')) return 'Ingen forbindelse til nettet.';
+  if(c.includes('popup-blocked')) return 'Browseren blokerede login-vinduet. Åbn siden i Chrome eller Safari (ikke inde i Messenger eller Facebook) og prøv igen – eller log ind med e-mail.';
+  if(c.includes('popup-closed-by-user')) return 'Login-vinduet blev lukket, før du var færdig. Prøv igen.';
   return (e && e.message) || String(e);
 }
 $('btnGoogle').addEventListener('click', async () => { $('loginErr').textContent = ''; try{ await Online.signInGoogle(); }catch(e){ $('loginErr').textContent = authMsg(e); } });
@@ -440,6 +448,7 @@ $('btnReset').addEventListener('click', async () => {
   try{ await Online.resetPassword(email); toast('Der er sendt en mail til ' + email); }catch(e){ $('loginErr').textContent = authMsg(e); }
 });
 $('btnLogout').addEventListener('click', () => Online.signOut());
+$('btnCopyUrl').addEventListener('click', async () => { try{ await navigator.clipboard.writeText(location.href); toast('Linket er kopieret – sæt det ind i din browser'); }catch(e){ prompt('Kopiér linket', location.href); } });
 
 /* ---------- Lobby ---------- */
 $('btnName').addEventListener('click', async () => {
@@ -636,6 +645,9 @@ async function main(){
   clearTimeout(slow);
   Online.onAuth(async (user, profile) => {
     $('loading').hidden = true;
+    const inapp = !user && Online.inAppBrowser();
+    $('inapp').hidden = !inapp;
+    if(inapp){ $('inappUrl').textContent = location.href; }
     $('login').hidden = !!user; $('lobby').hidden = !user; $('btnLogout').hidden = !user;
     if(unsubGames){ unsubGames(); unsubGames = null; }
     if(unsubUsers){ unsubUsers(); unsubUsers = null; }
