@@ -185,10 +185,38 @@ Datamodel: `brugere/{uid}` (navn, e-mail, push-tokens) og `terningspil/{id}` (ty
 lader kun spilleren med turen skrive under spillet, deltagerne skrive efter 3 dages stilhed, ejeren starte og
 slette, og alle indloggede finde ventende spil på koden.
 
+## 🧩 Sudoku – dagens udfordring og træning
+
+`/sudoku.html` har to dele:
+
+- **Træning** i fire sværhedsgrader – *Let*, *Mellem*, *Svær* og *Ekspert*. Tæller kun i ens egen statistik.
+- **Dagens sudoku** – samme opgave til alle, ét forsøg pr. dag, med fælles highscoreliste.
+
+| Regel | Sådan er den bygget ind |
+|---|---|
+| Hver opgave har præcis én løsning | `public/sudoku.js` laver en fuld løsning, fjerner tal i symmetriske par og tjekker for hvert par, at løsningen stadig er entydig. Ingen server, ingen opgavebank – en opgave tager typisk under 10 ms. |
+| Sværhedsgrad efter løseteknik | En logisk løser afgør, hvilke teknikker opgaven kræver: *Let* og *Mellem* kun singler (Let med mindst 34 givne tal), *Svær* låste kandidater og par, *Ekspert* tripler, X-wing eller mere. |
+| Dagens niveau skifter efter ugedagen | Mandag og torsdag let, tirsdag og fredag mellem, onsdag og lørdag svær, søndag ekspert (`DAILY_LEVEL` i `sudoku.js`). Opgaven laves ud fra den danske dato med en fast tilfældighedsgenerator, så alle får den samme – også uden net. |
+| Ét forsøg, uret går kun mens siden er åben | Uret stopper af sig selv, når siden skjules eller lukkes, og en genåbnet opgave starter på pause. *Pause* skjuler pladen, så man ikke kan tænke videre imens. |
+| Straf for fejl og hints | I dagens sudoku vises et forkert tal med det samme og koster 30 sekunder; et hint udfylder et felt (eller retter en fejl) og koster 60 sekunder. Lavest samlet tid vinder; samme samlede tid deler pladsen. |
+| Træning med eller uden hjælp | *Vis fejl med det samme* og *Hint* må bruges frit, men så tæller opgaven som *løst med hjælp* og indgår ikke i bedste tid og snit. |
+| Noter, fortryd, tastatur | *Noter* skriver kandidattal; når et rigtigt tal sættes, fjernes det fra noterne i række, kolonne og felt. Tastatur: 1–9, piletaster, Backspace, N (noter), P (pause), Ctrl+Z. |
+| Highscore | *Dagens top* (bladr tilbage i tidligere dage) og *Samlet*: gennemsnitlig placering over alle dage, derefter flest sejre og flest dage. Lobbyen viser dagens top 3. |
+| Statistik | Pr. niveau: løst, uden hjælp, bedste tid og snit; for dagens: dage løst, dage i træk og længste stime. |
+
+**Login er valgfrit.** Uden login gemmes alt på telefonen, og dagens resultat sendes til listen, når man logger
+ind (samme login som terningspillene, via lobbyen – man sendes tilbage til sudokuen bagefter). Med login følger
+statistikken med i profilen (`brugere/{uid}.sudoku`), så den er den samme på alle telefoner. Dagens resultater
+ligger i `sudokuResultater/{dato}_{uid}`; reglerne tillader kun ét resultat pr. spiller pr. dag, det kan ikke
+rettes eller slettes, og den samlede tid skal passe med tid + straf. Da opgaven laves i browseren, bygger listen
+på tillid – reglerne forhindrer kun de grove fejl.
+
+Sudokuen virker også uden net (træning og dagens), og kan lægges på hjemmeskærmen som app (`sudoku.webmanifest`).
+
 ## 📴 Terningspillene uden net
 
-Mexico og 10.000 kan spilles uden forbindelse. `public/sw.js` er en service worker, der ved første besøg gemmer
-de to spilsider, deres manifester og ikoner på telefonen. Derefter hentes siden fra nettet, når der er net (så
+Mexico, 10.000 og sudokuen kan spilles uden forbindelse. `public/sw.js` er en service worker, der ved første besøg gemmer
+spilsiderne, deres manifester og ikoner på telefonen. Derefter hentes siden fra nettet, når der er net (så
 en ny udgave slår igennem med det samme), og fra telefonen, når der ikke er. Golf-scorekortet og dets synk
 rører den ikke. Et igangværende spil ligger i forvejen i browserens localStorage.
 
@@ -264,13 +292,14 @@ Har du ikke lyst til at lægge config'en i repoet, kan den i stedet indsættes d
 | `public/index.html` | Hele appen: layout, regler, pointberegning, turneringer og synk |
 | `public/mexico.html` | Terningspillet Mexico – selvstændig side uden synk |
 | `public/10000.html` | Terningspillet 10.000 – selvstændig side uden synk |
-| `public/sw.js`, `public/*.webmanifest`, `public/ikoner/` | Offline-cache og hjemmeskærms-apps for de to terningspil |
+| `public/sudoku.html`, `public/sudoku.js` | Sudoku: side med træning, dagens udfordring og highscore – og motoren (generator, løser, sværhedsgrad) |
+| `public/sw.js`, `public/*.webmanifest`, `public/ikoner/` | Offline-cache og hjemmeskærms-apps for terningspillene og sudokuen |
 | `public/spil.html`, `public/online.js` | Lobby og online-lag for terningspillene: login, spil i skyen, historik, statistik, push |
 | `functions/` | Cloud Function der sender "det er din tur"-beskeder |
 | `public/firebase-messaging-sw.js` | Service worker der viser push-beskeder |
 | `public/firebase-config.js` | Firebase web-config (pladsholdere indtil du udfylder dem) |
 | `firebase.json` | Firestore-regler + valgfri Firebase Hosting |
-| `firestore.rules` | Adgang til `spil` (golf), `brugere` og `terningspil` |
+| `firestore.rules` | Adgang til `spil` (golf), `brugere`, `terningspil` og `sudokuResultater` |
 | `.firebaserc` | Standardprojekt til Firebase CLI |
 | `public/CNAME` | Domænet siden svarer på |
 | `.github/workflows/deploy.yml` | Udgiver siden ved hvert push |

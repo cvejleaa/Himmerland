@@ -4,7 +4,7 @@
    (window.__onlineBackend). Firebase indlæses først når Online.init() kaldes. */
 (function(){
   const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
-  const COL = {users: 'brugere', games: 'terningspil', settings: 'indstillinger'};
+  const COL = {users: 'brugere', games: 'terningspil', settings: 'indstillinger', sudoku: 'sudokuResultater'};
   const SKIP_AFTER_MS = 3 * 24 * 3600 * 1000;   // efter 3 dage kan de andre springe turen over
 
   /* ---------- Firebase-backend ---------- */
@@ -250,6 +250,56 @@
     },
     async saveDefaults(defaults){
       await this.backend.db.set(`${COL.settings}/standard`, {mexico: defaults.mexico, '10000': defaults['10000'], opdateret: Date.now(), af: this.user.uid});
+    },
+
+    /* ---- sudoku: dagens udfordring og egen statistik ---- */
+    // Dagens resultat: ét dokument pr. dag og spiller (dato_uid), kan kun oprettes – aldrig rettes.
+    // Samlet = tid + 30 sek. pr. fejl + 60 sek. pr. hint (reglerne tjekker regnestykket).
+    SUDOKU_STRAF: {fejl: 30, hint: 60},
+    sudokuTotal(r){ return (r.tid | 0) + (r.fejl | 0) * this.SUDOKU_STRAF.fejl + (r.hints | 0) * this.SUDOKU_STRAF.hint; },
+    async sudokuSubmit(r){
+      const uid = this.user.uid;
+      const data = {uid, navn: this.shortName(this.profile && this.profile.navn), dato: r.dato, niveau: r.niveau,
+        tid: r.tid | 0, fejl: r.fejl | 0, hints: r.hints | 0, total: this.sudokuTotal(r), tidspunkt: Date.now()};
+      // false = der lå allerede et resultat for dagen (fx spillet på en anden telefon)
+      return this.backend.db.txn(`${COL.sudoku}/${r.dato}_${uid}`, cur => cur ? undefined : data);
+    },
+    sudokuMine(dato){ return this.backend.db.get(`${COL.sudoku}/${dato}_${this.user.uid}`); },
+    watchSudokuDay(dato, cb){ return this.backend.db.watchList(COL.sudoku, 'dato', '==', dato, rows => cb(this.sudokuRank(rows))); },
+    sudokuAll(){ return this.backend.db.list(COL.sudoku); },
+    // Placering: laveste samlede tid vinder; samme samlede tid deler pladsen
+    sudokuRank(rows){
+      const s = rows.slice().sort((a, b) => a.total - b.total || a.tid - b.tid || (a.tidspunkt || 0) - (b.tidspunkt || 0));
+      let plads = 0, prev = null;
+      s.forEach((r, i) => { if(r.total !== prev) plads = i + 1; prev = r.total; r.plads = plads; });
+      return s;
+    },
+    // Samlet liste over alle dage: gennemsnitlig placering (lavest fører), dernæst flest sejre og flest dage
+    sudokuBoard(all){
+      const days = new Map();
+      all.forEach(r => { if(!days.has(r.dato)) days.set(r.dato, []); days.get(r.dato).push(r); });
+      const by = new Map();
+      [...days.keys()].sort().forEach(d => this.sudokuRank(days.get(d)).forEach(r => {
+        const s = by.get(r.uid) || {uid: r.uid, navn: r.navn, dage: 0, sejre: 0, top3: 0, sum: 0};
+        s.navn = r.navn; s.dage += 1; s.sum += r.plads; if(r.plads === 1) s.sejre += 1; if(r.plads <= 3) s.top3 += 1;
+        by.set(r.uid, s);
+      }));
+      return [...by.values()].map(s => Object.assign(s, {snit: s.sum / s.dage})).sort((a, b) => a.snit - b.snit || b.sejre - a.sejre || b.dage - a.dage);
+    },
+    // Egne løste sudokuer (træning og dagens) gemmes i profilen, så statistikken følger med mellem telefoner
+    sudokuMerge(a, b){
+      const m = new Map(); (a || []).concat(b || []).forEach(g => { if(g && g.id) m.set(g.id, g); });
+      return [...m.values()].sort((x, y) => (x.slut || 0) - (y.slut || 0)).slice(-1000);
+    },
+    async sudokuSync(local){
+      let merged = this.sudokuMerge([], local);
+      await this.backend.db.txn(`${COL.users}/${this.user.uid}`, u => {
+        const cloud = (u && u.sudoku) || [];
+        merged = this.sudokuMerge(cloud, local);
+        if(!u || merged.length === cloud.length) return undefined;
+        return Object.assign({}, u, {sudoku: merged});
+      });
+      return merged;
     },
 
     /* ---- push ---- */
