@@ -1,15 +1,16 @@
-/* Service worker for terningspillene Mexico og 10.000.
-   Gemmer de to spilsider (og deres manifester og ikoner) på telefonen, så de kan
+/* Service worker for terningspillene Mexico og 10.000 og for sudokuen.
+   Gemmer spilsiderne (og deres manifester og ikoner) på telefonen, så de kan
    åbnes uden net. Alt andet på sitet – golf-scorekortet og dets synk – rører den ikke.
    Strategi: net først (så en ny udgave slår igennem med det samme), ellers cachen. */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = 'terninger-' + VERSION;
 const ASSETS = [
-  'mexico.html', '10000.html',
+  'mexico.html', '10000.html', 'sudoku.html', 'sudoku.js',
   'online.js', 'firebase-config.js',            // så spilsiderne også indlæser rent uden net (online-tilstand kræver stadig net)
-  'mexico.webmanifest', '10000.webmanifest',
+  'mexico.webmanifest', '10000.webmanifest', 'sudoku.webmanifest',
   'ikoner/mexico-192.png', 'ikoner/mexico-512.png', 'ikoner/mexico-180.png',
   'ikoner/10000-192.png', 'ikoner/10000-512.png', 'ikoner/10000-180.png',
+  'ikoner/sudoku-192.png', 'ikoner/sudoku-512.png', 'ikoner/sudoku-180.png',
 ];
 const NET_TIMEOUT = 4000;
 

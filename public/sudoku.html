@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sudoku – dagens udfordring og træning</title>
+<meta name="description" content="Sudoku i fire sværhedsgrader. Træn for din egen statistik, eller spil dagens sudoku og kom på den fælles highscoreliste.">
+<meta name="theme-color" content="#0d5c3f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#08160f" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🧩</text></svg>">
+<link rel="manifest" href="sudoku.webmanifest">
+<link rel="apple-touch-icon" href="ikoner/sudoku-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sudoku">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+:root{
+  --green:#0d5c3f; --green-2:#12784f; --green-3:#e8f4ee; --green-deep:#0a4630;
+  --on-accent:#fff;
+  --ink:#16241d; --muted:#5d6f66;
+  --line:#d8e2db; --card:#fff; --bg:#f2f6f3;
+  --gold:#b8860b; --gold-bg:#fff7dc; --gold-line:#e5c765;
+  --danger:#b91c1c; --danger-bg:#fee2e2;
+  --toast-bg:#16241d; --toast-fg:#fff;
+  --grid:#16241d; --cell:#fff; --peer:#eef5f0; --same:#cfe7da; --sel:#a9d8bf; --entry:#1f5fae; --hintc:#9a6b00;
+  --radius:14px; --shadow:0 1px 2px rgba(16,40,30,.06),0 6px 20px rgba(16,40,30,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --green:#3f9d72; --green-2:#5cbc8e; --green-3:#172b23; --green-deep:#08160f;
+    --on-accent:#07150f;
+    --ink:#e6efe9; --muted:#93a89e;
+    --line:#2b3a33; --card:#16211c; --bg:#0e1613;
+    --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
+    --danger:#f08a8a; --danger-bg:#3b1a1a;
+    --toast-bg:#e6efe9; --toast-fg:#0e1613;
+    --grid:#8fa89b; --cell:#16211c; --peer:#1c2b24; --same:#24443a; --sel:#2f6a52; --entry:#8cc0ff; --hintc:#e3bf5a;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 20px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --green:#3f9d72; --green-2:#5cbc8e; --green-3:#172b23; --green-deep:#08160f;
+  --on-accent:#07150f;
+  --ink:#e6efe9; --muted:#93a89e;
+  --line:#2b3a33; --card:#16211c; --bg:#0e1613;
+  --gold:#d9b44a; --gold-bg:#2a2410; --gold-line:#7a6428;
+  --danger:#f08a8a; --danger-bg:#3b1a1a;
+  --toast-bg:#e6efe9; --toast-fg:#0e1613;
+  --grid:#8fa89b; --cell:#16211c; --peer:#1c2b24; --same:#24443a; --sel:#2f6a52; --entry:#8cc0ff; --hintc:#e3bf5a;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 20px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{color-scheme:light dark}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px 60px}
+a{color:var(--green-2)}
+button{font:inherit}
+[hidden]{display:none!important}
+
+header.top{background:linear-gradient(160deg,var(--green-deep) 0%,#061009 100%);color:#fff;padding:18px 0 16px;margin-bottom:14px}
+header.top .wrap{padding-bottom:0;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+h1{margin:0;font-size:1.45rem;letter-spacing:.2px}
+h1 .em{opacity:.85;font-weight:400}
+.sub{margin:4px 0 0;opacity:.8;font-size:.85rem}
+header.top .btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff;flex:0 0 auto;text-decoration:none}
+header.top .who{font-size:.8rem;opacity:.85;text-align:right;max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
+.card > h2{margin:0 0 4px;font-size:1.05rem}
+.card > h2 .hint{font-weight:400;font-size:.78rem;color:var(--muted);margin-left:6px}
+.help{margin:0 0 12px;color:var(--muted);font-size:.82rem}
+.muted{color:var(--muted);font-size:.85rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:.9rem;font-weight:600;cursor:pointer;min-height:42px;text-decoration:none}
+.btn:hover{border-color:var(--green-2);color:var(--green-2)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.primary{background:var(--green);border-color:var(--green);color:var(--on-accent)}
+.btn.primary:hover{background:var(--green-2);color:var(--on-accent)}
+.btn.big{font-size:1.05rem;padding:14px 18px;min-height:56px;flex:1 1 auto}
+.btn.ghost{background:transparent}
+.btn[aria-pressed=true]{background:var(--green-3);border-color:var(--green);color:var(--green)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.75rem;font-weight:700;background:var(--green-3);color:var(--green);vertical-align:middle}
+.badge.let{background:#e3f3e8;color:#17663a}.badge.mellem{background:#e5eefb;color:#1f4f99}.badge.svaer{background:#fdf0db;color:#995c00}.badge.ekspert{background:#fbe3e3;color:#9b1c1c}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .badge.let{background:#173322;color:#8fd8a8}:root:not([data-theme="light"]) .badge.mellem{background:#172640;color:#9cc2ff}:root:not([data-theme="light"]) .badge.svaer{background:#3a2a10;color:#f0c071}:root:not([data-theme="light"]) .badge.ekspert{background:#3b1a1a;color:#f4a3a3}}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{flex:1;padding:8px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:600;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--green);color:var(--on-accent);border-color:var(--green)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+td .d{display:block;font-size:.75rem;color:var(--muted);font-weight:400}
+tr.me td{background:var(--green-3);font-weight:700}
+.foot{color:var(--muted);font-size:.8rem;text-align:center;margin-top:6px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--toast-bg);color:var(--toast-fg);padding:10px 16px;border-radius:10px;font-size:.85rem;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- Forside ---------- */
+.daily{display:grid;gap:10px}
+.daily .when{font-size:1.15rem;font-weight:700}
+.daily .status{font-size:.9rem}
+.daily .status b{font-variant-numeric:tabular-nums}
+.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.levels .btn{flex-direction:column;gap:0;padding:10px 4px;min-height:64px}
+.levels .btn small{font-weight:500;font-size:.72rem;color:var(--muted)}
+.cont{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--green);background:var(--green-3);border-radius:12px;margin-top:10px}
+.daynav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.daynav button{width:40px;height:36px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:1rem}
+.daynav button:disabled{opacity:.3;cursor:default}
+.daynav .dl{font-weight:600;font-size:.9rem;text-align:center}
+.streak{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 10px}
+.streak > div{flex:1 1 90px;border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.streak .v{font-size:1.3rem;font-weight:800;font-variant-numeric:tabular-nums}
+.streak .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+details summary{cursor:pointer;font-weight:600}
+.rules{font-size:.9rem}
+.rules ul{padding-left:18px}
+
+/* ---------- Spillet ---------- */
+.playhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.playhead .ttl{font-weight:700}
+.pz{display:inline-block;width:11px;height:13px;border-left:4px solid currentColor;border-right:4px solid currentColor}
+.clock{font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap;font-size:.8rem}
+.chips span{padding:3px 9px;border-radius:999px;background:var(--bg);border:1px solid var(--line)}
+.chips span.bad{color:var(--danger);border-color:var(--danger)}
+.boardwrap{position:relative;width:min(100%,480px);margin:0 auto}
+.board{display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);aspect-ratio:1/1;width:100%;border:2px solid var(--grid);border-radius:8px;overflow:hidden;background:var(--cell);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.cell{position:relative;border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--cell);color:var(--ink);padding:0;margin:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:clamp(1.05rem,5.6vw,1.75rem);font-weight:500;font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent;min-width:0;min-height:0}
+.cell.c2,.cell.c5{border-right:2px solid var(--grid)}
+.cell.c8{border-right:0}
+.cell.r2,.cell.r5{border-bottom:2px solid var(--grid)}
+.cell.r8{border-bottom:0}
+.cell.given{font-weight:750}
+.cell.entry{color:var(--entry)}
+.cell.hinted{color:var(--hintc);font-weight:700}
+.cell.peer{background:var(--peer)}
+.cell.same{background:var(--same)}
+.cell.sel{background:var(--sel)}
+.cell.wrong{color:var(--danger);background:var(--danger-bg)}
+.cell.wrong.sel{box-shadow:inset 0 0 0 2px var(--danger)}
+.cell.flash{animation:flash .5s}
+@keyframes flash{0%{background:var(--danger-bg)}50%{background:var(--danger)}100%{background:var(--danger-bg)}}
+.notes{position:absolute;inset:1px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);font-size:clamp(.5rem,2.3vw,.72rem);font-weight:600;color:var(--muted);line-height:1}
+.notes i{font-style:normal;display:flex;align-items:center;justify-content:center}
+.notes i.hl{color:var(--green);font-weight:800}
+.boardwrap.paused .cell{color:transparent!important;background:var(--cell)!important}
+.boardwrap.paused .notes{visibility:hidden}
+.pauseov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:color-mix(in srgb,var(--card) 92%,transparent);border-radius:8px;z-index:5;text-align:center;padding:20px}
+.pauseov .big{font-size:1.6rem;font-weight:800}
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px auto 8px;width:min(100%,480px)}
+.tools .btn{flex-direction:column;gap:0;padding:6px 2px;min-height:54px;font-size:.8rem}
+.tools .btn .ic{font-size:1.15rem;line-height:1.2}
+.tools .btn small{font-size:.66rem;color:var(--muted);font-weight:500}
+.pad{display:grid;grid-template-columns:repeat(9,1fr);gap:5px;width:min(100%,480px);margin:0 auto}
+.pad button{border:1px solid var(--line);background:var(--card);color:var(--green);border-radius:10px;padding:6px 0 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;font-size:clamp(1.2rem,5.5vw,1.6rem);font-weight:700;line-height:1.1;-webkit-tap-highlight-color:transparent;min-width:0}
+.pad button small{font-size:.62rem;font-weight:600;color:var(--muted)}
+.pad button:disabled{opacity:.25;cursor:default}
+.pad.notemode button{color:var(--muted);font-style:italic}
+.markrow{display:flex;justify-content:center;margin-top:10px}
+.markrow label{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);cursor:pointer}
+.done{text-align:center;padding:16px 10px;border-radius:12px;background:var(--gold-bg);border:1px solid var(--gold-line);margin:12px auto 0;width:min(100%,480px)}
+.done .trophy{font-size:2.4rem;line-height:1;animation:pop .6s cubic-bezier(.2,.9,.3,1.4)}
+.done .tt{font-size:2rem;font-weight:800;font-variant-numeric:tabular-nums}
+.done .br{font-size:.85rem;color:var(--muted)}
+.done .rank{font-size:1rem;font-weight:700;margin-top:6px}
+@keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){.done .trophy,.cell.flash{animation:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1>🧩 Sudoku <span class="em">– dagens og træning</span></h1>
+      <p class="sub">Fire sværhedsgrader og en ny fælles udfordring hver dag.</p>
+    </div>
+    <div style="display:grid;gap:4px;justify-items:end">
+      <a class="btn" id="btnLogin" href="spil.html?next=sudoku.html">Log ind</a>
+      <span class="who" id="who" hidden></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ===== Forside ===== -->
+<div id="home">
+  <section class="card">
+    <h2>Dagens sudoku <span class="hint">samme opgave til alle</span></h2>
+    <div class="daily">
+      <div class="row" style="justify-content:space-between"><span class="when" id="dWhen"></span><span class="badge" id="dLevel"></span></div>
+      <div class="status" id="dStatus"></div>
+      <div class="row"><button class="btn primary big" id="btnDaily" type="button">Spil dagens sudoku</button></div>
+      <p class="help" style="margin:0">Ét forsøg pr. dag. Uret går kun, mens siden er åben, og kan sættes på pause (pladen skjules imens). En fejl koster 30 sekunder, et hint 60 sekunder.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Highscore</h2>
+    <div class="tabs" role="tablist" id="hsTabs">
+      <button type="button" data-tab="dag" role="tab" aria-selected="true">Dagens top</button>
+      <button type="button" data-tab="samlet" role="tab" aria-selected="false">Samlet</button>
+    </div>
+    <div id="hsDay">
+      <div class="daynav"><button type="button" id="dayPrev" aria-label="Dagen før">‹</button><span class="dl" id="dayLabel"></span><button type="button" id="dayNext" aria-label="Dagen efter">›</button></div>
+      <div id="dayList"></div>
+    </div>
+    <div id="hsAll" hidden>
+      <p class="help" style="margin:0 0 6px">Gennemsnitlig placering over alle dage – lavest fører. Ved lige snit: flest sejre, så flest dage.</p>
+      <div id="allList"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Træning <span class="hint">tæller kun i din egen statistik</span></h2>
+    <div class="levels" id="levels"></div>
+    <div class="cont" id="contTrain" hidden>
+      <div><b id="contTitle"></b><div class="muted" id="contSub"></div></div>
+      <button class="btn primary" id="btnCont" type="button">Fortsæt</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Din statistik <span class="hint" id="statHint"></span></h2>
+    <div class="streak" id="streak"></div>
+    <div id="statTrain"></div>
+    <div id="statDaily" style="margin-top:12px"></div>
+  </section>
+
+  <section class="card">
+    <details class="rules">
+      <summary>Sådan spiller du</summary>
+      <ul>
+        <li><strong>Reglen.</strong> Udfyld pladen, så hver række, hver kolonne og hver af de ni 3×3-felter indeholder tallene 1–9 præcis én gang. Hver opgave har præcis én løsning.</li>
+        <li><strong>Sværhedsgrader.</strong> <em>Let</em> og <em>Mellem</em> kan løses ved kun at se, hvor et tal skal stå. <em>Svær</em> kræver kandidat-teknikker som låste kandidater og par. <em>Ekspert</em> kræver tripler, X-wing eller mere.</li>
+        <li><strong>Noter.</strong> Slå <em>Noter</em> til for at skrive små kandidattal i et felt. Når et tal sættes, fjernes det fra noterne i samme række, kolonne og felt.</li>
+        <li><strong>Dagens sudoku.</strong> Skifter sværhedsgrad efter ugedagen: mandag og torsdag let, tirsdag og fredag mellem, onsdag og lørdag svær, søndag ekspert. Forkerte tal vises med det samme og koster 30 sekunder; et hint udfylder et felt og koster 60 sekunder. Lavest samlet tid vinder dagen.</li>
+        <li><strong>Træning.</strong> Fejlmarkering og hint kan bruges frit, men så tæller opgaven som <em>løst med hjælp</em> og ikke i dine bedste tider.</li>
+        <li><strong>Uden login.</strong> Alt kan spilles uden login og gemmes på telefonen. Log ind for at komme på highscorelisten og have din statistik med på andre telefoner.</li>
+      </ul>
+      <p class="muted">Tastatur: 1–9 sætter tal, piletasterne flytter, Backspace sletter, N slår noter til og fra, P sætter på pause.</p>
+    </details>
+  </section>
+</div>
+
+<!-- ===== Spillet ===== -->
+<div id="play" hidden>
+  <section class="card">
+    <div class="playhead">
+      <div>
+        <div class="ttl" id="pTitle"></div>
+        <div class="chips" id="pChips"></div>
+      </div>
+      <div class="row">
+        <span class="clock" id="pClock">0:00</span>
+        <button class="btn" id="btnPause" type="button"><i class="pz" aria-hidden="true"></i>Pause</button>
+      </div>
+    </div>
+    <div class="boardwrap" id="boardwrap">
+      <div class="board" id="board" role="grid" aria-label="Sudoku-plade"></div>
+      <div class="pauseov" id="pauseov" hidden>
+        <div class="big">Pause</div>
+        <div class="muted" id="pauseNote">Uret står stille, og pladen er skjult.</div>
+        <button class="btn primary big" id="btnResume" type="button" style="flex:0 0 auto">▶ Fortsæt</button>
+      </div>
+    </div>
+    <div id="controls">
+      <div class="tools">
+        <button class="btn" id="btnUndo" type="button"><span class="ic">↶</span>Fortryd</button>
+        <button class="btn" id="btnErase" type="button"><span class="ic">⌫</span>Slet</button>
+        <button class="btn" id="btnNotes" type="button" aria-pressed="false"><span class="ic">✎</span>Noter</button>
+        <button class="btn" id="btnHint" type="button"><span class="ic">💡</span>Hint<small id="hintCost"></small></button>
+      </div>
+      <div class="pad" id="pad"></div>
+      <div class="markrow" id="markRow"><label><input type="checkbox" id="chkMark"> Vis fejl med det samme (tæller som hjælp)</label></div>
+    </div>
+    <div class="done" id="doneBox" hidden></div>
+    <div class="row" style="justify-content:center;margin-top:12px">
+      <button class="btn ghost" id="btnHome" type="button">← Til oversigten</button>
+      <button class="btn primary" id="btnAgain" type="button" hidden>Ny opgave</button>
+    </div>
+  </section>
+</div>
+
+<p class="foot"><a href="spil.html">Online-spil</a> · <a href="mexico.html">Mexico</a> · <a href="10000.html">10.000</a> · <a href="index.html">Golf</a></p>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="sudoku.js"></script>
+<script src="firebase-config.js"></script>
+<script src="online.js"></script>
+<script>
+const S = window.Sudoku;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PEN = {fejl: 30, hint: 60};
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} },
+  keys(){ try{ return Object.keys(localStorage); }catch(e){ return []; } },
+};
+const KEY_TRAIN = 'sudoku-traening';
+const KEY_DAY = d => 'sudoku-dag-' + d;
+const KEY_GAMES = uid => 'sudoku-spil-' + (uid || 'anon');
+let toastTimer;
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600); }
+function fmtT(sec){ sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0'); }
+function fmtDate(key, opts){ const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d, 12).toLocaleDateString('da-DK', opts || {weekday: 'long', day: 'numeric', month: 'long'}); }
+function addDays(key, n){ const [y, m, d] = key.split('-').map(Number); const t = new Date(Date.UTC(y, m - 1, d + n)); return t.toISOString().slice(0, 10); }
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const total = r => (r.tid | 0) + (r.fejl | 0) * PEN.fejl + (r.hints | 0) * PEN.hint;
+const breakdown = r => [fmtT(r.tid)].concat(r.fejl ? [`${r.fejl} fejl`] : [], r.hints ? [`${r.hints} hint${r.hints > 1 ? 's' : ''}`] : []).join(' + ');
+const badge = lvl => `<span class="badge ${lvl}">${S.LEVEL_NAMES[lvl]}</span>`;
+function today(){ return S.todayKey(); }
+
+/* ---------- Tilstand ---------- */
+let me = null;            // {uid, navn} når man er logget ind
+let online = false;       // Firebase kørte op
+let myGames = [];         // løste opgaver (træning og dagens)
+let myCloudDay = null;    // dagens resultat i skyen (spillet på en anden telefon)
+let game = null;          // den åbne opgave
+let sel = -1, notesMode = false, paused = false, runSince = null;
+let hsTab = 'dag', viewDate = today(), dayRows = null, allRows = null, unsubDay = null;
+
+/* ---------- Egne resultater ---------- */
+function mergeGames(a, b){
+  const m = new Map(); (a || []).concat(b || []).forEach(g => { if(g && g.id) m.set(g.id, g); });
+  return [...m.values()].sort((x, y) => (x.slut || 0) - (y.slut || 0)).slice(-1000);
+}
+function loadMyGames(){ myGames = LS.get(KEY_GAMES(me && me.uid), []); }
+function addMyGame(rec){
+  myGames = mergeGames(myGames, [rec]);
+  LS.set(KEY_GAMES(me && me.uid), myGames);
+  if(me && online) Online.sudokuSync([rec]).then(m => { myGames = m; LS.set(KEY_GAMES(me.uid), m); renderStats(); }).catch(e => console.warn('sudoku-synk', e));
+}
+
+/* ---------- Opgaver ---------- */
+function newGame(type, gen){
+  return {
+    id: (type === 'dag' ? 'dag-' + gen.dato : 't-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
+    type, niveau: gen.level, dato: gen.dato || today(),
+    puzzle: gen.puzzle, solution: gen.solution, values: gen.puzzle.slice(), notes: new Array(81).fill(0),
+    elapsed: 0, fejl: 0, hints: 0, hintCells: [], mark: false, hjaelp: false, done: false,
+    startet: Date.now(), slut: null, undo: [],
+  };
+}
+function storeKey(g){ return g.type === 'dag' ? KEY_DAY(g.dato) : KEY_TRAIN; }
+function elapsedMs(){ return game ? game.elapsed + (runSince ? Date.now() - runSince : 0) : 0; }
+function save(){ if(!game) return; LS.set(storeKey(game), Object.assign({}, game, {elapsed: elapsedMs()})); }
+function marking(){ return game.type === 'dag' || game.mark; }
+function isWrong(i){ return game.values[i] && game.values[i] !== game.solution[i]; }
+function locked(i){ return !!game.puzzle[i] || game.hintCells.includes(i) || (marking() && game.values[i] === game.solution[i]); }
+
+function run(){ if(!game || game.done || runSince) return; runSince = Date.now(); paused = false; renderPause(); tick(); }
+function pause(){ if(!game) return; if(runSince){ game.elapsed += Date.now() - runSince; runSince = null; } paused = !game.done; save(); renderPause(); tick(); }
+
+function openGame(g, start){
+  game = g; sel = -1; notesMode = false; runSince = null; paused = !g.done;
+  $('home').hidden = true; $('play').hidden = false; scrollTo(0, 0);
+  render();
+  if(start) run();
+}
+function goHome(){
+  if(game && !game.done) pause();
+  game = null; runSince = null;
+  $('play').hidden = true; $('home').hidden = false; scrollTo(0, 0);
+  renderHome();
+}
+
+function startDaily(){
+  const key = today();
+  const cur = LS.get(KEY_DAY(key), null);
+  if(cur){ openGame(cur, false); return; }
+  if(myCloudDay){ toast('Du har allerede spillet dagens sudoku'); return; }
+  openGame(newGame('dag', S.daily(key)), true);
+  save();
+}
+function startTraining(lvl){
+  const cur = LS.get(KEY_TRAIN, null);
+  if(cur && !cur.done && !confirm(`Du har en ${S.LEVEL_NAMES[cur.niveau].toLowerCase()} opgave i gang. Vil du droppe den og starte en ny?`)) return;
+  openGame(newGame('traening', S.generate(lvl)), true);
+  save();
+}
+
+/* ---------- Træk ---------- */
+function pushUndo(i, peers){ game.undo.push({i, v: game.values[i], n: game.notes[i], p: peers || []}); if(game.undo.length > 300) game.undo.shift(); }
+function clearPeerNotes(i, d){
+  const changed = [];
+  for(const j of S.PEERS[i]) if(game.notes[j] & (1 << d)){ changed.push([j, game.notes[j]]); game.notes[j] &= ~(1 << d); }
+  return changed;
+}
+function canPlay(){ return game && !game.done && !paused; }
+function input(d){
+  if(!canPlay() || sel < 0 || locked(sel)) return;
+  const i = sel;
+  if(notesMode){
+    if(game.values[i] && !game.puzzle[i]) return;
+    pushUndo(i); game.notes[i] ^= 1 << d;
+  }else if(game.values[i] === d){
+    pushUndo(i); game.values[i] = 0;
+  }else{
+    const before = {v: game.values[i], n: game.notes[i]};
+    game.values[i] = d; game.notes[i] = 0;
+    // Et tal, der straks vises som forkert, skal ikke fjerne noter i række, kolonne og felt
+    const peers = d === game.solution[i] || !marking() ? clearPeerNotes(i, d) : [];
+    game.undo.push({i, v: before.v, n: before.n, p: peers}); if(game.undo.length > 300) game.undo.shift();
+    if(d !== game.solution[i] && marking()){
+      game.fejl += 1;
+      if(game.type === 'dag') toast(`Forkert – +${PEN.fejl} sekunder`);
+      flashCell = i;
+    }
+  }
+  after();
+}
+let flashCell = -1;
+function erase(){
+  if(!canPlay() || sel < 0 || locked(sel)) return;
+  if(!game.values[sel] && !game.notes[sel]) return;
+  pushUndo(sel); game.values[sel] = 0; game.notes[sel] = 0; after();
+}
+function undo(){
+  if(!canPlay()) return;
+  while(game.undo.length){
+    const u = game.undo.pop();
+    if(game.hintCells.includes(u.i)) continue;   // hint-felter kan ikke fortrydes
+    game.values[u.i] = u.v; game.notes[u.i] = u.n;
+    u.p.forEach(([j, n]) => { if(!game.values[j]) game.notes[j] = n; });
+    sel = u.i; after(); return;
+  }
+  toast('Der er ikke noget at fortryde');
+}
+function candidates(i){
+  let m = 0x3FE;
+  for(const j of S.PEERS[i]){ const v = game.values[j]; if(v && v === game.solution[j]) m &= ~(1 << v); }
+  let c = 0; for(let d = 1; d <= 9; d++) if(m & (1 << d)) c++;
+  return c;
+}
+function hint(){
+  if(!canPlay()) return;
+  if(game.type === 'dag' && !confirm(`Et hint udfylder et felt og koster ${PEN.hint} sekunder. Vil du bruge et?`)) return;
+  let i = -1;
+  if(sel >= 0 && game.values[sel] !== game.solution[sel]) i = sel;
+  if(i < 0){ const wrong = game.values.findIndex((v, k) => v && v !== game.solution[k]); if(wrong >= 0) i = wrong; }   // ret først en fejl
+  if(i < 0){
+    let best = 99;
+    for(let k = 0; k < 81; k++) if(!game.values[k]){ const c = candidates(k); if(c < best){ best = c; i = k; } }
+  }
+  if(i < 0) return;
+  game.values[i] = game.solution[i]; game.notes[i] = 0; clearPeerNotes(i, game.solution[i]);
+  game.hints += 1; game.hintCells.push(i);
+  if(game.type !== 'dag') game.hjaelp = true;
+  sel = i;
+  if(game.type === 'dag') toast(`Hint – +${PEN.hint} sekunder`);
+  after();
+}
+function after(){
+  const full = game.values.every(Boolean);
+  const solved = full && game.values.every((v, i) => v === game.solution[i]);
+  if(solved) finish();
+  else{
+    if(full && !marking()) toast('Pladen er fyldt, men der er fejl et sted');
+    save();
+  }
+  render();
+}
+
+/* ---------- Løst ---------- */
+function finish(){
+  if(runSince){ game.elapsed += Date.now() - runSince; runSince = null; }
+  paused = false;
+  game.done = true; game.slut = Date.now();
+  game.tid = Math.max(1, Math.round(game.elapsed / 1000));
+  if(game.type !== 'dag' && (game.mark || game.hints)) game.hjaelp = true;
+  game.total = total(game);
+  if(game.type === 'dag') game.sendt = false;
+  save();
+  addMyGame({id: game.id, type: game.type, niveau: game.niveau, dato: game.dato, tid: game.tid, fejl: game.fejl, hints: game.hints, total: game.total, hjaelp: game.hjaelp, slut: game.slut});
+  if(game.type === 'dag') submitDay(game);
+}
+async function submitDay(g){
+  if(!me || !online || g.sendt) return;
+  try{
+    const ok = await Online.sudokuSubmit(g);
+    const stored = LS.get(KEY_DAY(g.dato), g);
+    stored.sendt = true; stored.fandtes = !ok; LS.set(KEY_DAY(g.dato), stored);
+    if(game && game.id === stored.id){ game.sendt = true; game.fandtes = !ok; }
+    if(!ok) toast('Der lå allerede et resultat for i dag – det første tæller');
+    allRows = null;
+    render();
+  }catch(e){ console.warn('sudoku-resultat', e); toast('Resultatet kunne ikke sendes: ' + Online.errorText(e)); }
+}
+// Resultater spillet uden login (eller uden net) sendes, når man er logget ind
+function submitPending(){
+  LS.keys().filter(k => k.startsWith('sudoku-dag-')).forEach(k => {
+    const g = LS.get(k, null);
+    if(g && g.done && !g.sendt) submitDay(g);
+  });
+}
+function cleanOld(){
+  const cutoff = addDays(today(), -14);
+  LS.keys().filter(k => k.startsWith('sudoku-dag-')).forEach(k => {
+    const d = k.slice('sudoku-dag-'.length), g = LS.get(k, null);
+    if(d < cutoff && (!g || !g.done || g.sendt)) LS.del(k);
+  });
+}
+
+/* ---------- Tegning: spillet ---------- */
+function buildBoard(){
+  const b = $('board'); b.innerHTML = '';
+  for(let i = 0; i < 81; i++){
+    const c = document.createElement('button');
+    c.type = 'button'; c.className = `cell r${S.ROW(i)} c${S.COL(i)}`; c.dataset.i = i;
+    c.setAttribute('role', 'gridcell');
+    c.addEventListener('click', () => { if(!canPlay()) return; sel = i; render(); });
+    b.appendChild(c);
+  }
+  const pad = $('pad'); pad.innerHTML = '';
+  for(let d = 1; d <= 9; d++){
+    const p = document.createElement('button');
+    p.type = 'button'; p.dataset.d = d; p.innerHTML = `${d}<small></small>`;
+    p.addEventListener('click', () => input(d));
+    pad.appendChild(p);
+  }
+}
+function render(){
+  if(!game) return;
+  const g = game, cells = $('board').children;
+  const sv = sel >= 0 ? g.values[sel] : 0;
+  const showWrong = marking();
+  for(let i = 0; i < 81; i++){
+    const c = cells[i], v = g.values[i];
+    const peer = sel >= 0 && i !== sel && (S.ROW(i) === S.ROW(sel) || S.COL(i) === S.COL(sel) || S.BOX(i) === S.BOX(sel));
+    const cls = [`cell r${S.ROW(i)} c${S.COL(i)}`];
+    if(g.puzzle[i]) cls.push('given'); else if(g.hintCells.includes(i)) cls.push('hinted'); else if(v) cls.push('entry');
+    if(i === sel) cls.push('sel'); else if(sv && v === sv) cls.push('same'); else if(peer) cls.push('peer');
+    if(showWrong && isWrong(i)) cls.push('wrong');
+    if(i === flashCell) cls.push('flash');
+    c.className = cls.join(' ');
+    if(v) c.textContent = v;
+    else if(g.notes[i]){
+      let h = '<span class="notes">';
+      for(let d = 1; d <= 9; d++) h += `<i class="${sv === d ? 'hl' : ''}">${g.notes[i] & (1 << d) ? d : ''}</i>`;
+      c.innerHTML = h + '</span>';
+    }else c.textContent = '';
+    c.setAttribute('aria-label', `Række ${S.ROW(i) + 1}, kolonne ${S.COL(i) + 1}${v ? ': ' + v : ''}`);
+  }
+  flashCell = -1;
+  // hvor mange af hvert tal mangler endnu (alle udfyldte felter tæller, så det afslører ingen fejl)
+  const placed = new Array(10).fill(0);
+  g.values.forEach(v => { if(v) placed[v]++; });
+  [...$('pad').children].forEach(p => {
+    const d = +p.dataset.d, left = 9 - placed[d];
+    p.querySelector('small').textContent = left > 0 ? left : '';
+    p.disabled = left <= 0 && !notesMode;
+  });
+  $('pad').classList.toggle('notemode', notesMode);
+  $('btnNotes').setAttribute('aria-pressed', String(notesMode));
+  $('pTitle').innerHTML = (g.type === 'dag' ? `Dagens sudoku · ${esc(fmtDate(g.dato, {day: 'numeric', month: 'short'}))} ` : 'Træning ') + badge(g.niveau);
+  const chips = [];
+  if(g.type === 'dag'){
+    chips.push(`<span class="${g.fejl ? 'bad' : ''}">Fejl ${g.fejl}${g.fejl ? ` · +${fmtT(g.fejl * PEN.fejl)}` : ''}</span>`);
+    chips.push(`<span>Hints ${g.hints}${g.hints ? ` · +${fmtT(g.hints * PEN.hint)}` : ''}</span>`);
+  }else{
+    if(g.mark) chips.push(`<span class="${g.fejl ? 'bad' : ''}">Fejl ${g.fejl}</span>`);
+    if(g.hints) chips.push(`<span>Hints ${g.hints}</span>`);
+    chips.push(`<span>${g.hjaelp || g.mark ? 'Med hjælp' : 'Uden hjælp'}</span>`);
+  }
+  $('pChips').innerHTML = chips.join('');
+  $('hintCost').textContent = g.type === 'dag' ? `+${PEN.hint} sek.` : '';
+  $('markRow').hidden = g.type === 'dag';
+  $('chkMark').checked = !!g.mark;
+  $('controls').hidden = g.done;
+  $('btnAgain').hidden = !(g.done && g.type !== 'dag');
+  $('btnPause').hidden = g.done;
+  renderDone();
+  renderPause();
+  tick();
+}
+function renderPause(){
+  if(!game) return;
+  $('boardwrap').classList.toggle('paused', paused && !game.done);
+  $('pauseov').hidden = !(paused && !game.done);
+  $('pauseNote').textContent = game.elapsed > 0 ? 'Uret står stille, og pladen er skjult.' : 'Uret starter, når du trykker Fortsæt.';
+}
+function tick(){ if(game) $('pClock').textContent = fmtT((game.done ? game.tid * 1000 : elapsedMs()) / 1000); }
+setInterval(() => { if(runSince) tick(); }, 500);
+setInterval(() => { if(runSince) save(); }, 5000);
+
+function renderDone(){
+  const g = game, box = $('doneBox');
+  if(!g.done){ box.hidden = true; return; }
+  box.hidden = false;
+  let rank = '';
+  if(g.type === 'dag'){
+    if(!me) rank = `<div class="rank"><a href="spil.html?next=sudoku.html">Log ind</a> for at komme på dagens liste</div>`;
+    else if(g.fandtes) rank = `<div class="rank">Du havde allerede et resultat for dagen – det første tæller</div>`;
+    else if(dayRows && viewDate === g.dato){ const r = dayRows.find(x => x.uid === me.uid); if(r) rank = `<div class="rank">Nr. ${r.plads} af ${dayRows.length} i dag</div>`; }
+    else if(!g.sendt) rank = `<div class="rank muted">Sendes, når der er forbindelse</div>`;
+  }
+  const extra = g.type === 'dag'
+    ? `<div class="br">${esc(breakdown(g))}${g.fejl || g.hints ? ' = samlet tid' : ''}</div>`
+    : `<div class="br">${g.hjaelp ? 'Løst med hjælp' : 'Løst uden hjælp'}${g.fejl ? ` · ${g.fejl} fejl` : ''}${g.hints ? ` · ${g.hints} hint${g.hints > 1 ? 's' : ''}` : ''}${!g.hjaelp && bestTime(g.niveau, g.id) !== null && g.tid < bestTime(g.niveau, g.id) ? ' · ny bedste tid!' : ''}</div>`;
+  box.innerHTML = `<div class="trophy">🏆</div><div class="muted">Løst!</div><div class="tt">${fmtT(g.type === 'dag' ? g.total : g.tid)}</div>${extra}${rank}`;
+}
+function bestTime(lvl, exceptId){
+  const t = myGames.filter(x => x.type === 'traening' && x.niveau === lvl && !x.hjaelp && x.id !== exceptId).map(x => x.tid);
+  return t.length ? Math.min(...t) : null;
+}
+
+/* ---------- Tegning: forsiden ---------- */
+function renderHome(){
+  const key = today();
+  if(viewDate > key) viewDate = key;
+  const lvl = S.dailyLevel(key);
+  $('dWhen').textContent = cap(fmtDate(key));
+  $('dLevel').className = 'badge ' + lvl; $('dLevel').textContent = S.LEVEL_NAMES[lvl];
+  const cur = LS.get(KEY_DAY(key), null);
+  const btn = $('btnDaily');
+  if(cur && cur.done){
+    const r = me && dayRows && viewDate === key ? dayRows.find(x => x.uid === me.uid) : null;
+    $('dStatus').innerHTML = `Løst på <b>${fmtT(cur.total)}</b> <span class="muted">(${esc(breakdown(cur))})</span>${r ? ` – nr. ${r.plads} af ${dayRows.length}` : ''}${!me ? ' · <a href="spil.html?next=sudoku.html">log ind</a> for at komme på listen' : ''}`;
+    btn.textContent = 'Se dagens plade'; btn.disabled = false;
+  }else if(cur){
+    $('dStatus').innerHTML = `I gang – <b>${fmtT(cur.elapsed / 1000)}</b>${cur.fejl ? `, ${cur.fejl} fejl` : ''}${cur.hints ? `, ${cur.hints} hints` : ''}`;
+    btn.textContent = 'Fortsæt dagens'; btn.disabled = false;
+  }else if(myCloudDay){
+    $('dStatus').innerHTML = `Løst på <b>${fmtT(myCloudDay.total)}</b> <span class="muted">(på en anden telefon)</span>`;
+    btn.textContent = 'Allerede spillet'; btn.disabled = true;
+  }else{
+    $('dStatus').innerHTML = `<span class="muted">Ikke spillet endnu. Uret starter, når du trykker.</span>`;
+    btn.textContent = 'Spil dagens sudoku'; btn.disabled = false;
+  }
+  // træning
+  const names = {let: 'Rolig start', mellem: 'Lidt mere tænkning', svaer: 'Kandidat-teknikker', ekspert: 'Til de garvede'};
+  $('levels').innerHTML = S.LEVELS.map(l => `<button class="btn" type="button" data-lvl="${l}">${S.LEVEL_NAMES[l]}<small>${names[l]}</small></button>`).join('');
+  $('levels').querySelectorAll('button').forEach(b => b.addEventListener('click', () => startTraining(b.dataset.lvl)));
+  const t = LS.get(KEY_TRAIN, null);
+  $('contTrain').hidden = !(t && !t.done);
+  if(t && !t.done){
+    const left = t.values.filter((v, i) => v !== t.solution[i]).length;
+    $('contTitle').innerHTML = `Fortsæt ${badge(t.niveau)}`;
+    $('contSub').textContent = `${fmtT(t.elapsed / 1000)} · ${left} felter tilbage`;
+  }
+  renderHighscore();
+  renderStats();
+}
+
+function renderHighscore(){
+  document.querySelectorAll('#hsTabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === hsTab)));
+  $('hsDay').hidden = hsTab !== 'dag'; $('hsAll').hidden = hsTab !== 'samlet';
+  const key = today();
+  $('dayLabel').innerHTML = `${esc(viewDate === key ? 'I dag' : cap(fmtDate(viewDate, {weekday: 'short', day: 'numeric', month: 'short'})))} ${badge(S.dailyLevel(viewDate))}`;
+  $('dayNext').disabled = viewDate >= key;
+  const login = `<p class="muted" style="margin:0"><a href="spil.html?next=sudoku.html">Log ind</a> for at se listen og komme på den. Du kan godt spille uden – resultatet sendes, når du logger ind samme dag.</p>`;
+  if(!me){ $('dayList').innerHTML = login; $('allList').innerHTML = login; return; }
+  if(!online){ $('dayList').innerHTML = $('allList').innerHTML = '<p class="muted" style="margin:0">Listen kræver forbindelse til nettet.</p>'; return; }
+  if(hsTab === 'dag'){
+    if(!dayRows){ $('dayList').innerHTML = '<p class="muted" style="margin:0">Henter…</p>'; return; }
+    if(!dayRows.length){ $('dayList').innerHTML = `<p class="muted" style="margin:0">Ingen har løst ${viewDate === key ? 'dagens' : 'den dags'} sudoku endnu.</p>`; return; }
+    $('dayList').innerHTML = `<table><thead><tr><th>#</th><th>Spiller</th><th class="n">Samlet</th></tr></thead><tbody>${dayRows.map(r => `<tr class="${r.uid === me.uid ? 'me' : ''}"><td>${r.plads === 1 ? '🥇' : r.plads === 2 ? '🥈' : r.plads === 3 ? '🥉' : r.plads}</td><td>${esc(r.navn)}</td><td class="n">${fmtT(r.total)}<span class="d">${esc(breakdown(r))}</span></td></tr>`).join('')}</tbody></table>`;
+  }else{
+    if(!allRows){ $('allList').innerHTML = '<p class="muted" style="margin:0">Henter…</p>'; loadAll(); return; }
+    if(!allRows.length){ $('allList').innerHTML = '<p class="muted" style="margin:0">Ingen resultater endnu.</p>'; return; }
+    $('allList').innerHTML = `<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Spiller</th><th class="n">Dage</th><th class="n">Sejre</th><th class="n">Top 3</th><th class="n">Snit</th></tr></thead><tbody>${allRows.map((r, i) => `<tr class="${r.uid === me.uid ? 'me' : ''}"><td>${i + 1}</td><td>${esc(r.navn)}</td><td class="n">${r.dage}</td><td class="n">${r.sejre}</td><td class="n">${r.top3}</td><td class="n">${r.snit.toFixed(2).replace('.', ',')}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+}
+let loadingAll = false;
+async function loadAll(){
+  if(loadingAll) return; loadingAll = true;
+  try{ allRows = Online.sudokuBoard(await Online.sudokuAll()); }
+  catch(e){ console.warn('sudoku-samlet', e); allRows = []; toast('Den samlede liste kunne ikke hentes: ' + Online.errorText(e)); }
+  loadingAll = false; renderHighscore();
+}
+function watchDay(){
+  if(unsubDay){ unsubDay(); unsubDay = null; }
+  dayRows = null;
+  if(!me || !online) return;
+  const d = viewDate;
+  unsubDay = Online.watchSudokuDay(d, rows => {
+    if(d !== viewDate) return;
+    dayRows = rows;
+    if(d === today()){ const mine = rows.find(r => r.uid === me.uid); if(mine) myCloudDay = mine; }
+    if(game) renderDone(); else { renderHome(); }
+  });
+}
+
+function streaks(){
+  const days = [...new Set(myGames.filter(g => g.type === 'dag').map(g => g.dato))].sort();
+  let best = 0, run = 0, prev = null;
+  days.forEach(d => { run = prev && addDays(prev, 1) === d ? run + 1 : 1; best = Math.max(best, run); prev = d; });
+  const set = new Set(days); let cur = 0, k = today();
+  if(!set.has(k)) k = addDays(k, -1);
+  while(set.has(k)){ cur++; k = addDays(k, -1); }
+  return {days: days.length, cur, best};
+}
+function renderStats(){
+  $('statHint').textContent = me ? 'følger dit login' : 'gemt på denne telefon';
+  const st = streaks();
+  $('streak').innerHTML = `<div><div class="v">${st.days}</div><div class="l">Dagens løst</div></div><div><div class="v">${st.cur}</div><div class="l">Dage i træk</div></div><div><div class="v">${st.best}</div><div class="l">Længste stime</div></div>`;
+  const tr = myGames.filter(g => g.type === 'traening');
+  const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+  if(!tr.length) $('statTrain').innerHTML = '<p class="muted" style="margin:0">Ingen træningsopgaver løst endnu.</p>';
+  else $('statTrain').innerHTML = `<table><thead><tr><th>Træning</th><th class="n">Løst</th><th class="n">Uden hjælp</th><th class="n">Bedste</th><th class="n">Snit</th></tr></thead><tbody>${S.LEVELS.map(l => {
+    const all = tr.filter(g => g.niveau === l), clean = all.filter(g => !g.hjaelp).map(g => g.tid);
+    return `<tr><td>${badge(l)}</td><td class="n">${all.length}</td><td class="n">${clean.length}</td><td class="n">${clean.length ? fmtT(Math.min(...clean)) : '–'}</td><td class="n">${clean.length ? fmtT(avg(clean)) : '–'}</td></tr>`;
+  }).join('')}</tbody></table><p class="muted" style="margin:6px 0 0;font-size:.75rem">Bedste og snit tæller kun opgaver løst uden hjælp.</p>`;
+  const dg = myGames.filter(g => g.type === 'dag');
+  if(!dg.length) $('statDaily').innerHTML = '';
+  else $('statDaily').innerHTML = `<table><thead><tr><th>Dagens</th><th class="n">Dage</th><th class="n">Bedste</th><th class="n">Snit</th></tr></thead><tbody>${S.LEVELS.map(l => {
+    const t = dg.filter(g => g.niveau === l).map(g => g.total);
+    return t.length ? `<tr><td>${badge(l)}</td><td class="n">${t.length}</td><td class="n">${fmtT(Math.min(...t))}</td><td class="n">${fmtT(avg(t))}</td></tr>` : '';
+  }).join('')}</tbody></table><p class="muted" style="margin:6px 0 0;font-size:.75rem">Samlet tid inkl. straf for fejl og hints.</p>`;
+}
+
+/* ---------- Knapper og taster ---------- */
+$('btnDaily').addEventListener('click', startDaily);
+$('btnCont').addEventListener('click', () => { const t = LS.get(KEY_TRAIN, null); if(t) openGame(t, false); });
+$('btnHome').addEventListener('click', goHome);
+$('btnAgain').addEventListener('click', () => { const l = game.niveau; openGame(newGame('traening', S.generate(l)), true); save(); });
+$('btnPause').addEventListener('click', () => { if(paused) run(); else pause(); });
+$('btnResume').addEventListener('click', run);
+$('btnUndo').addEventListener('click', undo);
+$('btnErase').addEventListener('click', erase);
+$('btnNotes').addEventListener('click', () => { notesMode = !notesMode; render(); });
+$('btnHint').addEventListener('click', hint);
+$('chkMark').addEventListener('change', e => {
+  if(!game || game.type === 'dag') return;
+  game.mark = e.target.checked; if(game.mark) game.hjaelp = true;
+  save(); render();
+});
+document.querySelectorAll('#hsTabs button').forEach(b => b.addEventListener('click', () => { hsTab = b.dataset.tab; renderHighscore(); }));
+$('dayPrev').addEventListener('click', () => { viewDate = addDays(viewDate, -1); watchDay(); renderHighscore(); });
+$('dayNext').addEventListener('click', () => { if(viewDate < today()){ viewDate = addDays(viewDate, 1); watchDay(); renderHighscore(); } });
+addEventListener('keydown', e => {
+  if(!game || $('play').hidden || e.ctrlKey && e.key !== 'z' || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if(k === 'p' || k === 'P' || (k === ' ' && paused)){ e.preventDefault(); if(game.done) return; paused ? run() : pause(); return; }
+  if(!canPlay()) return;
+  if(/^[1-9]$/.test(k)){ e.preventDefault(); input(+k); return; }
+  if(k === 'Backspace' || k === 'Delete' || k === '0'){ e.preventDefault(); erase(); return; }
+  if(k === 'n' || k === 'N'){ notesMode = !notesMode; render(); return; }
+  if(e.ctrlKey && k === 'z'){ e.preventDefault(); undo(); return; }
+  const mv = {ArrowUp: -9, ArrowDown: 9, ArrowLeft: -1, ArrowRight: 1}[k];
+  if(mv){
+    e.preventDefault();
+    if(sel < 0) sel = 40;
+    else{ const r = S.ROW(sel), c = S.COL(sel); sel = mv === -9 ? ((r + 8) % 9) * 9 + c : mv === 9 ? ((r + 1) % 9) * 9 + c : mv === -1 ? r * 9 + (c + 8) % 9 : r * 9 + (c + 1) % 9; }
+    render();
+  }
+});
+// Uret går kun, mens siden er synlig
+document.addEventListener('visibilitychange', () => { if(document.hidden && runSince) pause(); if(!document.hidden && $('play').hidden) renderHome(); });
+addEventListener('pagehide', () => { if(runSince) pause(); });
+
+/* ---------- Login og sky ---------- */
+function renderWho(){
+  $('btnLogin').hidden = !!me; $('who').hidden = !me;
+  if(me) $('who').textContent = me.navn;
+}
+async function startOnline(){
+  if(!window.Online || !window.FIREBASE_CONFIG && !window.__onlineBackend) return;
+  try{ await Online.init(); online = true; }
+  catch(e){ console.warn('online', e); return; }
+  Online.onAuth(async (user, profile) => {
+    me = user ? {uid: user.uid, navn: (profile && profile.navn) || Online.shortName(user.navn || user.email)} : null;
+    myCloudDay = null;
+    renderWho();
+    if(me){
+      // Opgaver løst uden login følger med til den første, der logger ind på telefonen
+      const anon = LS.get(KEY_GAMES(null), []);
+      myGames = mergeGames(LS.get(KEY_GAMES(me.uid), []), anon);
+      LS.set(KEY_GAMES(me.uid), myGames); if(anon.length) LS.del(KEY_GAMES(null));
+      Online.sudokuSync(myGames).then(m => { myGames = m; LS.set(KEY_GAMES(me.uid), m); renderStats(); }).catch(e => console.warn('sudoku-synk', e));
+      Online.sudokuMine(today()).then(r => { if(r){ myCloudDay = r; if(!game) renderHome(); } }).catch(() => {});
+      submitPending();
+    }else loadMyGames();
+    watchDay();
+    if(game) render(); else renderHome();
+  });
+}
+
+/* ---------- Offline ---------- */
+if('serviceWorker' in navigator){
+  addEventListener('load', () => {
+    const first = !navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      if(!first) return;
+      const w = reg.installing || reg.waiting; if(!w) return;
+      w.addEventListener('statechange', () => { if(w.state === 'activated') toast('Sudokuen er gemt på telefonen og kan spilles uden net'); });
+    }).catch(() => {});
+  });
+}
+
+/* ---------- Start ---------- */
+buildBoard();
+cleanOld();
+loadMyGames();
+renderWho();
+renderHome();
+startOnline();
+</script>
+</body>
+</html>

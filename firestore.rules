@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // Golf-scorekortene ligger i "spil" (ét dokument pr. spilkode), terningspillene i
-// "terningspil" og spillerprofilerne i "brugere". Alt kræver et login (anonymt for golf,
+// "terningspil", dagens sudoku-resultater i "sudokuResultater" og spillerprofilerne i "brugere". Alt kræver et login (anonymt for golf,
 // Google eller e-mail for terningspillene – slås til under Authentication → Sign-in method).
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -69,6 +69,24 @@ service cloud.firestore {
       );
 
       allow delete: if false;
+    }
+
+    // Dagens sudoku: ét resultat pr. spiller pr. dag (dokument-id = dato_uid). Kan kun oprettes,
+    // aldrig rettes eller slettes. Samlet tid = tid + 30 sek. pr. fejl + 60 sek. pr. hint.
+    match /sudokuResultater/{id} {
+      function d(){ return request.resource.data; }
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && d().uid == request.auth.uid
+        && d().dato is string && d().dato.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && id == d().dato + '_' + request.auth.uid
+        && d().niveau in ['let', 'mellem', 'svaer', 'ekspert']
+        && d().navn is string && d().navn.size() >= 1 && d().navn.size() <= 20
+        && d().tid is int && d().tid >= 20 && d().tid < 86400
+        && d().fejl is int && d().fejl >= 0 && d().fejl <= 1000
+        && d().hints is int && d().hints >= 0 && d().hints <= 81
+        && d().total == d().tid + d().fejl * 30 + d().hints * 60;
+      allow update, delete: if false;
     }
 
     match /{document=**} {
