@@ -64,7 +64,7 @@ header.top .wrap{padding-bottom:0;display:flex;align-items:flex-start;justify-co
 h1{margin:0;font-size:1.45rem;letter-spacing:.2px}
 h1 .em{opacity:.85;font-weight:400}
 .sub{margin:4px 0 0;opacity:.8;font-size:.85rem}
-header.top .btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff;flex:0 0 auto;text-decoration:none}
+header.top .btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff;flex:0 0 auto;text-decoration:none;white-space:nowrap}
 header.top .who{font-size:.8rem;opacity:.85;text-align:right;max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
@@ -145,7 +145,20 @@ details summary{cursor:pointer;font-weight:600}
 @keyframes flash{0%{background:var(--danger-bg)}50%{background:var(--danger)}100%{background:var(--danger-bg)}}
 .notes{position:absolute;inset:1px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);font-size:clamp(.5rem,2.3vw,.72rem);font-weight:600;color:var(--muted);line-height:1}
 .notes i{font-style:normal;display:flex;align-items:center;justify-content:center}
-.notes i.hl{color:var(--green);font-weight:800}
+.notes i.hl{background:var(--sel);color:var(--ink);font-weight:800;border-radius:4px}
+.cell.harea:not(.sel){background:var(--gold-bg)}
+.cell.hmark{box-shadow:inset 0 0 0 2px var(--gold)}
+.cell.hfocus{box-shadow:inset 0 0 0 3px var(--gold);z-index:1}
+.hintbox{width:min(100%,480px);margin:10px auto 0;padding:10px 12px;border:1px solid var(--gold-line);background:var(--gold-bg);border-radius:12px}
+.hintbox .hh{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.hintbox .hs{font-size:.78rem;color:var(--muted);flex:1}
+.hintbox .x{border:0;background:transparent;color:var(--muted);font-size:1rem;cursor:pointer;padding:2px 6px}
+.hintbox .ht{font-size:.92rem;margin-bottom:8px}
+.hintbox .dots{display:inline-flex;gap:4px;margin-left:4px;vertical-align:middle}
+.hintbox .dots i{width:7px;height:7px;border-radius:50%;background:var(--gold-line)}
+.hintbox .dots i.on{background:var(--gold)}
+.pad button.on{background:var(--green);color:var(--on-accent);border-color:var(--green)}
+.pad button.on small{color:var(--on-accent)}
 .boardwrap.paused .cell{color:transparent!important;background:var(--cell)!important}
 .boardwrap.paused .notes{visibility:hidden}
 .pauseov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:color-mix(in srgb,var(--card) 92%,transparent);border-radius:8px;z-index:5;text-align:center;padding:20px}
@@ -237,7 +250,9 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Reglen.</strong> Udfyld pladen, så hver række, hver kolonne og hver af de ni 3×3-felter indeholder tallene 1–9 præcis én gang. Hver opgave har præcis én løsning.</li>
         <li><strong>Sværhedsgrader.</strong> <em>Let</em> og <em>Mellem</em> kan løses ved kun at se, hvor et tal skal stå. <em>Svær</em> kræver kandidat-teknikker som låste kandidater og par. <em>Ekspert</em> kræver tripler, X-wing eller mere.</li>
         <li><strong>Noter.</strong> Slå <em>Noter</em> til for at skrive små kandidattal i et felt. Når et tal sættes, fjernes det fra noterne i samme række, kolonne og felt.</li>
-        <li><strong>Dagens sudoku.</strong> Skifter sværhedsgrad efter ugedagen: mandag og torsdag let, tirsdag og fredag mellem, onsdag og lørdag svær, søndag ekspert. Forkerte tal vises med det samme og koster 30 sekunder; et hint udfylder et felt og koster 60 sekunder. Lavest samlet tid vinder dagen.</li>
+        <li><strong>Dagens sudoku.</strong> Skifter sværhedsgrad efter ugedagen: mandag og torsdag let, tirsdag og fredag mellem, onsdag og lørdag svær, søndag ekspert. Forkerte tal vises med det samme og koster 30 sekunder; et hint koster 60 sekunder. Lavest samlet tid vinder dagen.</li>
+        <li><strong>Hint i tre trin.</strong> Et hint finder det næste logiske træk og forklarer det: først hvor du skal kigge, så hvorfor tallet må stå dér (fx en skjult single, låste kandidater eller et par), og til sidst sættes tallet. Du kan lukke hintet efter første eller andet trin og selv finde tallet.</li>
+        <li><strong>Fremhævning.</strong> Tryk på et felt med et tal – eller på et tal i tastaturet, når intet tomt felt er valgt – så fremhæves alle de samme tal og hjælpetal på pladen.</li>
         <li><strong>Træning.</strong> Fejlmarkering og hint kan bruges frit, men så tæller opgaven som <em>løst med hjælp</em> og ikke i dine bedste tider.</li>
         <li><strong>Uden login.</strong> Alt kan spilles uden login og gemmes på telefonen. Log ind for at komme på highscorelisten og have din statistik med på andre telefoner.</li>
       </ul>
@@ -266,6 +281,11 @@ details summary{cursor:pointer;font-weight:600}
         <div class="muted" id="pauseNote">Uret står stille, og pladen er skjult.</div>
         <button class="btn primary big" id="btnResume" type="button" style="flex:0 0 auto">▶ Fortsæt</button>
       </div>
+    </div>
+    <div class="hintbox" id="hintBox" hidden>
+      <div class="hh"><b>💡 Hint</b><span class="hs"><span id="hintStep"></span><span class="dots" id="hintDots"></span></span><button class="x" id="btnHintClose" type="button" aria-label="Luk hint">✕</button></div>
+      <div class="ht" id="hintText"></div>
+      <button class="btn primary" id="btnHintNext" type="button">Vis hvorfor</button>
     </div>
     <div id="controls">
       <div class="tools">
@@ -323,7 +343,7 @@ let online = false;       // Firebase kørte op
 let myGames = [];         // løste opgaver (træning og dagens)
 let myCloudDay = null;    // dagens resultat i skyen (spillet på en anden telefon)
 let game = null;          // den åbne opgave
-let sel = -1, notesMode = false, paused = false, runSince = null;
+let sel = -1, notesMode = false, paused = false, runSince = null, hlDigit = 0;
 let hsTab = 'dag', viewDate = today(), dayRows = null, allRows = null, unsubDay = null;
 
 /* ---------- Egne resultater ---------- */
@@ -359,7 +379,7 @@ function run(){ if(!game || game.done || runSince) return; runSince = Date.now()
 function pause(){ if(!game) return; if(runSince){ game.elapsed += Date.now() - runSince; runSince = null; } paused = !game.done; save(); renderPause(); tick(); }
 
 function openGame(g, start){
-  game = g; sel = -1; notesMode = false; runSince = null; paused = !g.done;
+  game = g; sel = -1; hlDigit = 0; notesMode = false; runSince = null; paused = !g.done;
   $('home').hidden = true; $('play').hidden = false; scrollTo(0, 0);
   render();
   if(start) run();
@@ -395,7 +415,10 @@ function clearPeerNotes(i, d){
 }
 function canPlay(){ return game && !game.done && !paused; }
 function input(d){
-  if(!canPlay() || sel < 0 || locked(sel)) return;
+  if(!canPlay()) return;
+  // Uden et felt at skrive i fremhæver tallet sig selv og hjælpetallene på pladen
+  if(sel < 0 || locked(sel)){ hlDigit = hlDigit === d ? 0 : d; if(sel >= 0 && game.values[sel] !== d) sel = -1; render(); return; }
+  hlDigit = 0;
   const i = sel;
   if(notesMode){
     if(game.values[i] && !game.puzzle[i]) return;
@@ -413,6 +436,8 @@ function input(d){
       if(game.type === 'dag') toast(`Forkert – +${PEN.fejl} sekunder`);
       flashCell = i;
     }
+    const h = game.hintOpen;
+    if(h && h.step < 2 && h.data.cell === i && d === game.solution[i]){ game.hintOpen = null; toast('Godt set!'); }
   }
   after();
 }
@@ -433,30 +458,36 @@ function undo(){
   }
   toast('Der er ikke noget at fortryde');
 }
-function candidates(i){
-  let m = 0x3FE;
-  for(const j of S.PEERS[i]){ const v = game.values[j]; if(v && v === game.solution[j]) m &= ~(1 << v); }
-  let c = 0; for(let d = 1; d <= 9; d++) if(m & (1 << d)) c++;
-  return c;
-}
+// Hint i tre trin: 1) hvor skal man kigge, 2) hvorfor, 3) tallet sættes. Straffen tæller ved første trin.
 function hint(){
   if(!canPlay()) return;
-  if(game.type === 'dag' && !confirm(`Et hint udfylder et felt og koster ${PEN.hint} sekunder. Vil du bruge et?`)) return;
-  let i = -1;
-  if(sel >= 0 && game.values[sel] !== game.solution[sel]) i = sel;
-  if(i < 0){ const wrong = game.values.findIndex((v, k) => v && v !== game.solution[k]); if(wrong >= 0) i = wrong; }   // ret først en fejl
-  if(i < 0){
-    let best = 99;
-    for(let k = 0; k < 81; k++) if(!game.values[k]){ const c = candidates(k); if(c < best){ best = c; i = k; } }
-  }
-  if(i < 0) return;
-  game.values[i] = game.solution[i]; game.notes[i] = 0; clearPeerNotes(i, game.solution[i]);
-  game.hints += 1; game.hintCells.push(i);
+  if(game.hintOpen){ hintNext(); return; }
+  const data = S.explain(game.values, game.solution, sel);
+  if(!data) return;
+  if(game.type === 'dag' && !confirm(`Et hint koster ${PEN.hint} sekunder. Du får det forklaret i tre trin, og det sidste trin sætter tallet. Vil du bruge et?`)) return;
+  game.hints += 1;
   if(game.type !== 'dag') game.hjaelp = true;
-  sel = i;
-  if(game.type === 'dag') toast(`Hint – +${PEN.hint} sekunder`);
-  after();
+  else toast(`Hint – +${PEN.hint} sekunder`);
+  game.hintOpen = {data, step: 0};
+  hlDigit = 0;
+  save(); render();
 }
+function hintNext(){
+  const h = game.hintOpen; if(!h || !canPlay()) return;
+  if(h.step >= 2){ closeHint(); return; }
+  h.step += 1;
+  if(h.step === 2){
+    const i = h.data.cell, d = h.data.digit;
+    if(game.values[i] !== d){
+      game.values[i] = d; game.notes[i] = 0; clearPeerNotes(i, d);
+      if(!game.hintCells.includes(i)) game.hintCells.push(i);
+    }
+    sel = i;
+    after(); return;
+  }
+  save(); render();
+}
+function closeHint(){ if(!game) return; game.hintOpen = null; save(); render(); }
 function after(){
   const full = game.values.every(Boolean);
   const solved = full && game.values.every((v, i) => v === game.solution[i]);
@@ -515,7 +546,7 @@ function buildBoard(){
     const c = document.createElement('button');
     c.type = 'button'; c.className = `cell r${S.ROW(i)} c${S.COL(i)}`; c.dataset.i = i;
     c.setAttribute('role', 'gridcell');
-    c.addEventListener('click', () => { if(!canPlay()) return; sel = i; render(); });
+    c.addEventListener('click', () => { if(!canPlay()) return; sel = i; hlDigit = 0; render(); });
     b.appendChild(c);
   }
   const pad = $('pad'); pad.innerHTML = '';
@@ -529,7 +560,9 @@ function buildBoard(){
 function render(){
   if(!game) return;
   const g = game, cells = $('board').children;
-  const sv = sel >= 0 ? g.values[sel] : 0;
+  const sv = (sel >= 0 && g.values[sel]) || hlDigit;
+  const h = !g.done && g.hintOpen ? g.hintOpen.data.steps[g.hintOpen.step] : null;
+  const hArea = new Set(h ? h.area : []), hFocus = new Set(h ? h.focus : []), hMark = new Set(h && h.marks ? h.marks : []);
   const showWrong = marking();
   for(let i = 0; i < 81; i++){
     const c = cells[i], v = g.values[i];
@@ -539,11 +572,14 @@ function render(){
     if(i === sel) cls.push('sel'); else if(sv && v === sv) cls.push('same'); else if(peer) cls.push('peer');
     if(showWrong && isWrong(i)) cls.push('wrong');
     if(i === flashCell) cls.push('flash');
+    if(hArea.has(i)) cls.push('harea');
+    if(hMark.has(i)) cls.push('hmark');
+    if(hFocus.has(i)) cls.push('hfocus');
     c.className = cls.join(' ');
     if(v) c.textContent = v;
     else if(g.notes[i]){
       let h = '<span class="notes">';
-      for(let d = 1; d <= 9; d++) h += `<i class="${sv === d ? 'hl' : ''}">${g.notes[i] & (1 << d) ? d : ''}</i>`;
+      for(let d = 1; d <= 9; d++){ const on = g.notes[i] & (1 << d); h += `<i class="${on && sv === d ? 'hl' : ''}">${on ? d : ''}</i>`; }
       c.innerHTML = h + '</span>';
     }else c.textContent = '';
     c.setAttribute('aria-label', `Række ${S.ROW(i) + 1}, kolonne ${S.COL(i) + 1}${v ? ': ' + v : ''}`);
@@ -555,7 +591,8 @@ function render(){
   [...$('pad').children].forEach(p => {
     const d = +p.dataset.d, left = 9 - placed[d];
     p.querySelector('small').textContent = left > 0 ? left : '';
-    p.disabled = left <= 0 && !notesMode;
+    p.disabled = left <= 0 && !notesMode && hlDigit !== d;
+    p.classList.toggle('on', hlDigit === d);
   });
   $('pad').classList.toggle('notemode', notesMode);
   $('btnNotes').setAttribute('aria-pressed', String(notesMode));
@@ -570,18 +607,30 @@ function render(){
     chips.push(`<span>${g.hjaelp || g.mark ? 'Med hjælp' : 'Uden hjælp'}</span>`);
   }
   $('pChips').innerHTML = chips.join('');
-  $('hintCost').textContent = g.type === 'dag' ? `+${PEN.hint} sek.` : '';
+  $('hintCost').textContent = g.hintOpen ? 'næste trin' : g.type === 'dag' ? `+${PEN.hint} sek.` : '';
   $('markRow').hidden = g.type === 'dag';
   $('chkMark').checked = !!g.mark;
   $('controls').hidden = g.done;
   $('btnAgain').hidden = !(g.done && g.type !== 'dag');
   $('btnPause').hidden = g.done;
+  renderHint();
   renderDone();
   renderPause();
   tick();
 }
+function renderHint(){
+  const h = game && !game.done ? game.hintOpen : null;
+  $('hintBox').hidden = !h || paused;
+  if(!h) return;
+  const st = h.data.steps[h.step];
+  $('hintStep').textContent = `trin ${h.step + 1} af 3`;
+  $('hintDots').innerHTML = [0, 1, 2].map(k => `<i class="${k <= h.step ? 'on' : ''}"></i>`).join('');
+  $('hintText').textContent = st.text;
+  $('btnHintNext').textContent = h.step === 0 ? 'Vis hvorfor' : h.step === 1 ? 'Sæt tallet' : 'Luk';
+}
 function renderPause(){
   if(!game) return;
+  $('hintBox').hidden = !game.hintOpen || paused || game.done;
   $('boardwrap').classList.toggle('paused', paused && !game.done);
   $('pauseov').hidden = !(paused && !game.done);
   $('pauseNote').textContent = game.elapsed > 0 ? 'Uret står stille, og pladen er skjult.' : 'Uret starter, når du trykker Fortsæt.';
@@ -727,6 +776,8 @@ $('btnUndo').addEventListener('click', undo);
 $('btnErase').addEventListener('click', erase);
 $('btnNotes').addEventListener('click', () => { notesMode = !notesMode; render(); });
 $('btnHint').addEventListener('click', hint);
+$('btnHintNext').addEventListener('click', hintNext);
+$('btnHintClose').addEventListener('click', closeHint);
 $('chkMark').addEventListener('change', e => {
   if(!game || game.type === 'dag') return;
   game.mark = e.target.checked; if(game.mark) game.hjaelp = true;

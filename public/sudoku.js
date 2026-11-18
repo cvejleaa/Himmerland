@@ -178,6 +178,176 @@
     throw new Error('Kunne ikke lave en opgave på niveau ' + level);
   }
 
+  /* ---------- forklarende hint i tre trin ----------
+     Finder det næste logiske træk ud fra de rigtige tal på pladen og forklarer det:
+     trin 1 = hvor man skal kigge, trin 2 = hvorfor, trin 3 = tallet sættes.
+     Hvert trin har area (felter der fremhæves som område) og focus (felter der peges på). */
+  const BOX_NAMES = ['øverst til venstre', 'øverst i midten', 'øverst til højre', 'i midten til venstre', 'i midten', 'i midten til højre', 'nederst til venstre', 'nederst i midten', 'nederst til højre'];
+  const unitName = u => u < 9 ? `række ${u + 1}` : u < 18 ? `kolonne ${u - 8}` : `boksen ${BOX_NAMES[u - 18]}`;
+  const cellName = i => `feltet i række ${ROW(i) + 1}, kolonne ${COL(i) + 1}`;
+  const andList = a => a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' og ' + a[a.length - 1];
+  const digitList = m => andList(digitsOf(m).map(String));
+  const orList = m => { const a = digitsOf(m).map(String); return a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' eller ' + a[a.length - 1]; };
+  const TECH = {locked: 'låste kandidater', nakedPair: 'et nøgent par', hiddenPair: 'et skjult par', nakedTriple: 'en nøgen trippel', xwing: 'en X-wing'};
+
+  function candidatesOf(g){
+    const cand = new Array(81).fill(0);
+    for(let i = 0; i < 81; i++) if(!g[i]){ let m = ALL; for(const p of PEERS[i]) if(g[p]) m &= ~bit(g[p]); cand[i] = m; }
+    return cand;
+  }
+  // Alle singler: skjult single i en boks/række/kolonne, eller nøgen single i et felt
+  function findSingles(g, cand){
+    const out = [];
+    for(const u of [18, 19, 20, 21, 22, 23, 24, 25, 26, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]){
+      for(let d = 1; d <= 9; d++){
+        if(UNITS[u].some(i => g[i] === d)) continue;
+        const cells = UNITS[u].filter(i => !g[i] && (cand[i] & bit(d)));
+        if(cells.length === 1) out.push({type: 'skjult', unit: u, d, i: cells[0]});
+      }
+    }
+    for(let i = 0; i < 81; i++) if(!g[i] && popcount(cand[i]) === 1) out.push({type: 'nøgen', i, d: digitsOf(cand[i])[0]});
+    return out;
+  }
+  // Fjernelser med kandidat-teknikker (simpleste først). Hver: {tech, area, cells, elim: [[felt, tal]], text}
+  function findEliminations(g, cand){
+    const out = [];
+    const has = (i, d) => !g[i] && (cand[i] & bit(d));
+    const add = (tech, area, cells, elim, text) => { if(elim.length) out.push({tech, area, cells, elim, text}); };
+    // låste kandidater: boks → linje
+    for(let b = 0; b < 9; b++){ const box = UNITS[18 + b];
+      for(let d = 1; d <= 9; d++){ const cells = box.filter(i => has(i, d)); if(cells.length < 2) continue;
+        for(const [same, lineOf, lu] of [[new Set(cells.map(ROW)), ROW, 0], [new Set(cells.map(COL)), COL, 9]]){
+          if(same.size !== 1) continue; const line = lu + [...same][0];
+          const elim = UNITS[line].filter(i => BOX(i) !== b && has(i, d)).map(i => [i, d]);
+          add('locked', box, cells, elim, `I ${unitName(18 + b)} kan ${d} kun stå i ${unitName(line)}. Derfor kan ${d} ikke stå andre steder i ${unitName(line)}.`);
+        } } }
+    // låste kandidater: linje → boks
+    for(let li = 0; li < 18; li++){ const line = UNITS[li];
+      for(let d = 1; d <= 9; d++){ const cells = line.filter(i => has(i, d)); if(cells.length < 2) continue;
+        const bs = new Set(cells.map(BOX)); if(bs.size !== 1) continue; const b = 18 + [...bs][0];
+        const elim = UNITS[b].filter(i => !line.includes(i) && has(i, d)).map(i => [i, d]);
+        add('locked', line, cells, elim, `I ${unitName(li)} kan ${d} kun stå inde i ${unitName(b)}. Derfor kan ${d} ikke stå andre steder i den boks.`);
+      } }
+    // nøgent par
+    for(let u = 0; u < 27; u++){ const cells = UNITS[u].filter(i => !g[i] && popcount(cand[i]) === 2);
+      for(let a = 0; a < cells.length; a++) for(let b = a + 1; b < cells.length; b++){ if(cand[cells[a]] !== cand[cells[b]]) continue; const m = cand[cells[a]];
+        const elim = []; UNITS[u].forEach(i => { if(i !== cells[a] && i !== cells[b] && !g[i]) digitsOf(cand[i] & m).forEach(d => elim.push([i, d])); });
+        add('nakedPair', UNITS[u], [cells[a], cells[b]], elim, `To felter i ${unitName(u)} kan begge kun være ${orList(m)}. Så må de to tal stå netop dér, og de kan ikke stå andre steder i ${unitName(u)}.`);
+      } }
+    // skjult par
+    for(let u = 0; u < 27; u++){ const pos = {};
+      for(let d = 1; d <= 9; d++){ if(UNITS[u].some(i => g[i] === d)) continue; const cs = UNITS[u].filter(i => has(i, d)); if(cs.length === 2) pos[d] = cs; }
+      const ds = Object.keys(pos).map(Number);
+      for(let a = 0; a < ds.length; a++) for(let b = a + 1; b < ds.length; b++){ const p = pos[ds[a]], q = pos[ds[b]]; if(p[0] !== q[0] || p[1] !== q[1]) continue;
+        const m = bit(ds[a]) | bit(ds[b]); const elim = []; p.forEach(i => digitsOf(cand[i] & ~m).forEach(d => elim.push([i, d])));
+        add('hiddenPair', UNITS[u], p, elim, `I ${unitName(u)} kan ${ds[a]} og ${ds[b]} kun stå i de samme to felter. Så må de to felter være ${ds[a]} og ${ds[b]}, og alle andre kandidater i dem kan streges.`);
+      } }
+    // nøgen trippel
+    for(let u = 0; u < 27; u++){ const cells = UNITS[u].filter(i => !g[i] && popcount(cand[i]) >= 2 && popcount(cand[i]) <= 3);
+      for(let a = 0; a < cells.length; a++) for(let b = a + 1; b < cells.length; b++) for(let c = b + 1; c < cells.length; c++){
+        const m = cand[cells[a]] | cand[cells[b]] | cand[cells[c]]; if(popcount(m) !== 3) continue; const trio = [cells[a], cells[b], cells[c]];
+        const elim = []; UNITS[u].forEach(i => { if(!trio.includes(i) && !g[i]) digitsOf(cand[i] & m).forEach(d => elim.push([i, d])); });
+        add('nakedTriple', UNITS[u], trio, elim, `Tre felter i ${unitName(u)} kan tilsammen kun være ${digitList(m)}. De tre tal skal altså stå i de tre felter og kan ikke stå andre steder i ${unitName(u)}.`);
+      } }
+    // X-wing
+    for(const dir of [0, 9]){
+      for(let d = 1; d <= 9; d++){ const lines = [];
+        for(let k = 0; k < 9; k++){ const cs = UNITS[dir + k].filter(i => has(i, d)); if(cs.length === 2) lines.push({k, cs, at: cs.map(dir === 0 ? COL : ROW)}); }
+        for(let a = 0; a < lines.length; a++) for(let b = a + 1; b < lines.length; b++){ const A = lines[a], B = lines[b]; if(A.at[0] !== B.at[0] || A.at[1] !== B.at[1]) continue;
+          const other = dir === 0 ? 9 : 0, elim = [];
+          A.at.forEach(x => UNITS[other + x].forEach(i => { const ln = dir === 0 ? ROW(i) : COL(i); if(ln !== A.k && ln !== B.k && has(i, d)) elim.push([i, d]); }));
+          add('xwing', UNITS[dir + A.k].concat(UNITS[dir + B.k]), A.cs.concat(B.cs), elim,
+            `I ${unitName(dir + A.k)} og ${unitName(dir + B.k)} kan ${d} kun stå i ${unitName(other + A.at[0])} og ${unitName(other + A.at[1])}. Uanset hvordan de placeres, optager de begge ${dir === 0 ? 'kolonner' : 'rækker'}, så ${d} kan ikke stå andre steder i dem.`);
+        } } }
+    return out;
+  }
+  // Hvorfor kan d kun stå i felt i i enheden u? Peger på de tal d, der spærrer de andre tomme felter
+  function blockersFor(g, u, d, i){
+    const others = UNITS[u].filter(j => j !== i && !g[j]);
+    const blockers = [], names = [];
+    others.forEach(j => {
+      if(blockers.some(p => PEERS[j].includes(p))) return;
+      const p = PEERS[j].find(k => g[k] === d); if(p === undefined) return;
+      blockers.push(p);
+      const lu = ROW(p) === ROW(j) && u >= 9 ? ROW(p) : COL(p) === COL(j) && (u < 9 || u >= 18) ? 9 + COL(p) : 18 + BOX(p);
+      const nm = unitName(lu); if(!names.includes(nm)) names.push(nm);
+    });
+    return {blockers, names, filled: UNITS[u].filter(j => j !== i && g[j]).length};
+  }
+  function singleWhy(g, s){
+    if(s.type === 'nøgen'){
+      const r = UNITS[ROW(s.i)].map(j => g[j]).filter(Boolean), c = UNITS[9 + COL(s.i)].map(j => g[j]).filter(v => v && !r.includes(v)),
+        b = UNITS[18 + BOX(s.i)].map(j => g[j]).filter(v => v && !r.includes(v) && !c.includes(v));
+      const parts = [];
+      if(r.length) parts.push(`rækken har ${andList(r.sort().map(String))}`);
+      if(c.length) parts.push(`kolonnen har ${parts.length ? 'også ' : ''}${andList(c.sort().map(String))}`);
+      if(b.length) parts.push(`boksen har ${parts.length ? 'også ' : ''}${andList(b.sort().map(String))}`);
+      return {text: `${parts.length ? andList(parts).replace(/^./, x => x.toUpperCase()) + '. ' : ''}Det eneste tal fra 1 til 9, der mangler, er ${s.d}.`, focus: [s.i], marks: []};
+    }
+    const bl = blockersFor(g, s.unit, s.d, s.i);
+    const txt = bl.names.length
+      ? `${s.d} står allerede i ${andList(bl.names)} (markeret), så ${s.d} kan ikke stå i de andre tomme felter. ${bl.filled ? 'Resten af felterne er udfyldt. ' : ''}Der er kun ét sted tilbage til ${s.d} i ${unitName(s.unit)}.`
+      : `Der er kun ét ledigt felt tilbage til ${s.d} i ${unitName(s.unit)}.`;
+    return {text: txt, focus: [s.i], marks: bl.blockers};
+  }
+  function explain(values, solution, prefer){
+    const g = values.map((v, i) => v === solution[i] ? v : 0);
+    const pick = list => list.find(s => s.i === prefer) || list[0];
+    // 1) en fejl på pladen rettes først
+    const wrongs = []; values.forEach((v, i) => { if(v && v !== solution[i]) wrongs.push(i); });
+    if(wrongs.length){
+      const w = wrongs.includes(prefer) ? prefer : wrongs[0];
+      return {kind: 'fejl', cell: w, digit: solution[w], steps: [
+        {text: `Der er et forkert tal på pladen. Kig i ${unitName(ROW(w))}.`, area: UNITS[ROW(w)], focus: []},
+        {text: `Tallet ${values[w]} i ${cellName(w)} er forkert – det passer ikke med løsningen. Tjek, om det står to gange, eller om du har taget fejl af et andet felt.`, area: UNITS[ROW(w)], focus: [w]},
+        {text: `Der skal stå ${solution[w]} i ${cellName(w)}. Fejlen er rettet.`, area: [], focus: [w]},
+      ]};
+    }
+    const cand = candidatesOf(g);
+    // 2) en single direkte ud fra tallene på pladen
+    const singles = findSingles(g, cand);
+    if(singles.length){
+      const s = pick(singles), why = singleWhy(g, s);
+      const look = s.type === 'nøgen'
+        ? {text: `Kig på ${cellName(s.i)}. Hvilke tal mangler i dens række, kolonne og boks?`, area: PEERS[s.i].concat([s.i]), focus: [s.i]}
+        : {text: `Kig på ${unitName(s.unit)}. Hvor kan ${s.d} stå?`, area: UNITS[s.unit], focus: []};
+      return {kind: s.type === 'nøgen' ? 'nøgen single' : 'skjult single', cell: s.i, digit: s.d, steps: [
+        look,
+        {text: why.text, area: look.area, focus: why.focus, marks: why.marks},
+        {text: `Derfor skal der stå ${s.d} i ${cellName(s.i)}.`, area: [], focus: [s.i]},
+      ]};
+    }
+    // 3) kandidat-teknikker, indtil en single dukker op
+    const work = cand.slice(), used = [];
+    for(let round = 0; round < 40; round++){
+      const elims = findEliminations(g, work); if(!elims.length) break;
+      let chosen = null, single = null;
+      for(const e of elims){
+        const trial = work.slice(); e.elim.forEach(([i, d]) => { trial[i] &= ~bit(d); });
+        const ss = findSingles(g, trial); if(ss.length){ chosen = e; single = pick(ss); break; }
+      }
+      if(!chosen){ elims[0].elim.forEach(([i, d]) => { work[i] &= ~bit(d); }); used.push(elims[0]); continue; }
+      chosen.elim.forEach(([i, d]) => { work[i] &= ~bit(d); });
+      const before = used.length ? ` (Først skal der streges ${used.length} kandidat${used.length > 1 ? 'er' : ''} med ${andList([...new Set(used.map(u => TECH[u.tech]))])} – derefter:)` : '';
+      const result = single.type === 'nøgen' ? `Så kan ${cellName(single.i)} nu kun være ${single.d}.` : `Så kan ${single.d} nu kun stå ét sted i ${unitName(single.unit)}.`;
+      return {kind: TECH[chosen.tech], cell: single.i, digit: single.d, steps: [
+        {text: `Her er der ingen tal, der kan sættes direkte – du skal bruge kandidater (små hjælpetal). Kig efter ${TECH[chosen.tech]} i det markerede område.${before}`, area: chosen.area, focus: []},
+        {text: `${chosen.text} ${result}`, area: chosen.area, focus: chosen.cells.concat([single.i])},
+        {text: `Derfor skal der stå ${single.d} i ${cellName(single.i)}.`, area: [], focus: [single.i]},
+      ]};
+    }
+    // 4) kræver en teknik, hintet ikke kan forklare: peg på feltet med færrest kandidater
+    let best = -1, bc = 10;
+    for(let i = 0; i < 81; i++) if(!g[i] && popcount(work[i]) < bc){ bc = popcount(work[i]); best = i; }
+    if(best < 0) return null;
+    return {kind: 'avanceret', cell: best, digit: solution[best], steps: [
+      {text: `Her skal der en avanceret teknik til (fx kæder), som hintet ikke kan forklare kort. Kig på felterne med færrest kandidater.`, area: UNITS[18 + BOX(best)], focus: []},
+      {text: `${cap1(cellName(best))} kan kun være ${orList(work[best])}. Prøv i tankerne, hvad der sker med hvert af tallene – det ene fører til en modstrid.`, area: UNITS[18 + BOX(best)], focus: [best]},
+      {text: `Der skal stå ${solution[best]} i ${cellName(best)}.`, area: [], focus: [best]},
+    ]};
+  }
+  const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
+
   /* ---------- dagens opgave ---------- */
   function todayKey(date){
     // Dansk dato som ÅÅÅÅ-MM-DD
@@ -187,6 +357,6 @@
   function dailyLevel(key){ const [y, m, d] = key.split('-').map(Number); return DAILY_LEVEL[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]; }
   function daily(key){ key = key || todayKey(); const level = dailyLevel(key); return Object.assign(generate(level, 'himmerland-sudoku-' + key), {dato: key}); }
 
-  const api = {LEVELS, LEVEL_NAMES, DAILY_LEVEL, PEERS, ROW, COL, BOX, rng, countSolutions, solve, grade, levelOf, generate, todayKey, dailyLevel, daily};
+  const api = {LEVELS, LEVEL_NAMES, DAILY_LEVEL, PEERS, ROW, COL, BOX, rng, countSolutions, solve, grade, levelOf, generate, todayKey, dailyLevel, daily, explain};
   if(typeof module !== 'undefined' && module.exports) module.exports = api; else root.Sudoku = api;
 })(typeof self !== 'undefined' ? self : this);
