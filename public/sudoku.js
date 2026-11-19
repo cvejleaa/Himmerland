@@ -364,6 +364,36 @@
   function dailyLevel(key){ const [y, m, d] = key.split('-').map(Number); return DAILY_LEVEL[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]; }
   function daily(key){ key = key || todayKey(); const level = dailyLevel(key); return Object.assign(generate(level, 'himmerland-sudoku-' + key), {dato: key}); }
 
-  const api = {LEVELS, LEVEL_NAMES, DAILY_LEVEL, PEERS, ROW, COL, BOX, rng, countSolutions, solve, grade, levelOf, generate, todayKey, dailyLevel, daily, explain};
+  /* ---------- banekoder ----------
+     Træningsbaner: niveaubogstav + 5 tegn, fx S-K7PM2 (L=let, M=mellem, S=svær, E=ekspert).
+     Koden er frøet til generatoren, så samme kode altid giver samme bane.
+     Dagens sudoku: D-ÅÅMMDD, fx D-261119. */
+  const CODE_ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const LEVEL_LETTER = {let: 'L', mellem: 'M', svaer: 'S', ekspert: 'E'};
+  const LETTER_LEVEL = {L: 'let', M: 'mellem', S: 'svaer', E: 'ekspert'};
+  const CODE_RE = /^[LMSE]-[A-HJ-NP-Z2-9]{5}$/, DAY_RE = /^D-\d{6}$/;   // uden 0, 1, I og O, der let forveksles
+  function makeCode(level, rand){
+    rand = rand || Math.random;
+    let s = LEVEL_LETTER[level] + '-';
+    for(let k = 0; k < 5; k++) s += CODE_ALPHA[Math.floor(rand() * CODE_ALPHA.length)];
+    return s;
+  }
+  // Tåler små bogstaver, mellemrum og manglende bindestreg. Ugyldig kode giver null
+  function normalizeCode(input){
+    let s = String(input || '').toUpperCase().replace(/[\s_.]/g, '');
+    if(/^[LMSED][A-Z0-9]+$/.test(s)) s = s[0] + '-' + s.slice(1);
+    return CODE_RE.test(s) || DAY_RE.test(s) ? s : null;
+  }
+  const isDayCode = c => DAY_RE.test(c);
+  const dayCode = key => 'D-' + key.slice(2).replace(/-/g, '');
+  const dateOfCode = c => '20' + c.slice(2, 4) + '-' + c.slice(4, 6) + '-' + c.slice(6, 8);
+  const levelOfCode = c => isDayCode(c) ? dailyLevel(dateOfCode(c)) : LETTER_LEVEL[c[0]];
+  function fromCode(code){
+    if(isDayCode(code)) return Object.assign(daily(dateOfCode(code)), {kode: code});
+    if(!CODE_RE.test(code)) throw new Error('Ugyldig kode: ' + code);
+    return Object.assign(generate(LETTER_LEVEL[code[0]], 'himmerland-bane-' + code), {kode: code});
+  }
+
+  const api = {LEVELS, LEVEL_NAMES, DAILY_LEVEL, PEERS, ROW, COL, BOX, rng, countSolutions, solve, grade, levelOf, generate, todayKey, dailyLevel, daily, explain, makeCode, normalizeCode, isDayCode, dayCode, dateOfCode, levelOfCode, fromCode};
   if(typeof module !== 'undefined' && module.exports) module.exports = api; else root.Sudoku = api;
 })(typeof self !== 'undefined' ? self : this);

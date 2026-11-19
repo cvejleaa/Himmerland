@@ -105,6 +105,17 @@ tr.me td{background:var(--green-3);font-weight:700}
 .levels{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .levels .btn{flex-direction:column;gap:0;padding:10px 4px;min-height:64px}
 .levels .btn small{font-weight:500;font-size:.72rem;color:var(--muted)}
+.codechip{display:inline-flex;align-items:center;gap:4px;font:700 .78rem ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--green);cursor:pointer}
+.codechip:hover{border-color:var(--green-2)}
+.code{font:700 .95rem ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;color:var(--green)}
+.blist{display:grid;gap:6px}
+.brow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;text-align:left;color:var(--ink);width:100%;font:inherit}
+.brow:hover{border-color:var(--green-2)}
+.brow .s{font-size:.78rem;color:var(--muted)}
+.brow .t{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.brow .t small{display:block;font-weight:500;font-size:.72rem;color:var(--muted)}
+input.codein{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:700 1rem ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}
+.err{color:var(--danger);font-size:.85rem;min-height:1.2em;margin:6px 0 0}
 .cont{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--green);background:var(--green-3);border-radius:12px;margin-top:10px}
 .daynav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
 .daynav button{width:40px;height:36px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-size:1rem}
@@ -244,11 +255,34 @@ details summary{cursor:pointer;font-weight:600}
   </section>
 
   <section class="card">
-    <h2>Træning <span class="hint">tæller kun i din egen statistik</span></h2>
+    <h2>Træning <span class="hint">ny bane med kode hver gang</span></h2>
     <div class="levels" id="levels"></div>
     <div class="cont" id="contTrain" hidden>
       <div><b id="contTitle"></b><div class="muted" id="contSub"></div></div>
       <button class="btn primary" id="btnCont" type="button">Fortsæt</button>
+    </div>
+  </section>
+
+  <section class="card" id="codeCard">
+    <h2>Baner <span class="hint">søg i dine – eller spil en kode</span></h2>
+    <form class="row" id="codeForm" autocomplete="off">
+      <input class="codein" type="text" id="codeInput" placeholder="Kode, fx S-K7PM2" maxlength="10" spellcheck="false" aria-label="Banekode">
+      <button class="btn primary" type="submit">Spil</button>
+    </form>
+    <p class="err" id="codeErr"></p>
+    <div class="blist" id="baneList"></div>
+  </section>
+
+  <section class="card" id="baneCard" hidden>
+    <h2 id="baneTitle"></h2>
+    <p class="help" id="baneHelp" style="margin:0 0 10px"></p>
+    <div id="baneMine"></div>
+    <h2 style="margin-top:12px;font-size:.95rem">Rangliste <span class="hint" id="baneListHint"></span></h2>
+    <div id="baneBoard"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn primary" id="btnBanePlay" type="button">Spil banen</button>
+      <button class="btn" id="btnBaneShare" type="button">Del</button>
+      <button class="btn ghost" id="btnBaneClose" type="button">Luk</button>
     </div>
   </section>
 
@@ -270,6 +304,8 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Hint i tre trin.</strong> Et hint finder det næste logiske træk og forklarer det: først hvor du skal kigge, så hvorfor tallet må stå dér (fx en skjult single, låste kandidater eller et par), og til sidst sættes tallet. Du kan lukke hintet efter første eller andet trin og selv finde tallet.</li>
         <li><strong>Fejring.</strong> En færdig række, kolonne eller kasse glimter i guld – og når hele sudokuen er løst, kommer der fyrværkeri.</li>
         <li><strong>Fremhævning.</strong> Tryk på et felt med et tal – eller på et tal i tastaturet, når intet tomt felt er valgt – så fremhæves alle de samme tal og hjælpetal på pladen.</li>
+        <li><strong>Banekoder.</strong> Hver bane har en kode – fx <span class="code">S-K7PM2</span> (L/M/S/E for niveauet) og <span class="code">D-261119</span> for dagens sudoku. Samme kode giver altid samme bane. Skriv en kode under <em>Baner</em> for at spille den eller finde den i din historik, og tryk på koden over pladen for at dele den.</li>
+        <li><strong>Rangliste pr. bane.</strong> Første gang du løser en bane, mens du er logget ind, kommer du på banens rangliste – med samme straf som dagens sudoku (30 sek. pr. fejl, 60 sek. pr. hint). Spiller du den igen, er det et omspil, der kun tæller i din egen historik.</li>
         <li><strong>Træning.</strong> Fejlmarkering og hint kan bruges frit, men så tæller opgaven som <em>løst med hjælp</em> og ikke i dine bedste tider.</li>
         <li><strong>Uden login.</strong> Alt kan spilles uden login og gemmes på telefonen. Log ind for at komme på highscorelisten og have din statistik med på andre telefoner.</li>
       </ul>
@@ -284,6 +320,7 @@ details summary{cursor:pointer;font-weight:600}
     <div class="playhead">
       <div>
         <div class="ttl" id="pTitle"></div>
+        <div style="margin:2px 0 4px"><button class="codechip" id="pCode" type="button" title="Del banen"></button></div>
         <div class="chips" id="pChips"></div>
       </div>
       <div class="row">
@@ -365,6 +402,9 @@ let myCloudDay = null;    // dagens resultat i skyen (spillet på en anden telef
 let game = null;          // den åbne opgave
 let sel = -1, notesMode = false, paused = false, runSince = null, hlDigit = 0;
 let hsTab = 'dag', viewDate = today(), dayRows = null, allRows = null, unsubDay = null;
+let baneCode = null, baneRows = null, unsubBane = null;   // åben bane (panel eller spil) og dens rangliste
+const KEY_PENDING = 'sudoku-baner-afventer';                // baneresultater, der venter på login eller net
+const urlCode = (() => { try{ return S.normalizeCode(new URLSearchParams(location.search).get('bane')); }catch(e){ return null; } })();
 
 /* ---------- Egne resultater ---------- */
 function mergeGames(a, b){
@@ -383,6 +423,7 @@ function newGame(type, gen){
   return {
     id: (type === 'dag' ? 'dag-' + gen.dato : 't-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
     type, niveau: gen.level, dato: gen.dato || today(),
+    kode: gen.kode || (type === 'dag' ? S.dayCode(gen.dato) : null), liste: type === 'dag' ? 'dag' : null,
     puzzle: gen.puzzle, solution: gen.solution, values: gen.puzzle.slice(), notes: new Array(81).fill(0),
     elapsed: 0, fejl: 0, hints: 0, hintCells: [], mark: false, hjaelp: false, done: false,
     startet: Date.now(), slut: null, undo: [],
@@ -408,6 +449,7 @@ function goHome(){
   if(game && !game.done) pause();
   game = null; runSince = null;
   $('play').hidden = true; $('home').hidden = false; scrollTo(0, 0);
+  $('btnLogin').href = loginUrl();
   renderHome();
 }
 
@@ -419,11 +461,38 @@ function startDaily(){
   openGame(newGame('dag', S.daily(key)), true);
   save();
 }
-function startTraining(lvl){
+function dropTrainingOk(){
   const cur = LS.get(KEY_TRAIN, null);
-  if(cur && !cur.done && !confirm(`Du har en ${S.LEVEL_NAMES[cur.niveau].toLowerCase()} opgave i gang. Vil du droppe den og starte en ny?`)) return;
-  openGame(newGame('traening', S.generate(lvl)), true);
+  return !(cur && !cur.done) || confirm(`Du har en ${S.LEVEL_NAMES[cur.niveau].toLowerCase()} bane (${cur.kode || 'uden kode'}) i gang. Vil du droppe den og starte en ny?`);
+}
+function startTraining(lvl){
+  if(!dropTrainingOk()) return;
+  playCodeGen(S.fromCode(S.makeCode(lvl)));
+}
+const playedCode = kode => myGames.some(g => g.kode === kode);
+// Starter en bane ud fra koden. Er banen gemt i skyen, bruges den gemte plade (koden giver altid samme bane)
+async function startCode(kode){
+  if(kode === S.dayCode(today())){ startDaily(); return; }
+  if(!dropTrainingOk()) return;
+  let gen = null;
+  if(!S.isDayCode(kode) && me && online){
+    try{
+      const b = await Online.sudokuBane(kode);
+      if(b && b.puzzle){ const puzzle = b.puzzle.split('').map(Number); gen = {puzzle, solution: S.solve(puzzle), level: S.levelOfCode(kode), kode}; }
+    }catch(e){ console.warn('bane', e); }
+  }
+  if(!gen || !gen.solution) gen = S.fromCode(kode);
+  playCodeGen(gen);
+}
+function playCodeGen(gen){
+  const g = newGame('traening', gen);
+  // Første forsøg på en træningsbane kommer på banens rangliste; dagens baner spillet igen tæller kun i historikken
+  g.liste = !S.isDayCode(gen.kode) && !playedCode(gen.kode) ? 'bane' : null;
+  if(S.isDayCode(gen.kode)) g.dato = S.dateOfCode(gen.kode);
+  closeBane();
+  openGame(g, true);
   save();
+  if(me && online && !S.isDayCode(gen.kode)) Online.sudokuBaneSave(gen.kode, gen.level, gen.puzzle).catch(e => console.warn('gem bane', e));
 }
 
 /* ---------- Træk ---------- */
@@ -532,8 +601,31 @@ function finish(){
   game.total = total(game);
   if(game.type === 'dag') game.sendt = false;
   save();
-  addMyGame({id: game.id, type: game.type, niveau: game.niveau, dato: game.dato, tid: game.tid, fejl: game.fejl, hints: game.hints, total: game.total, hjaelp: game.hjaelp, slut: game.slut});
+  addMyGame({id: game.id, type: game.type, niveau: game.niveau, dato: game.dato, kode: game.kode, omspil: game.type !== 'dag' && game.liste !== 'bane', tid: game.tid, fejl: game.fejl, hints: game.hints, total: game.total, hjaelp: game.hjaelp, slut: game.slut});
   if(game.type === 'dag') submitDay(game);
+  if(game.liste === 'bane'){
+    const pend = LS.get(KEY_PENDING, []);
+    pend.push({id: game.id, kode: game.kode, niveau: game.niveau, puzzle: game.puzzle, tid: game.tid, fejl: game.fejl, hints: game.hints});
+    LS.set(KEY_PENDING, pend.slice(-50));
+    submitBanePending();
+  }
+}
+// Sender ventende baneresultater (kun første forsøg pr. bane tæller – findes der allerede et, springes det over)
+let submittingBane = false;
+async function submitBanePending(){
+  if(!me || !online || submittingBane) return;
+  submittingBane = true;
+  try{
+    for(const r of LS.get(KEY_PENDING, [])){
+      let ok;
+      if(r.puzzle) await Online.sudokuBaneSave(r.kode, r.niveau, r.puzzle).catch(() => {});
+      try{ ok = await Online.sudokuBaneSubmit(r); }
+      catch(e){ console.warn('baneresultat', e); if(r.tid < 20) ok = false; else continue; }
+      LS.set(KEY_PENDING, LS.get(KEY_PENDING, []).filter(x => x.id !== r.id));
+      if(game && game.id === r.id){ game.sendt = true; game.fandtes = !ok; save(); renderDone(); }
+      if(!ok && game && game.id === r.id) toast('Du har spillet banen før – kun første forsøg tæller på listen');
+    }
+  }finally{ submittingBane = false; }
 }
 async function submitDay(g){
   if(!me || !online || g.sendt) return;
@@ -706,6 +798,9 @@ function render(){
   });
   $('pad').classList.toggle('notemode', notesMode);
   $('btnNotes').setAttribute('aria-pressed', String(notesMode));
+ $('pCode').hidden = !g.kode;
+  $('pCode').textContent = g.kode ? g.kode + ' ⤴' : '';
+  if(g.kode && !S.isDayCode(g.kode) && baneCode !== g.kode) watchBane(g.kode);
   $('pTitle').innerHTML = (g.type === 'dag' ? `Dagens sudoku · ${esc(fmtDate(g.dato, {day: 'numeric', month: 'short'}))} ` : 'Træning ') + badge(g.niveau);
   const chips = [];
   if(g.type === 'dag'){
@@ -755,19 +850,91 @@ function renderDone(){
   box.hidden = false;
   let rank = '';
   if(g.type === 'dag'){
-    if(!me) rank = `<div class="rank"><a href="spil.html?next=sudoku.html">Log ind</a> for at komme på dagens liste</div>`;
+    if(!me) rank = `<div class="rank"><a href="${loginUrl()}">Log ind</a> for at komme på dagens liste</div>`;
     else if(g.fandtes) rank = `<div class="rank">Du havde allerede et resultat for dagen – det første tæller</div>`;
     else if(dayRows && viewDate === g.dato){ const r = dayRows.find(x => x.uid === me.uid); if(r) rank = `<div class="rank">Nr. ${r.plads} af ${dayRows.length} i dag</div>`; }
     else if(!g.sendt) rank = `<div class="rank muted">Sendes, når der er forbindelse</div>`;
+  }else if(g.liste === 'bane'){
+    if(!me) rank = `<div class="rank"><a href="${loginUrl()}">Log ind</a> for at komme på banens rangliste</div>`;
+    else if(g.fandtes) rank = `<div class="rank">Du har spillet banen før – kun første forsøg tæller på listen</div>`;
+    else if(baneRows && baneCode === g.kode){ const r = baneRows.find(x => x.uid === me.uid); if(r) rank = `<div class="rank">Nr. ${r.plads} af ${baneRows.length} på banen</div>`; else if(!g.sendt) rank = `<div class="rank muted">Sendes, når der er forbindelse</div>`; }
+  }else if(g.kode){
+    const prev = myGames.filter(x => x.kode === g.kode && x.id !== g.id).map(x => x.total);
+    rank = `<div class="rank muted">${S.isDayCode(g.kode) ? 'Dagens sudoku spillet igen' : 'Omspil'} – tæller kun i din historik${prev.length ? ` · din bedste: ${fmtT(Math.min(...prev))}` : ''}</div>`;
   }
   const extra = g.type === 'dag'
     ? `<div class="br">${esc(breakdown(g))}${g.fejl || g.hints ? ' = samlet tid' : ''}</div>`
-    : `<div class="br">${g.hjaelp ? 'Løst med hjælp' : 'Løst uden hjælp'}${g.fejl ? ` · ${g.fejl} fejl` : ''}${g.hints ? ` · ${g.hints} hint${g.hints > 1 ? 's' : ''}` : ''}${!g.hjaelp && bestTime(g.niveau, g.id) !== null && g.tid < bestTime(g.niveau, g.id) ? ' · ny bedste tid!' : ''}</div>`;
-  box.innerHTML = `<div class="trophy">🏆</div><div class="muted">Løst!</div><div class="tt">${fmtT(g.type === 'dag' ? g.total : g.tid)}</div>${extra}${rank}`;
+    : `<div class="br">${g.fejl || g.hints ? esc(breakdown(g)) + ' = samlet tid · ' : ''}${g.hjaelp ? 'løst med hjælp' : 'løst uden hjælp'}${!g.hjaelp && bestTime(g.niveau, g.id) !== null && g.tid < bestTime(g.niveau, g.id) ? ' · ny bedste tid!' : ''}</div>`;
+  box.innerHTML = `<div class="trophy">🏆</div><div class="muted">Løst!${g.kode ? ` · <span class="code">${esc(g.kode)}</span>` : ''}</div><div class="tt">${fmtT(g.total)}</div>${extra}${rank}`;
 }
 function bestTime(lvl, exceptId){
   const t = myGames.filter(x => x.type === 'traening' && x.niveau === lvl && !x.hjaelp && x.id !== exceptId).map(x => x.tid);
   return t.length ? Math.min(...t) : null;
+}
+
+/* ---------- Baner og koder ---------- */
+function loginUrl(){
+  const kode = (game && game.kode && !S.isDayCode(game.kode) && game.kode) || (!$('baneCard').hidden && baneCode) || null;
+  return 'spil.html?next=' + encodeURIComponent('sudoku.html' + (kode ? '?bane=' + kode : ''));
+}
+function shareUrl(kode){ return location.origin + location.pathname + '?bane=' + kode; }
+async function shareCode(kode){
+  const url = shareUrl(kode), text = `Prøv sudoku-banen ${kode} (${S.LEVEL_NAMES[S.levelOfCode(kode)]})`;
+  try{ if(navigator.share){ await navigator.share({title: 'Sudoku ' + kode, text, url}); return; } }catch(e){ if(e && e.name === 'AbortError') return; }
+  try{ await navigator.clipboard.writeText(url); toast('Linket til ' + kode + ' er kopieret'); }catch(e){ prompt('Kopiér linket', url); }
+}
+// Rangliste for en bane: træningsbaner har deres egen, dagens baner viser dagens liste
+function watchBane(kode){
+  if(unsubBane){ unsubBane(); unsubBane = null; }
+  baneCode = kode; baneRows = null;
+  if(!kode || !me || !online) return;
+  const cb = rows => { if(baneCode !== kode) return; baneRows = rows; if(game) renderDone(); if(!$('baneCard').hidden) renderBane(); };
+  unsubBane = S.isDayCode(kode) ? Online.watchSudokuDay(S.dateOfCode(kode), cb) : Online.watchSudokuBane(kode, cb);
+}
+function openBane(kode){
+  $('baneCard').hidden = false;
+  watchBane(kode);
+  renderBane();
+  $('btnLogin').href = loginUrl();
+  $('baneCard').scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+function closeBane(){ $('baneCard').hidden = true; $('btnLogin').href = loginUrl(); }
+function renderBane(){
+  const kode = baneCode; if(!kode) return;
+  const lvl = S.levelOfCode(kode), day = S.isDayCode(kode);
+  $('baneTitle').innerHTML = `Bane <span class="code">${esc(kode)}</span> ${badge(lvl)}`;
+  const mine = myGames.filter(g => g.kode === kode).sort((a, b) => (a.slut || 0) - (b.slut || 0));
+  $('baneHelp').textContent = day ? `Dagens sudoku ${fmtDate(S.dateOfCode(kode), {day: 'numeric', month: 'long', year: 'numeric'})}. ${kode === S.dayCode(today()) ? '' : 'Spilles den igen, tæller den kun i din historik.'}`
+    : mine.length ? 'Du har spillet banen før – et nyt forsøg er et omspil og tæller kun i din historik.' : 'Første gang du løser banen med login, kommer du på ranglisten (straf: 30 sek. pr. fejl, 60 sek. pr. hint).';
+  $('baneMine').innerHTML = mine.length ? `<table><thead><tr><th>Dine forsøg</th><th class="n">Samlet</th></tr></thead><tbody>${mine.map((g, k) => `<tr><td>${esc(fmtDate(new Date(g.slut || Date.now()).toLocaleDateString('sv-SE'), {day: 'numeric', month: 'short', year: 'numeric'}))}${g.type === 'dag' ? ' <span class="badge">dagens</span>' : !g.omspil ? ' <span class="badge">første forsøg</span>' : ' <span class="muted">omspil</span>'}${g.hjaelp ? ' <span class="muted">· med hjælp</span>' : ''}</td><td class="n">${fmtT(g.total ?? total(g))}${g.fejl || g.hints ? `<span class="d">${esc(breakdown(g))}</span>` : ''}</td></tr>`).join('')}</tbody></table>` : '<p class="muted" style="margin:0">Du har ikke spillet banen endnu.</p>';
+  $('baneListHint').textContent = day ? 'dagens resultater' : 'første forsøg pr. spiller';
+  if(!me) $('baneBoard').innerHTML = `<p class="muted" style="margin:0"><a href="${loginUrl()}">Log ind</a> for at se ranglisten og komme på den.</p>`;
+  else if(!online) $('baneBoard').innerHTML = '<p class="muted" style="margin:0">Ranglisten kræver forbindelse til nettet.</p>';
+  else if(!baneRows) $('baneBoard').innerHTML = '<p class="muted" style="margin:0">Henter…</p>';
+  else if(!baneRows.length) $('baneBoard').innerHTML = '<p class="muted" style="margin:0">Ingen har løst banen endnu – vær den første.</p>';
+  else $('baneBoard').innerHTML = `<table><tbody>${baneRows.map(r => `<tr class="${r.uid === me.uid ? 'me' : ''}"><td>${r.plads === 1 ? '🥇' : r.plads === 2 ? '🥈' : r.plads === 3 ? '🥉' : r.plads}</td><td>${esc(r.navn)}</td><td class="n">${fmtT(r.total)}${r.fejl || r.hints ? `<span class="d">${esc(breakdown(r))}</span>` : ''}</td></tr>`).join('')}</tbody></table>`;
+  const todayDay = kode === S.dayCode(today());
+  const cur = todayDay ? LS.get(KEY_DAY(today()), null) : null;
+  $('btnBanePlay').textContent = todayDay ? (cur && cur.done ? 'Se dagens plade' : cur ? 'Fortsæt dagens' : 'Spil dagens sudoku') : mine.length ? 'Spil igen (omspil)' : 'Spil banen';
+  $('btnBanePlay').disabled = todayDay && !cur && !!myCloudDay;
+}
+// Egne baner: én række pr. kode med bedste resultat; feltet filtrerer listen
+function renderBaneList(){
+  const q = $('codeInput').value.toUpperCase().replace(/[\s-]/g, '');
+  const by = new Map();
+  myGames.filter(g => g.kode).forEach(g => {
+    const b = by.get(g.kode) || {kode: g.kode, niveau: g.niveau, n: 0, best: null, sidst: 0};
+    b.n++; b.sidst = Math.max(b.sidst, g.slut || 0);
+    const t = g.total ?? total(g); if(b.best === null || t < b.best) b.best = t;
+    by.set(g.kode, b);
+  });
+  let rows = [...by.values()].sort((a, b) => b.sidst - a.sidst);
+  if(q) rows = rows.filter(b => b.kode.replace('-', '').includes(q) || S.LEVEL_NAMES[b.niveau].toUpperCase().startsWith(q));
+  const shown = rows.slice(0, q ? 50 : 8);
+  $('baneList').innerHTML = shown.length
+    ? shown.map(b => `<button class="brow" type="button" data-kode="${esc(b.kode)}"><span class="code">${esc(b.kode)}</span><span>${badge(b.niveau)} <span class="s">${esc(new Date(b.sidst).toLocaleDateString('da-DK', {day: 'numeric', month: 'short'}))}${b.n > 1 ? ` · ${b.n} forsøg` : ''}</span></span><span class="t">${fmtT(b.best)}<small>bedste</small></span></button>`).join('') + (rows.length > shown.length ? `<p class="muted" style="margin:4px 0 0">${rows.length - shown.length} flere – søg på koden.</p>` : '')
+    : `<p class="muted" style="margin:0">${q ? 'Ingen af dine baner matcher – tryk Spil for at prøve koden.' : 'Dine spillede baner kommer her med kode og bedste tid.'}</p>`;
+  $('baneList').querySelectorAll('.brow').forEach(b => b.addEventListener('click', () => openBane(b.dataset.kode)));
 }
 
 /* ---------- Tegning: forsiden ---------- */
@@ -802,10 +969,12 @@ function renderHome(){
   if(t && !t.done){
     const left = t.values.filter((v, i) => v !== t.solution[i]).length;
     $('contTitle').innerHTML = `Fortsæt ${badge(t.niveau)}`;
-    $('contSub').textContent = `${fmtT(t.elapsed / 1000)} · ${left} felter tilbage`;
+    $('contSub').textContent = `${t.kode ? t.kode + ' · ' : ''}${fmtT(t.elapsed / 1000)} · ${left} felter tilbage`;
   }
   renderHighscore();
   renderStats();
+  renderBaneList();
+  if(!$('baneCard').hidden) renderBane();
 }
 
 function renderHighscore(){
@@ -820,7 +989,7 @@ function renderHighscore(){
   if(hsTab === 'dag'){
     if(!dayRows){ $('dayList').innerHTML = '<p class="muted" style="margin:0">Henter…</p>'; return; }
     if(!dayRows.length){ $('dayList').innerHTML = `<p class="muted" style="margin:0">Ingen har løst ${viewDate === key ? 'dagens' : 'den dags'} sudoku endnu.</p>`; return; }
-    $('dayList').innerHTML = `<table><thead><tr><th>#</th><th>Spiller</th><th class="n">Samlet</th></tr></thead><tbody>${dayRows.map(r => `<tr class="${r.uid === me.uid ? 'me' : ''}"><td>${r.plads === 1 ? '🥇' : r.plads === 2 ? '🥈' : r.plads === 3 ? '🥉' : r.plads}</td><td>${esc(r.navn)}</td><td class="n">${fmtT(r.total)}<span class="d">${esc(breakdown(r))}</span></td></tr>`).join('')}</tbody></table>`;
+    $('dayList').innerHTML = `<table><thead><tr><th>#</th><th>Spiller</th><th class="n">Samlet</th></tr></thead><tbody>${dayRows.map(r => `<tr class="${r.uid === me.uid ? 'me' : ''}"><td>${r.plads === 1 ? '🥇' : r.plads === 2 ? '🥈' : r.plads === 3 ? '🥉' : r.plads}</td><td>${esc(r.navn)}</td><td class="n">${fmtT(r.total)}${r.fejl || r.hints ? `<span class="d">${esc(breakdown(r))}</span>` : ''}</td></tr>`).join('')}</tbody></table>`;
   }else{
     if(!allRows){ $('allList').innerHTML = '<p class="muted" style="margin:0">Henter…</p>'; loadAll(); return; }
     if(!allRows.length){ $('allList').innerHTML = '<p class="muted" style="margin:0">Ingen resultater endnu.</p>'; return; }
@@ -879,7 +1048,19 @@ function renderStats(){
 $('btnDaily').addEventListener('click', startDaily);
 $('btnCont').addEventListener('click', () => { const t = LS.get(KEY_TRAIN, null); if(t) openGame(t, false); });
 $('btnHome').addEventListener('click', goHome);
-$('btnAgain').addEventListener('click', () => { const l = game.niveau; openGame(newGame('traening', S.generate(l)), true); save(); });
+$('btnAgain').addEventListener('click', () => { const l = game.kode && !S.isDayCode(game.kode) ? S.levelOfCode(game.kode) : game.niveau; playCodeGen(S.fromCode(S.makeCode(l))); });
+$('pCode').addEventListener('click', () => { if(game && game.kode) shareCode(game.kode); });
+$('codeInput').addEventListener('input', () => { $('codeErr').textContent = ''; renderBaneList(); });
+$('codeForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const kode = S.normalizeCode($('codeInput').value);
+  if(!kode){ $('codeErr').textContent = 'Ugyldig kode. En bane-kode ser sådan ud: S-K7PM2 (eller D-261119 for dagens).'; return; }
+  if(S.isDayCode(kode) && S.dateOfCode(kode) > today()){ $('codeErr').textContent = 'Den dags sudoku er ikke kommet endnu.'; return; }
+  $('codeInput').value = kode; renderBaneList(); openBane(kode);
+});
+$('btnBanePlay').addEventListener('click', () => { if(baneCode) startCode(baneCode); });
+$('btnBaneShare').addEventListener('click', () => { if(baneCode) shareCode(baneCode); });
+$('btnBaneClose').addEventListener('click', () => { closeBane(); history.replaceState(null, '', 'sudoku.html'); });
 $('btnPause').addEventListener('click', () => { if(paused) run(); else pause(); });
 $('btnResume').addEventListener('click', run);
 $('btnUndo').addEventListener('click', undo);
@@ -919,7 +1100,7 @@ addEventListener('pagehide', () => { if(runSince) pause(); });
 
 /* ---------- Login og sky ---------- */
 function renderWho(){
-  $('btnLogin').hidden = !!me; $('who').hidden = !me;
+  $('btnLogin').hidden = !!me; $('who').hidden = !me; $('btnLogin').href = loginUrl();
   if(me) $('who').textContent = me.navn;
 }
 async function startOnline(){
@@ -938,8 +1119,10 @@ async function startOnline(){
       Online.sudokuSync(myGames).then(m => { myGames = m; LS.set(KEY_GAMES(me.uid), m); renderStats(); }).catch(e => console.warn('sudoku-synk', e));
       Online.sudokuMine(today()).then(r => { if(r){ myCloudDay = r; if(!game) renderHome(); } }).catch(() => {});
       submitPending();
+      submitBanePending();
     }else loadMyGames();
     watchDay();
+    if(baneCode) watchBane(baneCode);
     if(game) render(); else renderHome();
   });
 }
@@ -962,6 +1145,7 @@ cleanOld();
 loadMyGames();
 renderWho();
 renderHome();
+if(urlCode){ $('codeInput').value = urlCode; renderBaneList(); openBane(urlCode); }
 startOnline();
 </script>
 </body>

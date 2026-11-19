@@ -89,6 +89,35 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Træningsbaner med kode (fx S-K7PM2): banen gemmes én gang og kan aldrig ændres
+    match /sudokuBaner/{kode} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && kode.matches('^[LMSE]-[A-HJ-NP-Z2-9]{5}$')
+        && request.resource.data.kode == kode
+        && request.resource.data.niveau == {'L': 'let', 'M': 'mellem', 'S': 'svaer', 'E': 'ekspert'}[kode.split('-')[0]]
+        && request.resource.data.puzzle is string && request.resource.data.puzzle.matches('^[0-9]{81}$')
+        && request.resource.data.af == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Første forsøg pr. spiller på en bane (dokument-id = kode_uid). Samme straf som dagens sudoku.
+    match /sudokuBaneTider/{id} {
+      function t(){ return request.resource.data; }
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && t().uid == request.auth.uid
+        && t().kode is string && t().kode.matches('^[LMSE]-[A-HJ-NP-Z2-9]{5}$')
+        && id == t().kode + '_' + request.auth.uid
+        && t().niveau == {'L': 'let', 'M': 'mellem', 'S': 'svaer', 'E': 'ekspert'}[t().kode.split('-')[0]]
+        && t().navn is string && t().navn.size() >= 1 && t().navn.size() <= 20
+        && t().tid is int && t().tid >= 20 && t().tid < 86400
+        && t().fejl is int && t().fejl >= 0 && t().fejl <= 1000
+        && t().hints is int && t().hints >= 0 && t().hints <= 81
+        && t().total == t().tid + t().fejl * 30 + t().hints * 60;
+      allow update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
