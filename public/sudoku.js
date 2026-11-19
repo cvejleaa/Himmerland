@@ -364,6 +364,30 @@
   function dailyLevel(key){ const [y, m, d] = key.split('-').map(Number); return DAILY_LEVEL[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]; }
   function daily(key){ key = key || todayKey(); const level = dailyLevel(key); return Object.assign(generate(level, 'himmerland-sudoku-' + key), {dato: key}); }
 
+  /* ---------- hvor svært var det tal? ----------
+     Ud fra de rigtige tal på pladen (uden det nye tal): kan feltet nås med singler alene – også i flere
+     led? Så er det 0. Ellers bruges de simpleste kandidat-teknikker én ad gangen, og den sværeste, der
+     skulle til, før feltet kunne findes, giver niveauet: 1 låste kandidater, 2 par, 3 trippel/X-wing,
+     4 kan ikke nås med de teknikker (avanceret). */
+  const TECH_TIER = {locked: 1, nakedPair: 2, hiddenPair: 2, nakedTriple: 3, xwing: 3};
+  function hardness(values, solution, target){
+    const g = values.map((v, i) => v && v === solution[i] ? v : 0); g[target] = 0;
+    const cand = candidatesOf(g);
+    let tier = 0, tech = null;
+    for(let guard = 0; guard < 300; guard++){
+      const ss = findSingles(g, cand);
+      if(ss.some(x => x.i === target)) return {tier, tech};
+      if(ss.length){ const x = ss[0]; g[x.i] = x.d; cand[x.i] = 0; for(const p of PEERS[x.i]) cand[p] &= ~bit(x.d); continue; }
+      const elims = findEliminations(g, cand);
+      if(!elims.length) return {tier: 4, tech: 'avanceret logik'};
+      const minT = Math.min(...elims.map(e => TECH_TIER[e.tech]));
+      const e = elims.find(x => TECH_TIER[x.tech] === minT);
+      e.elim.forEach(([i, d]) => { cand[i] &= ~bit(d); });
+      if(minT > tier){ tier = minT; tech = TECH[e.tech]; }
+    }
+    return {tier: 4, tech: 'avanceret logik'};
+  }
+
   /* ---------- banekoder ----------
      Træningsbaner: niveaubogstav + 5 tegn, fx S-K7PM2 (L=let, M=mellem, S=svær, E=ekspert).
      Koden er frøet til generatoren, så samme kode altid giver samme bane.
@@ -394,6 +418,6 @@
     return Object.assign(generate(LETTER_LEVEL[code[0]], 'himmerland-bane-' + code), {kode: code});
   }
 
-  const api = {LEVELS, LEVEL_NAMES, DAILY_LEVEL, PEERS, ROW, COL, BOX, rng, countSolutions, solve, grade, levelOf, generate, todayKey, dailyLevel, daily, explain, makeCode, normalizeCode, isDayCode, dayCode, dateOfCode, levelOfCode, fromCode};
+  const api = {LEVELS, LEVEL_NAMES, DAILY_LEVEL, PEERS, ROW, COL, BOX, rng, countSolutions, solve, grade, levelOf, generate, todayKey, dailyLevel, daily, explain, hardness, makeCode, normalizeCode, isDayCode, dayCode, dateOfCode, levelOfCode, fromCode};
   if(typeof module !== 'undefined' && module.exports) module.exports = api; else root.Sudoku = api;
 })(typeof self !== 'undefined' ? self : this);
