@@ -122,7 +122,7 @@ input.codein{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px 
 .daynav button:disabled{opacity:.3;cursor:default}
 .daynav .dl{font-weight:600;font-size:.9rem;text-align:center}
 .streak{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 10px}
-.streak > div{flex:1 1 90px;border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.streak > div{flex:1 1 70px;border:1px solid var(--line);border-radius:12px;padding:8px 10px}
 .streak .v{font-size:1.3rem;font-weight:800;font-variant-numeric:tabular-nums}
 .streak .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 details summary{cursor:pointer;font-weight:600}
@@ -204,6 +204,12 @@ details summary{cursor:pointer;font-weight:600}
 .fxtext.win span{background:var(--green);font-size:clamp(2rem,12vw,3.4rem)}
 .fxtext.win.go span{animation-duration:2.6s}
 @keyframes fxshout{0%{opacity:0;transform:scale(.3) rotate(-8deg)}18%{opacity:1;transform:scale(1.1) rotate(2deg)}30%{transform:scale(1) rotate(-1deg)}78%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
+.fx i.star{background:radial-gradient(circle,#fff7d1 0%,#f59e0b 45%,#a21caf 100%);border-radius:50%;animation:fxstar 1.5s cubic-bezier(.2,.9,.3,1.2) both;z-index:2}
+.fx i.spark{background:radial-gradient(circle,rgba(233,213,255,.9) 0%,rgba(168,85,247,.55) 70%);animation:fxunit .9s ease-out both}
+@keyframes fxstar{0%{opacity:0;transform:scale(.2) rotate(-90deg)}35%{opacity:1;transform:scale(1.7) rotate(15deg)}60%{opacity:.95;transform:scale(1.15) rotate(0)}100%{opacity:0;transform:scale(1)}}
+.fxtext span small{display:block;font-size:.42em;font-weight:700;letter-spacing:0;margin-top:3px;opacity:.95}
+.fxtext.star span{background:linear-gradient(135deg,#7c3aed 0%,#c026d3 55%,#f59e0b 100%)}
+.fxtext.star.go span{animation-duration:2.3s}
 .boardwrap.won .board{animation:glow 2.4s ease-out}
 @keyframes glow{0%{box-shadow:0 0 0 0 rgba(255,213,74,0)}25%{box-shadow:0 0 0 6px rgba(255,213,74,.9),0 0 40px 10px rgba(255,180,40,.55)}100%{box-shadow:0 0 0 0 rgba(255,213,74,0)}}
 #confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
@@ -303,6 +309,7 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Dagens sudoku.</strong> Skifter sværhedsgrad efter ugedagen: mandag og torsdag let, tirsdag og fredag mellem, onsdag og lørdag svær, søndag ekspert. Forkerte tal vises med det samme og koster 30 sekunder; et hint koster 60 sekunder. Lavest samlet tid vinder dagen.</li>
         <li><strong>Hint i tre trin.</strong> Et hint finder det næste logiske træk og forklarer det: først hvor du skal kigge, så hvorfor tallet må stå dér (fx en skjult single, låste kandidater eller et par), og til sidst sættes tallet. Du kan lukke hintet efter første eller andet trin og selv finde tallet.</li>
         <li><strong>Fejring.</strong> En færdig række, kolonne eller kasse glimter i guld – og når hele sudokuen er løst, kommer der fyrværkeri.</li>
+        <li><strong>Svære tal.</strong> Sætter du et rigtigt tal, der kun kunne findes med en kandidat-teknik, får du en anerkendelse: ⭐ låste kandidater, ⭐⭐ par, ⭐⭐⭐ trippel eller X-wing og 🏅 for avanceret logik. Uden fejlvisning i træning kommer de først, når banen er løst, så de ikke afslører, om tallet er rigtigt.</li>
         <li><strong>Fremhævning.</strong> Tryk på et felt med et tal – eller på et tal i tastaturet, når intet tomt felt er valgt – så fremhæves alle de samme tal og hjælpetal på pladen.</li>
         <li><strong>Banekoder.</strong> Hver bane har en kode – fx <span class="code">S-K7PM2</span> (L/M/S/E for niveauet) og <span class="code">D-261119</span> for dagens sudoku. Samme kode giver altid samme bane. Skriv en kode under <em>Baner</em> for at spille den eller finde den i din historik, og tryk på koden over pladen for at dele den.</li>
         <li><strong>Rangliste pr. bane.</strong> Første gang du løser en bane, mens du er logget ind, kommer du på banens rangliste – med samme straf som dagens sudoku (30 sek. pr. fejl, 60 sek. pr. hint). Spiller du den igen, er det et omspil, der kun tæller i din egen historik.</li>
@@ -526,6 +533,14 @@ function input(d){
       flashCell = i;
     }
     const h = game.hintOpen;
+    // Anerkendelse: et rigtigt tal, der krævede en kandidat-teknik at finde (ikke efter hint på samme felt, og kun én gang pr. felt)
+    if(d === game.solution[i] && !(game.hintSeen || []).includes(i) && !(game.flotte || []).some(f => f.i === i)){
+      const hd = S.hardness(game.values, game.solution, i);
+      if(hd.tier >= 1){
+        game.flotte = (game.flotte || []).concat([{i, tier: hd.tier, tech: hd.tech}]);
+        if(marking()) starCell = {i, tier: hd.tier, tech: hd.tech};   // uden fejlvisning vises de først, når banen er løst
+      }
+    }
     if(h && h.step < 2 && h.data.cell === i && d === game.solution[i]){ game.hintOpen = null; toast('Godt set!'); }
   }
   after();
@@ -558,6 +573,7 @@ function hint(){
   if(game.type !== 'dag') game.hjaelp = true;
   else toast(`Hint – +${PEN.hint} sekunder`);
   game.hintOpen = {data, step: 0};
+  game.hintSeen = (game.hintSeen || []).concat([data.cell]);
   hlDigit = 0;
   save(); render();
 }
@@ -580,7 +596,7 @@ function closeHint(){ if(!game) return; game.hintOpen = null; save(); render(); 
 function after(){
   const full = game.values.every(Boolean);
   const solved = full && game.values.every((v, i) => v === game.solution[i]);
-  const placed = lastPlaced; lastPlaced = -1;
+  const placed = lastPlaced, star = starCell; lastPlaced = -1; starCell = null;
   if(solved) finish();
   else{
     if(full && !marking()) toast('Pladen er fyldt, men der er fejl et sted');
@@ -588,7 +604,10 @@ function after(){
   }
   render();
   if(solved) celebrateWin(placed);
-  else if(placed >= 0) celebrateUnits(placed);
+  else{
+    if(placed >= 0) celebrateUnits(placed, !!star);
+    if(star) celebrateStar(star);
+  }
 }
 
 /* ---------- Løst ---------- */
@@ -601,7 +620,7 @@ function finish(){
   game.total = total(game);
   if(game.type === 'dag') game.sendt = false;
   save();
-  addMyGame({id: game.id, type: game.type, niveau: game.niveau, dato: game.dato, kode: game.kode, omspil: game.type !== 'dag' && game.liste !== 'bane', tid: game.tid, fejl: game.fejl, hints: game.hints, total: game.total, hjaelp: game.hjaelp, slut: game.slut});
+  addMyGame({id: game.id, type: game.type, niveau: game.niveau, dato: game.dato, kode: game.kode, omspil: game.type !== 'dag' && game.liste !== 'bane', tid: game.tid, fejl: game.fejl, hints: game.hints, total: game.total, hjaelp: game.hjaelp, svaere: (game.flotte || []).length, slut: game.slut});
   if(game.type === 'dag') submitDay(game);
   if(game.liste === 'bane'){
     const pend = LS.get(KEY_PENDING, []);
@@ -656,7 +675,7 @@ function cleanOld(){
 
 /* ---------- Tegning: spillet ---------- */
 /* ---------- Fejring ---------- */
-let lastPlaced = -1, shoutTimer = null;
+let lastPlaced = -1, shoutTimer = null, starCell = null;
 const REDUCED = (() => { try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } })();
 function unitCells(u){
   if(u < 9) return Array.from({length: 9}, (_, c) => u * 9 + c);
@@ -683,21 +702,31 @@ function fxCells(cells, origin, kind){
     el.className = kind;
   });
 }
-function shout(text, kind){
+function shout(text, kind, sub){
   const t = $('fxText');
-  t.firstElementChild.textContent = text;
+  t.firstElementChild.innerHTML = esc(text) + (sub ? `<small>${esc(sub)}</small>` : '');
   t.className = 'fxtext ' + (kind || ''); void t.offsetWidth; t.classList.add('go');
-  clearTimeout(shoutTimer); shoutTimer = setTimeout(() => { t.className = 'fxtext'; }, kind === 'win' ? 2700 : 1400);
+  clearTimeout(shoutTimer); shoutTimer = setTimeout(() => { t.className = 'fxtext'; }, kind === 'win' ? 2700 : kind === 'star' ? 2400 : 1400);
 }
-function celebrateUnits(i){
+function celebrateUnits(i, quiet){
   if(game.values[i] !== game.solution[i] && marking()) return;
   const units = [S.ROW(i), 9 + S.COL(i), 18 + S.BOX(i)].filter(unitDone);
   if(!units.length) return;
   const cells = [...new Set(units.flatMap(unitCells))];
   fxCells(cells, i, 'unit');
+  if(quiet) return;
   const names = units.map(u => u < 9 ? 'Række' : u < 18 ? 'Kolonne' : 'Kasse');
   shout(units.length === 3 ? 'Tredobbelt! 🔥' : units.length === 2 ? 'Dobbelt! ✨' : names[0] + ' ✓');
   try{ navigator.vibrate && navigator.vibrate(units.length > 1 ? [20, 40, 20] : 15); }catch(e){}
+}
+const STAR_TEXT = ['', 'Flot set! ⭐', 'Skarpt! ⭐⭐', 'Imponerende! ⭐⭐⭐', 'Mesterligt! 🏅'];
+function celebrateStar(st){
+  const box = [];
+  for(let k = 0; k < 81; k++) if(k !== st.i && S.BOX(k) === S.BOX(st.i)) box.push(k);
+  fxCells(box, st.i, 'spark');
+  fxCells([st.i], st.i, 'star');
+  shout(STAR_TEXT[st.tier], 'star', `Det tal krævede ${st.tech}`);
+  try{ navigator.vibrate && navigator.vibrate([30, 50, 30, 50, 60]); }catch(e){}
 }
 function celebrateWin(){
   fxCells(Array.from({length: 81}, (_, k) => k), -1, 'win');
@@ -865,6 +894,12 @@ function renderDone(){
   const extra = g.type === 'dag'
     ? `<div class="br">${esc(breakdown(g))}${g.fejl || g.hints ? ' = samlet tid' : ''}</div>`
     : `<div class="br">${g.fejl || g.hints ? esc(breakdown(g)) + ' = samlet tid · ' : ''}${g.hjaelp ? 'løst med hjælp' : 'løst uden hjælp'}${!g.hjaelp && bestTime(g.niveau, g.id) !== null && g.tid < bestTime(g.niveau, g.id) ? ' · ny bedste tid!' : ''}</div>`;
+  const fl = g.flotte || [];
+  if(fl.length){
+    const byTech = {}; fl.forEach(f => { byTech[f.tech] = (byTech[f.tech] || 0) + 1; });
+    const best = Math.max(...fl.map(f => f.tier));
+    rank += `<div class="br" style="margin-top:6px">${best >= 4 ? '🏅' : '⭐'.repeat(best)} ${fl.length} svær${fl.length > 1 ? 'e' : 't'} tal fundet: ${esc(Object.entries(byTech).map(([t, n]) => (n > 1 ? n + ' × ' : '') + t).join(', '))}</div>`;
+  }
   box.innerHTML = `<div class="trophy">🏆</div><div class="muted">Løst!${g.kode ? ` · <span class="code">${esc(g.kode)}</span>` : ''}</div><div class="tt">${fmtT(g.total)}</div>${extra}${rank}`;
 }
 function bestTime(lvl, exceptId){
@@ -1028,7 +1063,7 @@ function streaks(){
 function renderStats(){
   $('statHint').textContent = me ? 'følger dit login' : 'gemt på denne telefon';
   const st = streaks();
-  $('streak').innerHTML = `<div><div class="v">${st.days}</div><div class="l">Dagens løst</div></div><div><div class="v">${st.cur}</div><div class="l">Dage i træk</div></div><div><div class="v">${st.best}</div><div class="l">Længste stime</div></div>`;
+  $('streak').innerHTML = `<div><div class="v">${st.days}</div><div class="l">Dagens løst</div></div><div><div class="v">${st.cur}</div><div class="l">Dage i træk</div></div><div><div class="v">${st.best}</div><div class="l">Længste stime</div></div><div><div class="v">${myGames.reduce((n, g) => n + (g.svaere || 0), 0)}</div><div class="l">Svære tal ⭐</div></div>`;
   const tr = myGames.filter(g => g.type === 'traening');
   const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
   if(!tr.length) $('statTrain').innerHTML = '<p class="muted" style="margin:0">Ingen træningsopgaver løst endnu.</p>';
