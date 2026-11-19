@@ -329,7 +329,14 @@
       if(!chosen){ elims[0].elim.forEach(([i, d]) => { work[i] &= ~bit(d); }); used.push(elims[0]); continue; }
       chosen.elim.forEach(([i, d]) => { work[i] &= ~bit(d); });
       const before = used.length ? ` (Først skal der streges ${used.length} kandidat${used.length > 1 ? 'er' : ''} med ${andList([...new Set(used.map(u => TECH[u.tech]))])} – derefter:)` : '';
-      const result = single.type === 'nøgen' ? `Så kan ${cellName(single.i)} nu kun være ${single.d}.` : `Så kan ${single.d} nu kun stå ét sted i ${unitName(single.unit)}.`;
+      // Det streg, der gør udslaget: kandidaten fjernet fra målfeltet, eller tallet fjernet fra enheden
+      const key = single.type === 'nøgen' ? chosen.elim.filter(([i]) => i === single.i) : chosen.elim.filter(([i, d]) => d === single.d && UNITS[single.unit].includes(i));
+      const struck = key.length ? (single.type === 'nøgen'
+        ? `Dermed streges ${andList(key.map(([, d]) => String(d)))} i ${cellName(single.i)}, `
+        : `Dermed streges ${single.d} i ${key.length === 1 ? cellName(key[0][0]) : 'felterne i ' + andList(key.map(([i]) => cellName(i).replace('feltet i ', '')))}, `) : '';
+      const result = single.type === 'nøgen'
+        ? `${struck ? struck + 'så det' : `Så kan ${cellName(single.i)}`} nu kun ${struck ? 'kan ' : ''}være ${single.d}.`
+        : `${struck ? struck + 'så' : 'Så kan'} ${single.d} ${struck ? 'kan ' : ''}nu kun stå ét sted i ${unitName(single.unit)}.`;
       return {kind: TECH[chosen.tech], cell: single.i, digit: single.d, steps: [
         {text: `Her er der ingen tal, der kan sættes direkte – du skal bruge kandidater (små hjælpetal). Kig efter ${TECH[chosen.tech]} i det markerede område.${before}`, area: chosen.area, focus: []},
         {text: `${chosen.text} ${result}`, area: chosen.area, focus: chosen.cells.concat([single.i])},
