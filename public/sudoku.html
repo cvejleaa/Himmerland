@@ -310,6 +310,7 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Hint i tre trin.</strong> Et hint finder det næste logiske træk og forklarer det: først hvor du skal kigge, så hvorfor tallet må stå dér (fx en skjult single, låste kandidater eller et par), og til sidst sættes tallet. Du kan lukke hintet efter første eller andet trin og selv finde tallet.</li>
         <li><strong>Fejring.</strong> En færdig række, kolonne eller kasse glimter i guld – og når hele sudokuen er løst, kommer der fyrværkeri.</li>
         <li><strong>Svære tal.</strong> Sætter du et rigtigt tal, der kun kunne findes med en kandidat-teknik, får du en anerkendelse: ⭐ låste kandidater, ⭐⭐ par, ⭐⭐⭐ trippel eller X-wing og 🏅 for avanceret logik. Uden fejlvisning i træning kommer de først, når banen er løst, så de ikke afslører, om tallet er rigtigt.</li>
+        <li><strong>Start forfra.</strong> Knappen under pladen rydder alle tal og noter (efter en bekræftelse). Uret kører altid videre. I træning og omspil nulstilles fejl og hints; i dagens sudoku og på første forsøg på en bane tæller de stadig, så ranglisten forbliver fair.</li>
         <li><strong>Fremhævning.</strong> Tryk på et felt med et tal – eller på et tal i tastaturet, når intet tomt felt er valgt – så fremhæves alle de samme tal og hjælpetal på pladen.</li>
         <li><strong>Banekoder.</strong> Hver bane har en kode – fx <span class="code">S-K7PM2</span> (L/M/S/E for niveauet) og <span class="code">D-261119</span> for dagens sudoku. Samme kode giver altid samme bane. Skriv en kode under <em>Baner</em> for at spille den eller finde den i din historik, og tryk på koden over pladen for at dele den.</li>
         <li><strong>Rangliste pr. bane.</strong> Første gang du løser en bane, mens du er logget ind, kommer du på banens rangliste – med samme straf som dagens sudoku (30 sek. pr. fejl, 60 sek. pr. hint). Spiller du den igen, er det et omspil, der kun tæller i din egen historik.</li>
@@ -363,6 +364,7 @@ details summary{cursor:pointer;font-weight:600}
     <div class="done" id="doneBox" hidden></div>
     <div class="row" style="justify-content:center;margin-top:12px">
       <button class="btn ghost" id="btnHome" type="button">← Til oversigten</button>
+      <button class="btn ghost" id="btnRestart" type="button">↺ Start forfra</button>
       <button class="btn primary" id="btnAgain" type="button" hidden>Ny opgave</button>
     </div>
   </section>
@@ -610,6 +612,29 @@ function after(){
   }
 }
 
+/* ---------- Start forfra ---------- */
+// Pladen ryddes, og uret kører altid videre. Tæller banen på en rangliste (dagens eller første forsøg på
+// en bane), fortsætter fejl og hints også; ellers nulstilles de.
+function restart(){
+  if(!game || game.done) return;
+  const listed = game.type === 'dag' || game.liste === 'bane';
+  const msg = listed
+    ? 'Start forfra? Alle dine tal og noter slettes.\n\nUret, fejl og hints fortsætter, fordi resultatet tæller på ranglisten.'
+    : 'Start forfra? Alle tal, noter og hints slettes. Uret kører videre.';
+  if(!confirm(msg)) return;
+  game.values = game.puzzle.slice();
+  game.notes = new Array(81).fill(0);
+  game.undo = []; game.hintOpen = null; game.hintCells = [];
+  if(!listed){
+    game.fejl = 0; game.hints = 0; game.flotte = []; game.hintSeen = [];
+    game.hjaelp = !!game.mark;
+  }
+  game.forfra = (game.forfra || 0) + 1;
+  sel = -1; hlDigit = 0; notesMode = false;
+  save(); render();
+  toast('Pladen er ryddet – uret kører videre');
+}
+
 /* ---------- Løst ---------- */
 function finish(){
   if(runSince){ game.elapsed += Date.now() - runSince; runSince = null; }
@@ -846,6 +871,7 @@ function render(){
   $('chkMark').checked = !!g.mark;
   $('controls').hidden = g.done;
   $('btnAgain').hidden = !(g.done && g.type !== 'dag');
+  $('btnRestart').hidden = g.done;
   $('btnPause').hidden = g.done;
   renderHint();
   renderDone();
@@ -1083,6 +1109,7 @@ function renderStats(){
 $('btnDaily').addEventListener('click', startDaily);
 $('btnCont').addEventListener('click', () => { const t = LS.get(KEY_TRAIN, null); if(t) openGame(t, false); });
 $('btnHome').addEventListener('click', goHome);
+$('btnRestart').addEventListener('click', restart);
 $('btnAgain').addEventListener('click', () => { const l = game.kode && !S.isDayCode(game.kode) ? S.levelOfCode(game.kode) : game.niveau; playCodeGen(S.fromCode(S.makeCode(l))); });
 $('pCode').addEventListener('click', () => { if(game && game.kode) shareCode(game.kode); });
 $('codeInput').addEventListener('input', () => { $('codeErr').textContent = ''; renderBaneList(); });
