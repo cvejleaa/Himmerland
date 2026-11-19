@@ -676,7 +676,7 @@ async function main(){
     if(unsubSettings){ unsubSettings(); unsubSettings = null; }
     if(unsubSudoku){ unsubSudoku(); unsubSudoku = null; }
     if(!user) return;
-    if(NEXT && /^([a-z0-9]+\.html\?spil=[A-Za-z0-9_-]+|sudoku\.html)$/.test(NEXT)){ location.replace(NEXT); return; }
+    if(NEXT && /^([a-z0-9]+\.html\?spil=[A-Za-z0-9_-]+|sudoku\.html(\?bane=[A-Z0-9-]{6,9})?)$/.test(NEXT)){ location.replace(NEXT); return; }
     $('meName').textContent = profile.navn;
     renderPush();
     if(Online.pushEnabled()) Online.enablePush().then(r => { if(!r.ok){ Online.forgetPush(); $('pushNote').textContent = ''; renderPush(); } }).catch(() => {});   // hold tokenet frisk i det stille

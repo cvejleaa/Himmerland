@@ -4,7 +4,7 @@
    (window.__onlineBackend). Firebase indlæses først når Online.init() kaldes. */
 (function(){
   const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
-  const COL = {users: 'brugere', games: 'terningspil', settings: 'indstillinger', sudoku: 'sudokuResultater'};
+  const COL = {users: 'brugere', games: 'terningspil', settings: 'indstillinger', sudoku: 'sudokuResultater', baner: 'sudokuBaner', baneTider: 'sudokuBaneTider'};
   const SKIP_AFTER_MS = 3 * 24 * 3600 * 1000;   // efter 3 dage kan de andre springe turen over
 
   /* ---------- Firebase-backend ---------- */
@@ -286,6 +286,22 @@
       }));
       return [...by.values()].map(s => Object.assign(s, {snit: s.sum / s.dage})).sort((a, b) => a.snit - b.snit || b.sejre - a.sejre || b.dage - a.dage);
     },
+    // Træningsbaner med kode: banen gemmes første gang (så koden altid giver samme plade),
+    // og første forsøg pr. spiller kommer på banens rangliste – med samme straf som dagens
+    async sudokuBane(kode){ return this.backend.db.get(`${COL.baner}/${kode}`); },
+    async sudokuBaneSave(kode, niveau, puzzle){
+      const data = {kode, niveau, puzzle: puzzle.join(''), af: this.user.uid, oprettet: Date.now()};
+      await this.backend.db.txn(`${COL.baner}/${kode}`, cur => cur ? undefined : data);
+      return this.sudokuBane(kode);
+    },
+    async sudokuBaneSubmit(r){
+      const uid = this.user.uid;
+      const data = {uid, navn: this.shortName(this.profile && this.profile.navn), kode: r.kode, niveau: r.niveau,
+        tid: r.tid | 0, fejl: r.fejl | 0, hints: r.hints | 0, total: this.sudokuTotal(r), tidspunkt: Date.now()};
+      return this.backend.db.txn(`${COL.baneTider}/${r.kode}_${uid}`, cur => cur ? undefined : data);
+    },
+    watchSudokuBane(kode, cb){ return this.backend.db.watchList(COL.baneTider, 'kode', '==', kode, rows => cb(this.sudokuRank(rows))); },
+
     // Egne løste sudokuer (træning og dagens) gemmes i profilen, så statistikken følger med mellem telefoner
     sudokuMerge(a, b){
       const m = new Map(); (a || []).concat(b || []).forEach(g => { if(g && g.id) m.set(g.id, g); });
