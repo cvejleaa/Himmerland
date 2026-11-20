@@ -305,7 +305,7 @@ details summary{cursor:pointer;font-weight:600}
       <ul>
         <li><strong>Reglen.</strong> Udfyld pladen, så hver række, hver kolonne og hver af de ni 3×3-felter indeholder tallene 1–9 præcis én gang. Hver opgave har præcis én løsning.</li>
         <li><strong>Sværhedsgrader.</strong> <em>Let</em> og <em>Mellem</em> kan løses ved kun at se, hvor et tal skal stå. <em>Svær</em> kræver kandidat-teknikker som låste kandidater og par. <em>Ekspert</em> kræver tripler, X-wing eller mere.</li>
-        <li><strong>Noter.</strong> Slå <em>Noter</em> til for at skrive små kandidattal i et felt. Når et tal sættes, fjernes det fra noterne i samme række, kolonne og felt.</li>
+        <li><strong>Noter.</strong> Slå <em>Noter</em> til for at skrive små kandidattal i et felt. Når et tal sættes, fjernes det fra noterne i samme række, kolonne og felt. Tager du tallet væk igen – med <em>Slet</em>, ved at trykke på tallet igen, ved at skrive et andet tal eller med <em>Fortryd</em> – kommer noterne tilbage.</li>
         <li><strong>Dagens sudoku.</strong> Skifter sværhedsgrad efter ugedagen: mandag og torsdag let, tirsdag og fredag mellem, onsdag og lørdag svær, søndag ekspert. Forkerte tal vises med det samme og koster 30 sekunder; et hint koster 60 sekunder. Lavest samlet tid vinder dagen.</li>
         <li><strong>Hint i tre trin.</strong> Et hint finder det næste logiske træk og forklarer det: først hvor du skal kigge, så hvorfor tallet må stå dér (fx en skjult single, låste kandidater eller et par), og til sidst sættes tallet. Du kan lukke hintet efter første eller andet trin og selv finde tallet.</li>
         <li><strong>Fejring.</strong> En færdig række, kolonne eller kasse glimter i guld – og når hele sudokuen er løst, kommer der fyrværkeri.</li>
@@ -511,6 +511,29 @@ function clearPeerNotes(i, d){
   for(const j of S.PEERS[i]) if(game.notes[j] & (1 << d)){ changed.push([j, game.notes[j]]); game.notes[j] &= ~(1 << d); }
   return changed;
 }
+// Når et tal fjerner noter, huskes det (game.cleared[felt] = {d, n: feltets egne noter, p: naboer}),
+// så noterne kommer tilbage, når tallet tages væk igen – med Slet, ved at trykke på tallet igen,
+// ved at skrive et andet tal oven i, eller med Fortryd. Noterne kommer tilbage, præcis som de var –
+// undtagen hvor samme tal siden er sat et nyt sted i naboens række, kolonne eller kasse.
+function restoreCleared(i, d, changed){
+  const c = game.cleared && game.cleared[i];
+  if(!c || c.d !== d) return;
+  delete game.cleared[i];
+  if(!game.values[i] && c.n){ game.notes[i] = c.n; }
+  const was = new Set(c.dpos || []);
+  const added = []; game.values.forEach((v, k) => { if(v === d && k !== i && !was.has(k)) added.push(k); });
+  for(const j of c.p){
+    if(game.values[j] || added.some(k => S.PEERS[j].includes(k))) continue;
+    if(!(game.notes[j] & (1 << d))){ changed.push([j, game.notes[j]]); game.notes[j] |= 1 << d; }
+  }
+}
+// Fjerner tallet i felt i og lægger dets noter tilbage. Undo-posten gendanner det hele igen
+function removeValue(i){
+  const old = game.values[i], n0 = game.notes[i], c0 = (game.cleared || {})[i] || null, changed = [];
+  game.values[i] = 0;
+  restoreCleared(i, old, changed);
+  game.undo.push({i, v: old, n: n0, p: changed, c: c0}); if(game.undo.length > 300) game.undo.shift();
+}
 function canPlay(){ return game && !game.done && !paused; }
 function input(d){
   if(!canPlay()) return;
@@ -522,13 +545,24 @@ function input(d){
     if(game.values[i] && !game.puzzle[i]) return;
     pushUndo(i); game.notes[i] ^= 1 << d;
   }else if(game.values[i] === d){
-    pushUndo(i); game.values[i] = 0;
+    removeValue(i);
   }else{
-    const before = {v: game.values[i], n: game.notes[i]};
+    const before = {v: game.values[i], n: game.notes[i], c: (game.cleared || {})[i] || null};
+    // Står der et andet tal, kommer dets noter tilbage først
+    const restored = [];
+    if(before.v){ game.values[i] = 0; restoreCleared(i, before.v, restored); }
+    const ownNotes = game.notes[i];
     game.values[i] = d; game.notes[i] = 0; lastPlaced = i;
     // Et tal, der straks vises som forkert, skal ikke fjerne noter i række, kolonne og felt
     const peers = d === game.solution[i] || !marking() ? clearPeerNotes(i, d) : [];
-    game.undo.push({i, v: before.v, n: before.n, p: peers}); if(game.undo.length > 300) game.undo.shift();
+    game.cleared = game.cleared || {};
+    if(peers.length || ownNotes){
+      const dpos = []; game.values.forEach((v, k) => { if(v === d && k !== i) dpos.push(k); });
+      game.cleared[i] = {d, n: ownNotes, p: peers.map(([j]) => j), dpos};
+    }else delete game.cleared[i];
+    // Fortryd skal ramme tilstanden før begge dele: første øjebliksbillede pr. nabo vinder
+    const snap = new Map(); restored.concat(peers).forEach(([j, n]) => { if(!snap.has(j)) snap.set(j, n); });
+    game.undo.push({i, v: before.v, n: before.n, p: [...snap], c: before.c}); if(game.undo.length > 300) game.undo.shift();
     if(d !== game.solution[i] && marking()){
       game.fejl += 1;
       if(game.type === 'dag') toast(`Forkert – +${PEN.fejl} sekunder`);
@@ -551,7 +585,9 @@ let flashCell = -1;
 function erase(){
   if(!canPlay() || sel < 0 || locked(sel)) return;
   if(!game.values[sel] && !game.notes[sel]) return;
-  pushUndo(sel); game.values[sel] = 0; game.notes[sel] = 0; after();
+  if(game.values[sel]) removeValue(sel);          // et tal fjernes – dets noter kommer tilbage
+  else{ pushUndo(sel); game.notes[sel] = 0; }      // kun noter i feltet: de slettes
+  after();
 }
 function undo(){
   if(!canPlay()) return;
@@ -560,6 +596,7 @@ function undo(){
     if(game.hintCells.includes(u.i)) continue;   // hint-felter kan ikke fortrydes
     game.values[u.i] = u.v; game.notes[u.i] = u.n;
     u.p.forEach(([j, n]) => { if(!game.values[j]) game.notes[j] = n; });
+    if(u.c !== undefined){ game.cleared = game.cleared || {}; if(u.c) game.cleared[u.i] = u.c; else delete game.cleared[u.i]; }
     sel = u.i; after(); return;
   }
   toast('Der er ikke noget at fortryde');
@@ -624,7 +661,7 @@ function restart(){
   if(!confirm(msg)) return;
   game.values = game.puzzle.slice();
   game.notes = new Array(81).fill(0);
-  game.undo = []; game.hintOpen = null; game.hintCells = [];
+  game.undo = []; game.hintOpen = null; game.hintCells = []; game.cleared = {};
   if(!listed){
     game.fejl = 0; game.hints = 0; game.flotte = []; game.hintSeen = [];
     game.hjaelp = !!game.mark;
