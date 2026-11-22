@@ -167,13 +167,24 @@
     return p;
   }
   const TARGET = {let: 36, mellem: 28, svaer: 22, ekspert: 17};
-  function generate(level, seed){
+  // version 1: niveau efter den sværeste teknik (de første baner). Version 2: Svær og Ekspert efter
+  // sværhedsprofilen (antal svære øjeblikke, hvor tidligt, prøv-og-se-dybde). Let og Mellem er ens i begge.
+  const VERSION = 2;
+  function accepts(level, puzzle, solution, version){
+    if(version === 1 || level === 'let' || level === 'mellem') return levelOf(puzzle) === level;
+    const tier = grade(puzzle).tier;                       // hurtigt forfilter før den dyrere profil
+    if(level === 'svaer' && tier !== 2) return false;
+    if(level === 'ekspert' && tier < 2) return false;
+    return levelOf2(puzzle, solution) === level;
+  }
+  function generate(level, seed, version){
     if(!LEVELS.includes(level)) throw new Error('Ukendt niveau: ' + level);
+    version = version || VERSION;
     const rand = rng(seed == null ? Math.floor(Math.random() * 4294967296) : seed);
-    for(let attempt = 1; attempt <= 400; attempt++){
+    for(let attempt = 1; attempt <= 1500; attempt++){
       const solution = fullGrid(rand);
       const puzzle = carve(solution, rand, TARGET[level]);
-      if(levelOf(puzzle) === level) return {puzzle, solution, level, attempts: attempt};
+      if(accepts(level, puzzle, solution, version)) return {puzzle, solution, level, attempts: attempt, version};
     }
     throw new Error('Kunne ikke lave en opgave på niveau ' + level);
   }
@@ -343,7 +354,17 @@
         {text: `Derfor skal der stå ${single.d} i ${cellName(single.i)}.`, area: [], focus: [single.i]},
       ]};
     }
-    // 4) kræver en teknik, hintet ikke kan forklare: peg på feltet med færrest kandidater
+    // 4) prøv-og-se: et tovalgsfelt, hvor det ene tal hurtigt kører fast
+    const tr = bestTrial(g, work);
+    if(tr && tr.right === solution[tr.i]){
+      const efter = tr.depth === 0 ? 'med det samme' : `efter ${tr.depth} træk med "kun ét sted"`;
+      return {kind: 'prøv-og-se', cell: tr.i, digit: tr.right, steps: [
+        {text: `Her kommer du ikke videre med de almindelige teknikker. Kig på felterne, der kun kan have to tal – prøv det ene og se, om det går galt.`, area: UNITS[18 + BOX(tr.i)], focus: []},
+        {text: `${cap1(cellName(tr.i))} kan kun være ${tr.wrong} eller ${tr.right}. Sætter du ${tr.wrong}, går det galt ${efter}: et felt ender uden mulige tal, eller et tal kan ikke stå nogen steder i en række, kolonne eller kasse. Derfor kan det ikke være ${tr.wrong}.`, area: UNITS[18 + BOX(tr.i)], focus: [tr.i]},
+        {text: `Der skal stå ${tr.right} i ${cellName(tr.i)}.`, area: [], focus: [tr.i]},
+      ]};
+    }
+    // 5) kræver en teknik, hintet ikke kan forklare: peg på feltet med færrest kandidater
     let best = -1, bc = 10;
     for(let i = 0; i < 81; i++) if(!g[i] && popcount(work[i]) < bc){ bc = popcount(work[i]); best = i; }
     if(best < 0) return null;
@@ -362,7 +383,10 @@
     catch(e){ const d = date || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   }
   function dailyLevel(key){ const [y, m, d] = key.split('-').map(Number); return DAILY_LEVEL[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]; }
-  function daily(key){ key = key || todayKey(); const level = dailyLevel(key); return Object.assign(generate(level, 'himmerland-sudoku-' + key), {dato: key}); }
+  // Dagens baner før skiftet til version 2 laves med version 1, så historik og ranglister passer
+  const V2_FROM = '2026-11-23';
+  const dailyVersion = key => key >= V2_FROM ? 2 : 1;
+  function daily(key){ key = key || todayKey(); const level = dailyLevel(key); return Object.assign(generate(level, 'himmerland-sudoku-' + key, dailyVersion(key)), {dato: key}); }
 
   /* ---------- hvor svært var det tal? ----------
      Ud fra de rigtige tal på pladen (uden det nye tal): kan feltet nås med singler alene – også i flere
@@ -388,6 +412,83 @@
     return {tier: 4, tech: 'avanceret logik'};
   }
 
+  /* ---------- sværhedsprofil (version 2) ----------
+     Spiller banen igennem som en menneskelig spiller med noter: singler sættes, og hver gang man går
+     i stå, registreres et "svært øjeblik" med den sværeste teknik, der skulle til for at komme videre,
+     og hvor mange felter der stadig var tomme. Kan ingen af teknikkerne hjælpe, prøves tovalgsfelter:
+     hvor mange træk tager det, før det forkerte valg kører fast? Kort prøv-og-se er lettere end langt.
+     score = Σ vægt × (0,5 + tomme/51): tidlige og svære øjeblikke vejer mest. */
+  const ADV_UNSOLVED = 99;
+  function contradiction(h){
+    const c = candidatesOf(h);
+    for(let k = 0; k < 81; k++) if(!h[k] && !c[k]) return true;
+    for(const u of UNITS) for(let d = 1; d <= 9; d++){
+      if(u.some(k => h[k] === d)) continue;
+      if(!u.some(k => !h[k] && (c[k] & bit(d)))) return true;
+    }
+    return false;
+  }
+  // Sæt d i felt i og fyld singler ud: antal træk før modstrid, eller -1 hvis ingen modstrid opstår
+  function trialDepth(g, i, d){
+    const h = g.slice(); h[i] = d;
+    for(let n = 0; n < 81; n++){
+      if(contradiction(h)) return n;
+      const ss = findSingles(h, candidatesOf(h));
+      if(!ss.length) return -1;
+      h[ss[0].i] = ss[0].d;
+    }
+    return -1;
+  }
+  function bestTrial(g, cand){
+    let best = null;
+    for(let i = 0; i < 81; i++){
+      if(g[i] || popcount(cand[i]) !== 2) continue;
+      for(const d of digitsOf(cand[i])){
+        const dep = trialDepth(g, i, d);
+        if(dep >= 0 && (!best || dep < best.depth)) best = {i, wrong: d, right: digitsOf(cand[i]).find(x => x !== d), depth: dep};
+      }
+    }
+    return best;
+  }
+  const advWeight = depth => depth <= 4 ? 2 : depth <= 8 ? 3 : 4.5;
+  function profile(puzzle, solution){
+    const g = puzzle.slice(), cand = candidatesOf(g), moments = [];
+    const place = (i, d) => { g[i] = d; cand[i] = 0; for(const p of PEERS[i]) cand[p] &= ~bit(d); };
+    for(let guard = 0; guard < 400 && g.some(v => !v); guard++){
+      const ss = findSingles(g, cand);
+      if(ss.length){ place(ss[0].i, ss[0].d); continue; }
+      const empty = g.filter(v => !v).length;
+      let worst = 0, progressed = false;
+      for(let round = 0; round < 60; round++){
+        const el = findEliminations(g, cand); if(!el.length) break;
+        const minT = Math.min(...el.map(e => TECH_TIER[e.tech]));
+        el.find(e => TECH_TIER[e.tech] === minT).elim.forEach(([i, d]) => { cand[i] &= ~bit(d); });
+        worst = Math.max(worst, minT);
+        if(findSingles(g, cand).length){ progressed = true; break; }
+      }
+      if(progressed){ moments.push({w: worst, empty, adv: false}); continue; }
+      const t = bestTrial(g, cand);
+      const depth = t ? t.depth : ADV_UNSOLVED;
+      moments.push({w: advWeight(depth), empty, adv: true, depth});
+      let i = t ? t.i : -1;
+      if(i < 0){ let bc = 10; for(let k = 0; k < 81; k++) if(!g[k] && popcount(cand[k]) < bc){ bc = popcount(cand[k]); i = k; } }
+      place(i, solution[i]);
+    }
+    const score = moments.reduce((a, m) => a + m.w * (0.5 + m.empty / 51), 0);
+    return {moments, score: Math.round(score * 10) / 10, first: moments.length ? moments[0].empty : 0,
+      adv: moments.some(m => m.adv), maxW: moments.reduce((a, m) => Math.max(a, m.w), 0)};
+  }
+  // Niveau efter version 2. null = ligger mellem to niveauer og bruges ikke
+  function levelOf2(puzzle, solution){
+    const clues = puzzle.filter(Boolean).length, pr = profile(puzzle, solution);
+    if(!pr.moments.length) return clues >= 34 ? 'let' : 'mellem';
+    if(!pr.adv && pr.maxW <= 2 && pr.moments.length >= 2 && pr.score >= LEVEL2.svaerMin && pr.score <= LEVEL2.svaerMax) return 'svaer';
+    if(pr.score >= LEVEL2.ekspertMin && pr.first >= LEVEL2.ekspertFirst
+      && (pr.moments.length >= 3 || pr.moments.some(m => m.adv && m.depth >= LEVEL2.ekspertDepth))) return 'ekspert';
+    return null;
+  }
+  const LEVEL2 = {svaerMin: 2, svaerMax: 6, ekspertMin: 6.5, ekspertFirst: 27, ekspertDepth: 5};
+
   /* ---------- banekoder ----------
      Træningsbaner: niveaubogstav + 5 tegn, fx S-K7PM2 (L=let, M=mellem, S=svær, E=ekspert).
      Koden er frøet til generatoren, så samme kode altid giver samme bane.
@@ -412,12 +513,13 @@
   const dayCode = key => 'D-' + key.slice(2).replace(/-/g, '');
   const dateOfCode = c => '20' + c.slice(2, 4) + '-' + c.slice(4, 6) + '-' + c.slice(6, 8);
   const levelOfCode = c => isDayCode(c) ? dailyLevel(dateOfCode(c)) : LETTER_LEVEL[c[0]];
-  function fromCode(code){
+  // version: 1 for træningskoder fra før skiftet (siden ved det ud fra historikken), ellers den nyeste
+  function fromCode(code, version){
     if(isDayCode(code)) return Object.assign(daily(dateOfCode(code)), {kode: code});
     if(!CODE_RE.test(code)) throw new Error('Ugyldig kode: ' + code);
-    return Object.assign(generate(LETTER_LEVEL[code[0]], 'himmerland-bane-' + code), {kode: code});
+    return Object.assign(generate(LETTER_LEVEL[code[0]], 'himmerland-bane-' + code, version), {kode: code});
   }
 
-  const api = {LEVELS, LEVEL_NAMES, DAILY_LEVEL, PEERS, ROW, COL, BOX, rng, countSolutions, solve, grade, levelOf, generate, todayKey, dailyLevel, daily, explain, hardness, makeCode, normalizeCode, isDayCode, dayCode, dateOfCode, levelOfCode, fromCode};
+  const api = {LEVELS, LEVEL_NAMES, DAILY_LEVEL, PEERS, ROW, COL, BOX, rng, countSolutions, solve, grade, levelOf, generate, todayKey, dailyLevel, daily, explain, hardness, profile, levelOf2, VERSION, V2_FROM, makeCode, normalizeCode, isDayCode, dayCode, dateOfCode, levelOfCode, fromCode};
   if(typeof module !== 'undefined' && module.exports) module.exports = api; else root.Sudoku = api;
 })(typeof self !== 'undefined' ? self : this);

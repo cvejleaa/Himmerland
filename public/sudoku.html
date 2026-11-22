@@ -304,7 +304,7 @@ details summary{cursor:pointer;font-weight:600}
       <summary>Sådan spiller du</summary>
       <ul>
         <li><strong>Reglen.</strong> Udfyld pladen, så hver række, hver kolonne og hver af de ni 3×3-felter indeholder tallene 1–9 præcis én gang. Hver opgave har præcis én løsning.</li>
-        <li><strong>Sværhedsgrader.</strong> <em>Let</em> og <em>Mellem</em> kan løses ved kun at se, hvor et tal skal stå. <em>Svær</em> kræver kandidat-teknikker som låste kandidater og par. <em>Ekspert</em> kræver tripler, X-wing eller mere.</li>
+        <li><strong>Sværhedsgrader.</strong> <em>Let</em> og <em>Mellem</em> kan løses ved kun at se, hvor et tal skal stå. <em>Svær</em> har mindst to steder, hvor man går i stå og skal bruge kandidat-teknikker som låste kandidater og par. <em>Ekspert</em> har flere og tidligere svære øjeblikke – med tripler, X-wing eller prøv-og-se, der kræver flere træk at se igennem.</li>
         <li><strong>Noter.</strong> Slå <em>Noter</em> til for at skrive små kandidattal i et felt. Når et tal sættes, fjernes det fra noterne i samme række, kolonne og felt. Tager du tallet væk igen – med <em>Slet</em>, ved at trykke på tallet igen, ved at skrive et andet tal eller med <em>Fortryd</em> – kommer noterne tilbage.</li>
         <li><strong>Dagens sudoku.</strong> Skifter sværhedsgrad efter ugedagen: mandag og torsdag let, tirsdag og fredag mellem, onsdag og lørdag svær, søndag ekspert. Forkerte tal vises med det samme og koster 30 sekunder; et hint koster 60 sekunder. Lavest samlet tid vinder dagen.</li>
         <li><strong>Hint i tre trin.</strong> Et hint finder det næste logiske træk og forklarer det: først hvor du skal kigge, så hvorfor tallet må stå dér (fx en skjult single, låste kandidater eller et par), og til sidst sættes tallet. Du kan lukke hintet efter første eller andet trin og selv finde tallet.</li>
@@ -432,7 +432,7 @@ function newGame(type, gen){
   return {
     id: (type === 'dag' ? 'dag-' + gen.dato : 't-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
     type, niveau: gen.level, dato: gen.dato || today(),
-    kode: gen.kode || (type === 'dag' ? S.dayCode(gen.dato) : null), liste: type === 'dag' ? 'dag' : null,
+    kode: gen.kode || (type === 'dag' ? S.dayCode(gen.dato) : null), liste: type === 'dag' ? 'dag' : null, ver: gen.version || null,
     puzzle: gen.puzzle, solution: gen.solution, values: gen.puzzle.slice(), notes: new Array(81).fill(0),
     elapsed: 0, fejl: 0, hints: 0, hintCells: [], mark: false, hjaelp: false, done: false,
     startet: Date.now(), slut: null, undo: [],
@@ -490,7 +490,10 @@ async function startCode(kode){
       if(b && b.puzzle){ const puzzle = b.puzzle.split('').map(Number); gen = {puzzle, solution: S.solve(puzzle), level: S.levelOfCode(kode), kode}; }
     }catch(e){ console.warn('bane', e); }
   }
-  if(!gen || !gen.solution) gen = S.fromCode(kode);
+  // Har man spillet koden før, laves banen med samme udgave af generatoren som dengang.
+  // Spil fra før versionsnummeret blev gemt, er lavet med den første udgave
+  const rec = myGames.find(g => g.kode === kode && g.type !== 'dag');
+  if(!gen || !gen.solution) gen = S.fromCode(kode, rec ? (rec.ver || 1) : undefined);
   playCodeGen(gen);
 }
 function playCodeGen(gen){
@@ -682,7 +685,7 @@ function finish(){
   game.total = total(game);
   if(game.type === 'dag') game.sendt = false;
   save();
-  addMyGame({id: game.id, type: game.type, niveau: game.niveau, dato: game.dato, kode: game.kode, omspil: game.type !== 'dag' && game.liste !== 'bane', tid: game.tid, fejl: game.fejl, hints: game.hints, total: game.total, hjaelp: game.hjaelp, svaere: (game.flotte || []).length, slut: game.slut});
+  addMyGame({id: game.id, type: game.type, niveau: game.niveau, dato: game.dato, kode: game.kode, ver: game.ver || null, omspil: game.type !== 'dag' && game.liste !== 'bane', tid: game.tid, fejl: game.fejl, hints: game.hints, total: game.total, hjaelp: game.hjaelp, svaere: (game.flotte || []).length, slut: game.slut});
   if(game.type === 'dag') submitDay(game);
   if(game.liste === 'bane'){
     const pend = LS.get(KEY_PENDING, []);
