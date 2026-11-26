@@ -3,8 +3,8 @@
    Dagens opgave laves ud fra datoen med en fast tilfældighedsgenerator, så alle får den samme. */
 (function(root){
   'use strict';
-  const LEVELS = ['let', 'mellem', 'svaer', 'ekspert'];
-  const LEVEL_NAMES = {let: 'Let', mellem: 'Mellem', svaer: 'Svær', ekspert: 'Ekspert'};
+  const LEVELS = ['let', 'mellem', 'svaer', 'ekspert', 'ekstrem'];
+  const LEVEL_NAMES = {let: 'Let', mellem: 'Mellem', svaer: 'Svær', ekspert: 'Ekspert', ekstrem: 'Ekstrem'};
   // Dagens niveau pr. ugedag (0 = søndag)
   const DAILY_LEVEL = ['ekspert', 'let', 'mellem', 'svaer', 'let', 'mellem', 'svaer'];
 
@@ -166,25 +166,26 @@
     }
     return p;
   }
-  const TARGET = {let: 36, mellem: 28, svaer: 22, ekspert: 17};
+  const TARGET = {let: 36, mellem: 28, svaer: 22, ekspert: 17, ekstrem: 17};
   // version 1: niveau efter den sværeste teknik (de første baner). Version 2: Svær og Ekspert efter
   // sværhedsprofilen (antal svære øjeblikke, hvor tidligt, prøv-og-se-dybde). Let og Mellem er ens i begge.
-  const VERSION = 2;
+  const VERSION = 3;
   function accepts(level, puzzle, solution, version){
+    if(level === 'ekstrem' && version < 3) version = 3;     // Ekstrem findes kun fra version 3
     if(version === 1 || level === 'let' || level === 'mellem') return levelOf(puzzle) === level;
     const tier = grade(puzzle).tier;                       // hurtigt forfilter før den dyrere profil
     if(level === 'svaer' && tier !== 2) return false;
-    if(level === 'ekspert' && tier < 2) return false;
-    return levelOf2(puzzle, solution) === level;
+    if((level === 'ekspert' || level === 'ekstrem') && tier < 2) return false;
+    return (version === 2 ? levelOf2 : levelOf3)(puzzle, solution) === level;
   }
   function generate(level, seed, version){
     if(!LEVELS.includes(level)) throw new Error('Ukendt niveau: ' + level);
     version = version || VERSION;
     const rand = rng(seed == null ? Math.floor(Math.random() * 4294967296) : seed);
-    for(let attempt = 1; attempt <= 1500; attempt++){
+    for(let attempt = 1; attempt <= 3000; attempt++){
       const solution = fullGrid(rand);
       const puzzle = carve(solution, rand, TARGET[level]);
-      if(accepts(level, puzzle, solution, version)) return {puzzle, solution, level, attempts: attempt, version};
+      if(accepts(level, puzzle, solution, version)) return {puzzle, solution, level, attempts: attempt, version: level === 'ekstrem' ? Math.max(3, version) : version};
     }
     throw new Error('Kunne ikke lave en opgave på niveau ' + level);
   }
@@ -384,8 +385,8 @@
   }
   function dailyLevel(key){ const [y, m, d] = key.split('-').map(Number); return DAILY_LEVEL[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]; }
   // Dagens baner før skiftet til version 2 laves med version 1, så historik og ranglister passer
-  const V2_FROM = '2026-11-23';
-  const dailyVersion = key => key >= V2_FROM ? 2 : 1;
+  const V2_FROM = '2026-11-23', V3_FROM = '2026-11-27';
+  const dailyVersion = key => key >= V3_FROM ? 3 : key >= V2_FROM ? 2 : 1;
   function daily(key){ key = key || todayKey(); const level = dailyLevel(key); return Object.assign(generate(level, 'himmerland-sudoku-' + key, dailyVersion(key)), {dato: key}); }
 
   /* ---------- hvor svært var det tal? ----------
@@ -488,15 +489,32 @@
     return null;
   }
   const LEVEL2 = {svaerMin: 2, svaerMax: 6, ekspertMin: 6.5, ekspertFirst: 27, ekspertDepth: 5};
+  // Version 3: den sværeste del af Ekspert bliver sit eget niveau, Ekstrem. Ekspert loftes opad,
+  // og baner i mellemrummet bruges ikke, så de to niveauer ikke glider sammen.
+  const LEVEL3 = {ekspertMaxScore: 16, ekspertMaxDepth: 12, ekstremScore: 20, ekstremDepth: 15};
+  const maxDepth = pr => Math.max(0, ...pr.moments.filter(m => m.adv).map(m => m.depth));
+  function levelOf3(puzzle, solution){
+    const pr = profile(puzzle, solution);
+    const clues = puzzle.filter(Boolean).length;
+    if(!pr.moments.length) return clues >= 34 ? 'let' : 'mellem';
+    if(!pr.adv && pr.maxW <= 2 && pr.moments.length >= 2 && pr.score >= LEVEL2.svaerMin && pr.score <= LEVEL2.svaerMax) return 'svaer';
+    const hard = pr.score >= LEVEL2.ekspertMin && pr.first >= LEVEL2.ekspertFirst
+      && (pr.moments.length >= 3 || pr.moments.some(m => m.adv && m.depth >= LEVEL2.ekspertDepth));
+    if(!hard) return null;
+    const d = maxDepth(pr);
+    if(pr.score >= LEVEL3.ekstremScore || d >= LEVEL3.ekstremDepth) return 'ekstrem';
+    if(pr.score <= LEVEL3.ekspertMaxScore && d <= LEVEL3.ekspertMaxDepth) return 'ekspert';
+    return null;
+  }
 
   /* ---------- banekoder ----------
      Træningsbaner: niveaubogstav + 5 tegn, fx S-K7PM2 (L=let, M=mellem, S=svær, E=ekspert).
      Koden er frøet til generatoren, så samme kode altid giver samme bane.
      Dagens sudoku: D-ÅÅMMDD, fx D-261119. */
   const CODE_ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const LEVEL_LETTER = {let: 'L', mellem: 'M', svaer: 'S', ekspert: 'E'};
-  const LETTER_LEVEL = {L: 'let', M: 'mellem', S: 'svaer', E: 'ekspert'};
-  const CODE_RE = /^[LMSE]-[A-HJ-NP-Z2-9]{5}$/, DAY_RE = /^D-\d{6}$/;   // uden 0, 1, I og O, der let forveksles
+  const LEVEL_LETTER = {let: 'L', mellem: 'M', svaer: 'S', ekspert: 'E', ekstrem: 'X'};
+  const LETTER_LEVEL = {L: 'let', M: 'mellem', S: 'svaer', E: 'ekspert', X: 'ekstrem'};
+  const CODE_RE = /^[LMSEX]-[A-HJ-NP-Z2-9]{5}$/, DAY_RE = /^D-\d{6}$/;   // uden 0, 1, I og O, der let forveksles
   function makeCode(level, rand){
     rand = rand || Math.random;
     let s = LEVEL_LETTER[level] + '-';
@@ -506,7 +524,7 @@
   // Tåler små bogstaver, mellemrum og manglende bindestreg. Ugyldig kode giver null
   function normalizeCode(input){
     let s = String(input || '').toUpperCase().replace(/[\s_.]/g, '');
-    if(/^[LMSED][A-Z0-9]+$/.test(s)) s = s[0] + '-' + s.slice(1);
+    if(/^[LMSEXD][A-Z0-9]+$/.test(s)) s = s[0] + '-' + s.slice(1);
     return CODE_RE.test(s) || DAY_RE.test(s) ? s : null;
   }
   const isDayCode = c => DAY_RE.test(c);
@@ -517,9 +535,14 @@
   function fromCode(code, version){
     if(isDayCode(code)) return Object.assign(daily(dateOfCode(code)), {kode: code});
     if(!CODE_RE.test(code)) throw new Error('Ugyldig kode: ' + code);
-    return Object.assign(generate(LETTER_LEVEL[code[0]], 'himmerland-bane-' + code, version), {kode: code});
+    const g = Object.assign(generate(LETTER_LEVEL[code[0]], 'himmerland-bane-' + code, version), {kode: code});
+    // Ekspert-baner fra version 2, der hører til Ekstrem, vises og gemmes som Ekstrem (fx E-S5ZZ4)
+    if(g.level === 'ekspert' && g.version === 2) g.level = levelOfPuzzle(g.puzzle, g.solution, 'ekspert');
+    return g;
   }
+  // Niveau for en given plade efter den nyeste bedømmelse; fallback, hvis den falder mellem to niveauer
+  function levelOfPuzzle(puzzle, solution, fallback){ return levelOf3(puzzle, solution) || fallback; }
 
-  const api = {LEVELS, LEVEL_NAMES, DAILY_LEVEL, PEERS, ROW, COL, BOX, rng, countSolutions, solve, grade, levelOf, generate, todayKey, dailyLevel, daily, explain, hardness, profile, levelOf2, VERSION, V2_FROM, makeCode, normalizeCode, isDayCode, dayCode, dateOfCode, levelOfCode, fromCode};
+  const api = {LEVELS, LEVEL_NAMES, DAILY_LEVEL, PEERS, ROW, COL, BOX, rng, countSolutions, solve, grade, levelOf, generate, todayKey, dailyLevel, daily, explain, hardness, profile, levelOf2, levelOf3, levelOfPuzzle, VERSION, V2_FROM, V3_FROM, makeCode, normalizeCode, isDayCode, dayCode, dateOfCode, levelOfCode, fromCode};
   if(typeof module !== 'undefined' && module.exports) module.exports = api; else root.Sudoku = api;
 })(typeof self !== 'undefined' ? self : this);

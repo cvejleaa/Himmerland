@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sudoku – dagens udfordring og træning</title>
-<meta name="description" content="Sudoku i fire sværhedsgrader. Træn for din egen statistik, eller spil dagens sudoku og kom på den fælles highscoreliste.">
+<meta name="description" content="Sudoku i fem sværhedsgrader. Træn for din egen statistik, eller spil dagens sudoku og kom på den fælles highscoreliste.">
 <meta name="theme-color" content="#0d5c3f" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#08160f" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🧩</text></svg>">
@@ -82,8 +82,8 @@ header.top .who{font-size:.8rem;opacity:.85;text-align:right;max-width:40vw;over
 .btn[aria-pressed=true]{background:var(--green-3);border-color:var(--green);color:var(--green)}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.75rem;font-weight:700;background:var(--green-3);color:var(--green);vertical-align:middle}
-.badge.let{background:#e3f3e8;color:#17663a}.badge.mellem{background:#e5eefb;color:#1f4f99}.badge.svaer{background:#fdf0db;color:#995c00}.badge.ekspert{background:#fbe3e3;color:#9b1c1c}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .badge.let{background:#173322;color:#8fd8a8}:root:not([data-theme="light"]) .badge.mellem{background:#172640;color:#9cc2ff}:root:not([data-theme="light"]) .badge.svaer{background:#3a2a10;color:#f0c071}:root:not([data-theme="light"]) .badge.ekspert{background:#3b1a1a;color:#f4a3a3}}
+.badge.let{background:#e3f3e8;color:#17663a}.badge.mellem{background:#e5eefb;color:#1f4f99}.badge.svaer{background:#fdf0db;color:#995c00}.badge.ekspert{background:#fbe3e3;color:#9b1c1c}.badge.ekstrem{background:#2b0f3a;color:#f3d9ff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .badge.let{background:#173322;color:#8fd8a8}:root:not([data-theme="light"]) .badge.mellem{background:#172640;color:#9cc2ff}:root:not([data-theme="light"]) .badge.svaer{background:#3a2a10;color:#f0c071}:root:not([data-theme="light"]) .badge.ekspert{background:#3b1a1a;color:#f4a3a3}:root:not([data-theme="light"]) .badge.ekstrem{background:#e9c8ff;color:#2b0f3a}}
 .tabs{display:flex;gap:6px;margin-bottom:10px}
 .tabs button{flex:1;padding:8px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:600;cursor:pointer}
 .tabs button[aria-selected=true]{background:var(--green);color:var(--on-accent);border-color:var(--green)}
@@ -102,8 +102,8 @@ tr.me td{background:var(--green-3);font-weight:700}
 .daily .when{font-size:1.15rem;font-weight:700}
 .daily .status{font-size:.9rem}
 .daily .status b{font-variant-numeric:tabular-nums}
-.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.levels .btn{flex-direction:column;gap:0;padding:10px 4px;min-height:64px}
+.levels{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.levels .btn{flex-direction:column;gap:0;padding:10px 2px;min-height:64px;font-size:.82rem}
 .levels .btn small{font-weight:500;font-size:.72rem;color:var(--muted)}
 .codechip{display:inline-flex;align-items:center;gap:4px;font:700 .78rem ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--green);cursor:pointer}
 .codechip:hover{border-color:var(--green-2)}
@@ -221,7 +221,7 @@ details summary{cursor:pointer;font-weight:600}
   <div class="wrap">
     <div>
       <h1>🧩 Sudoku <span class="em">– dagens og træning</span></h1>
-      <p class="sub">Fire sværhedsgrader og en ny fælles udfordring hver dag.</p>
+      <p class="sub">Fem sværhedsgrader og en ny fælles udfordring hver dag.</p>
     </div>
     <div style="display:grid;gap:4px;justify-items:end">
       <a class="btn" id="btnLogin" href="spil.html?next=sudoku.html">Log ind</a>
@@ -304,7 +304,7 @@ details summary{cursor:pointer;font-weight:600}
       <summary>Sådan spiller du</summary>
       <ul>
         <li><strong>Reglen.</strong> Udfyld pladen, så hver række, hver kolonne og hver af de ni 3×3-felter indeholder tallene 1–9 præcis én gang. Hver opgave har præcis én løsning.</li>
-        <li><strong>Sværhedsgrader.</strong> <em>Let</em> og <em>Mellem</em> kan løses ved kun at se, hvor et tal skal stå. <em>Svær</em> har mindst to steder, hvor man går i stå og skal bruge kandidat-teknikker som låste kandidater og par. <em>Ekspert</em> har flere og tidligere svære øjeblikke – med tripler, X-wing eller prøv-og-se, der kræver flere træk at se igennem.</li>
+        <li><strong>Sværhedsgrader.</strong> <em>Let</em> og <em>Mellem</em> kan løses ved kun at se, hvor et tal skal stå. <em>Svær</em> har mindst to steder, hvor man går i stå og skal bruge kandidat-teknikker som låste kandidater og par. <em>Ekspert</em> har flere og tidligere svære øjeblikke – med tripler, X-wing eller prøv-og-se på op til 12 træk. <em>Ekstrem</em> er for de stædige: lange prøv-og-se-kæder på 15 træk eller mere, eller mange svære øjeblikke i træk.</li>
         <li><strong>Noter.</strong> Slå <em>Noter</em> til for at skrive små kandidattal i et felt. Når et tal sættes, fjernes det fra noterne i samme række, kolonne og felt. Tager du tallet væk igen – med <em>Slet</em>, ved at trykke på tallet igen, ved at skrive et andet tal eller med <em>Fortryd</em> – kommer noterne tilbage.</li>
         <li><strong>Dagens sudoku.</strong> Skifter sværhedsgrad efter ugedagen: mandag og torsdag let, tirsdag og fredag mellem, onsdag og lørdag svær, søndag ekspert. Forkerte tal vises med det samme og koster 30 sekunder; et hint koster 60 sekunder. Lavest samlet tid vinder dagen.</li>
         <li><strong>Hint i tre trin.</strong> Et hint finder det næste logiske træk og forklarer det: først hvor du skal kigge, så hvorfor tallet må stå dér (fx en skjult single, låste kandidater eller et par), og til sidst sættes tallet. Du kan lukke hintet efter første eller andet trin og selv finde tallet.</li>
@@ -312,7 +312,7 @@ details summary{cursor:pointer;font-weight:600}
         <li><strong>Svære tal.</strong> Sætter du et rigtigt tal, der kun kunne findes med en kandidat-teknik, får du en anerkendelse: ⭐ låste kandidater, ⭐⭐ par, ⭐⭐⭐ trippel eller X-wing og 🏅 for avanceret logik. Uden fejlvisning i træning kommer de først, når banen er løst, så de ikke afslører, om tallet er rigtigt.</li>
         <li><strong>Start forfra.</strong> Knappen under pladen rydder alle tal og noter (efter en bekræftelse). Uret kører altid videre. I træning og omspil nulstilles fejl og hints; i dagens sudoku og på første forsøg på en bane tæller de stadig, så ranglisten forbliver fair.</li>
         <li><strong>Fremhævning.</strong> Tryk på et felt med et tal – eller på et tal i tastaturet, når intet tomt felt er valgt – så fremhæves alle de samme tal og hjælpetal på pladen.</li>
-        <li><strong>Banekoder.</strong> Hver bane har en kode – fx <span class="code">S-K7PM2</span> (L/M/S/E for niveauet) og <span class="code">D-261119</span> for dagens sudoku. Samme kode giver altid samme bane. Skriv en kode under <em>Baner</em> for at spille den eller finde den i din historik, og tryk på koden over pladen for at dele den.</li>
+        <li><strong>Banekoder.</strong> Hver bane har en kode – fx <span class="code">S-K7PM2</span> (L/M/S/E/X for niveauet) og <span class="code">D-261119</span> for dagens sudoku. Samme kode giver altid samme bane. Skriv en kode under <em>Baner</em> for at spille den eller finde den i din historik, og tryk på koden over pladen for at dele den.</li>
         <li><strong>Rangliste pr. bane.</strong> Første gang du løser en bane, mens du er logget ind, kommer du på banens rangliste – med samme straf som dagens sudoku (30 sek. pr. fejl, 60 sek. pr. hint). Spiller du den igen, er det et omspil, der kun tæller i din egen historik.</li>
         <li><strong>Træning.</strong> Fejlmarkering og hint kan bruges frit, men så tæller opgaven som <em>løst med hjælp</em> og ikke i dine bedste tider.</li>
         <li><strong>Uden login.</strong> Alt kan spilles uden login og gemmes på telefonen. Log ind for at komme på highscorelisten og have din statistik med på andre telefoner.</li>
@@ -421,6 +421,19 @@ function mergeGames(a, b){
   return [...m.values()].sort((x, y) => (x.slut || 0) - (y.slut || 0)).slice(-1000);
 }
 function loadMyGames(){ myGames = LS.get(KEY_GAMES(me && me.uid), []); }
+// Ekspert-baner fra version 2, der hører til Ekstrem, flyttes til Ekstrem i historikken (én gang pr. bane)
+function reclassifyOld(){
+  const todo = myGames.filter(g => g.type !== 'dag' && g.kode && g.kode[0] === 'E' && g.ver === 2 && !g.nv3);
+  if(!todo.length) return;
+  const lv = {};
+  todo.forEach(g => {
+    try{ lv[g.kode] = lv[g.kode] || S.fromCode(g.kode, 2).level; }catch(e){ lv[g.kode] = g.niveau; }
+    g.niveau = lv[g.kode]; g.nv3 = true;
+  });
+  LS.set(KEY_GAMES(me && me.uid), myGames);
+  if(me && online) Online.sudokuSync(todo).then(m => { myGames = m; LS.set(KEY_GAMES(me.uid), m); }).catch(() => {});
+  if(!game) renderHome();
+}
 function addMyGame(rec){
   myGames = mergeGames(myGames, [rec]);
   LS.set(KEY_GAMES(me && me.uid), myGames);
@@ -487,7 +500,14 @@ async function startCode(kode){
   if(!S.isDayCode(kode) && me && online){
     try{
       const b = await Online.sudokuBane(kode);
-      if(b && b.puzzle){ const puzzle = b.puzzle.split('').map(Number); gen = {puzzle, solution: S.solve(puzzle), level: S.levelOfCode(kode), kode}; }
+      if(b && b.puzzle){
+        const puzzle = b.puzzle.split('').map(Number), solution = S.solve(puzzle);
+        // Hvilken udgave af generatoren lavede den gemte plade? (så omspil uden net giver samme bane)
+        let version = null;
+        for(const v of [S.VERSION, 2, 1]){ try{ if(S.fromCode(kode, v).puzzle.join('') === b.puzzle){ version = v; break; } }catch(e){} }
+        const level = kode[0] === 'E' ? S.levelOfPuzzle(puzzle, solution, 'ekspert') : S.levelOfCode(kode);
+        gen = {puzzle, solution, level, kode, version};
+      }
     }catch(e){ console.warn('bane', e); }
   }
   // Har man spillet koden før, laves banen med samme udgave af generatoren som dengang.
@@ -978,9 +998,14 @@ function loginUrl(){
   const kode = (game && game.kode && !S.isDayCode(game.kode) && game.kode) || (!$('baneCard').hidden && baneCode) || null;
   return 'spil.html?next=' + encodeURIComponent('sudoku.html' + (kode ? '?bane=' + kode : ''));
 }
+// Niveau for en kode: gamle ekspert-koder, der hører til Ekstrem, vises som Ekstrem
+function codeLevel(kode){
+  const rec = myGames.find(g => g.kode === kode && g.niveau);
+  return rec && !S.isDayCode(kode) ? rec.niveau : S.levelOfCode(kode);
+}
 function shareUrl(kode){ return location.origin + location.pathname + '?bane=' + kode; }
 async function shareCode(kode){
-  const url = shareUrl(kode), text = `Prøv sudoku-banen ${kode} (${S.LEVEL_NAMES[S.levelOfCode(kode)]})`;
+  const url = shareUrl(kode), text = `Prøv sudoku-banen ${kode} (${S.LEVEL_NAMES[codeLevel(kode)]})`;
   try{ if(navigator.share){ await navigator.share({title: 'Sudoku ' + kode, text, url}); return; } }catch(e){ if(e && e.name === 'AbortError') return; }
   try{ await navigator.clipboard.writeText(url); toast('Linket til ' + kode + ' er kopieret'); }catch(e){ prompt('Kopiér linket', url); }
 }
@@ -1002,7 +1027,7 @@ function openBane(kode){
 function closeBane(){ $('baneCard').hidden = true; $('btnLogin').href = loginUrl(); }
 function renderBane(){
   const kode = baneCode; if(!kode) return;
-  const lvl = S.levelOfCode(kode), day = S.isDayCode(kode);
+  const lvl = codeLevel(kode), day = S.isDayCode(kode);
   $('baneTitle').innerHTML = `Bane <span class="code">${esc(kode)}</span> ${badge(lvl)}`;
   const mine = myGames.filter(g => g.kode === kode).sort((a, b) => (a.slut || 0) - (b.slut || 0));
   $('baneHelp').textContent = day ? `Dagens sudoku ${fmtDate(S.dateOfCode(kode), {day: 'numeric', month: 'long', year: 'numeric'})}. ${kode === S.dayCode(today()) ? '' : 'Spilles den igen, tæller den kun i din historik.'}`
@@ -1062,7 +1087,7 @@ function renderHome(){
     btn.textContent = 'Spil dagens sudoku'; btn.disabled = false;
   }
   // træning
-  const names = {let: 'Rolig start', mellem: 'Lidt mere tænkning', svaer: 'Kandidat-teknikker', ekspert: 'Til de garvede'};
+  const names = {let: 'Rolig start', mellem: 'Lidt mere tænkning', svaer: 'Kandidat-teknikker', ekspert: 'Til de garvede', ekstrem: 'Lange kæder'};
   $('levels').innerHTML = S.LEVELS.map(l => `<button class="btn" type="button" data-lvl="${l}">${S.LEVEL_NAMES[l]}<small>${names[l]}</small></button>`).join('');
   $('levels').querySelectorAll('button').forEach(b => b.addEventListener('click', () => startTraining(b.dataset.lvl)));
   const t = LS.get(KEY_TRAIN, null);
@@ -1218,6 +1243,7 @@ async function startOnline(){
       const anon = LS.get(KEY_GAMES(null), []);
       myGames = mergeGames(LS.get(KEY_GAMES(me.uid), []), anon);
       LS.set(KEY_GAMES(me.uid), myGames); if(anon.length) LS.del(KEY_GAMES(null));
+      setTimeout(reclassifyOld, 300);
       Online.sudokuSync(myGames).then(m => { myGames = m; LS.set(KEY_GAMES(me.uid), m); renderStats(); }).catch(e => console.warn('sudoku-synk', e));
       Online.sudokuMine(today()).then(r => { if(r){ myCloudDay = r; if(!game) renderHome(); } }).catch(() => {});
       submitPending();
@@ -1245,6 +1271,7 @@ if('serviceWorker' in navigator){
 buildBoard();
 cleanOld();
 loadMyGames();
+setTimeout(reclassifyOld, 300);
 renderWho();
 renderHome();
 if(urlCode){ $('codeInput').value = urlCode; renderBaneList(); openBane(urlCode); }
