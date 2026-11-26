@@ -2,7 +2,7 @@
   "id": "sudoku",
   "name": "Sudoku – dagens og træning",
   "short_name": "Sudoku",
-  "description": "Sudoku i fire sværhedsgrader og en fælles daglig udfordring.",
+  "description": "Sudoku i fem sværhedsgrader og en fælles daglig udfordring.",
   "lang": "da",
   "start_url": "sudoku.html",
   "scope": "./",
